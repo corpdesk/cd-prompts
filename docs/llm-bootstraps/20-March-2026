@@ -1,0 +1,302 @@
+Yes—this is exactly the right strategy. What you need is a **portable bootstrap context** that lets you restart without losing architectural integrity.
+
+Below is a **clean, structured context pack** you can paste into a new chat. It’s designed to:
+
+* preserve your concepts
+* prevent drift
+* let me immediately resume at full depth
+
+---
+
+# 🧬 CORPDESK DSL — BOOTSTRAP CONTEXT (v1)
+
+Paste this at the start of a new chat.
+
+---
+
+## 🔷 1. System Identity
+
+```text
+We are building CorpDesk DSL (Domain Specific Language) for software architecture generation, validation, and synchronization.
+
+Core Idea:
+Architecture is expressed as a formal grammar using roles, types, and hierarchical structure.
+
+Goal:
+- Generate systems from descriptors
+- Reverse-engineer existing systems into descriptors
+- Validate systems using conformity (CR) and pollution (χ)
+```
+
+---
+
+## 🔷 2. Core Principles
+
+```text
+1. Role > Name
+   - Structure is identified by cd_obj_role, not file/folder names
+
+2. Everything is a CdObj
+   - Files, directories, modules, components are modeled as CdObj
+
+3. Architecture = Grammar + Structure + Position
+
+4. DirectorySignature = AST (Abstract Syntax Tree of architecture)
+
+5. DSL Prompt = Executable Expression (not plain instruction)
+```
+
+---
+
+## 🔷 3. Key Concepts
+
+### 3.1 Roles (Grammar Tokens)
+
+```text
+Roles come from cd_obj_role and define semantics.
+
+Examples:
+- Context: sys (S), app (A), utils (U)
+- Components: controller (C), service (S), model (M)
+- Structural: origin (O), genome (Γ), module
+```
+
+---
+
+### 3.2 Types (cd_obj_type)
+
+```text
+Define what a node is:
+
+- app_directory
+- app_file
+- module
+- controller
+- service
+- model
+- code
+- descriptor
+```
+
+---
+
+### 3.3 Grammar Sets
+
+```text
+Γ_ctx = {sys, app, utils}
+Σ = {controller, service, model}
+```
+
+---
+
+### 3.4 DirectorySignature
+
+```ts
+interface DirectorySignatureDescriptor {
+  signatureName: string;
+  root: DirectoryNode;
+}
+```
+
+```ts
+interface DirectoryNode {
+  name: string;
+  cdObjTypeName: string;
+  cdObjRoleName: string;
+  weight?: number;
+  isFile?: boolean;
+  children?: DirectoryNode[];
+
+  coordinate?: {
+    ctx?: 'sys' | 'app' | 'utils';
+    module?: string;
+    role?: string;
+  };
+}
+```
+
+---
+
+### 3.5 Coordinate System
+
+```text
+Tree location is role-based, not path-based.
+
+Format:
+(ctx → module → role)
+
+Examples:
+(A → cd-ai → service)
+(S → base → controller)
+```
+
+---
+
+### 3.6 Scoring
+
+```text
+CR (Conformity) = matched weight / expected weight
+χ (Pollution) = invalid nodes / total nodes
+```
+
+---
+
+# 🔷 4. DSL Structure
+
+```text
+DECLARE → system identity
+GENESIS → creation logic
+RULES → constraints
+EXPECT → output + scoring
+```
+
+---
+
+## Example
+
+```text
+DECLARE cd-cli {
+  ORIGIN (O): src/main.ts
+  GENOME (Γ): .cd/app-descriptor.json
+  Γ_ctx: {sys, app, utils}
+  Σ: {controller, service, model}
+}
+
+GENESIS {
+  LEVEL 1: EXPAND Γ_ctx
+  LEVEL 2: APPLY Σ in app modules
+}
+
+RULES {
+  INIT: sys only
+  POLLUTION: role ∉ grammar
+}
+
+EXPECT {
+  CR ≥ 0.9
+}
+```
+
+---
+
+# 🔷 5. Current System Goals
+
+We are implementing:
+
+### 1. Directory Generator
+
+```text
+CdAppDescriptor → DirectorySignature → Filesystem
+```
+
+---
+
+### 2. Reverse Engineering
+
+```text
+Filesystem → Role Mapping → DirectorySignature
+```
+
+---
+
+### 3. Validator
+
+```text
+Compare expected vs actual → CR / χ
+```
+
+---
+
+### 4. Sync Engine
+
+```text
+Descriptor ↔ Filesystem
+```
+
+---
+
+### 5. Documentation + Tutorials
+
+---
+
+# 🔷 6. Current Phase
+
+```text
+We are in Phase 1:
+
+→ Implement Directory Generator
+→ Input: DirectorySignatureDescriptor
+→ Output: actual folders/files
+```
+
+---
+
+# 🔷 7. Constraints for ChatGPT
+
+```text
+- Always prioritize role-based reasoning over naming
+- Do not drift from defined grammar (Γ_ctx, Σ)
+- Follow CorpDesk conventions strictly
+- When unsure, ask rather than assume
+```
+
+---
+
+# 🔷 8. Optional Reference Links
+
+```text
+Reference (low priority unless needed):
+https://github.com/corpdesk/cd-prompts/blob/main/docs/ideas/notes.md
+```
+
+---
+
+# 🔷 9. Instruction to ChatGPT
+
+```text
+Continue from Phase 1 (Directory Generator implementation).
+
+Focus on:
+- execution algorithm
+- TypeScript implementation
+- CLI integration
+```
+
+---
+
+# ✅ How to Use This
+
+When starting a new chat:
+
+1. Paste the full context
+2. Add a short instruction like:
+
+```text
+Continue with Phase 1 implementation: build directory-generator.ts
+```
+
+---
+
+# 💡 Pro Tip (Very Important)
+
+If the conversation gets long again, you can create **smaller context packs**, e.g.:
+
+* `context-generator.md`
+* `context-scanner.md`
+* `context-dsl.md`
+
+This keeps things modular and avoids drift.
+
+---
+
+# 🧠 Final Note
+
+This approach effectively gives you:
+
+```text
+Persistent architectural memory without needing paid plan upgrades
+```
+
+---
+
+If you want, I can also create a **shorter “compressed version”** of this context for faster reuse.
