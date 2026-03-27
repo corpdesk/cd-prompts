@@ -22,11 +22,151 @@ CdWire was designed to:
 
 ## 3. Protocol Components
 
-### 3.1 Request (ICdRequest)
+### 3.1 Some Key Interfaces:
 
-All invocations use a common request envelope:
 
 ```ts
+/**
+ * This is an effort to standardize corpdesk return by a function or method.
+ * All corpdesk functions and methods are expected to implement CdFxReturn (progressively)
+ * - Consistency Across All Corpdesk Applications
+ * - Safer Type Handling
+ * - Improved Error Handling
+ * interface as a return type.
+ * Proposed: 6th Feb 2025
+ * Adoption is meant to be progressive over time.
+ * The principle if borrowed from Go's tuple returns
+ * @data: T | null;
+ * @state: boolean;
+ * @message?: string; // Optional error/success message
+ */
+export interface CdFxReturn<T> {
+  data?: T | null;
+  state: boolean | CdFxStateLevel; // Interpreted through semantic map
+  message?: string | null;
+}
+
+export enum CdFxStateLevel {
+  Error = 0,
+  Success = 1,
+  PartialSuccess = 2,
+  LogicalFailure = 3,
+  Warning = 4,
+  Recoverable = 5,
+  Info = 6,
+  Pending = 7,
+  Cancelled = 8,
+  NotFound = 9,
+  NotImplemented = 10,
+  SystemError = 11,
+  Fatal = 12,
+  Unknown = 13,
+  NetworkError = 17,
+  PermissionDenied = 18,
+}
+
+// ─── Assertion Return Type ────────────────────────
+export type CdAssertReturn = CdFxReturn<boolean>;
+
+export interface FxStateMeta {
+  key: string;
+  label: string;
+  color?: string;
+  icon?: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  category?: 'error' | 'success' | 'warning' | 'info';
+}
+
+export interface FxStateSemantics {
+  mapping: Record<keyof typeof CdFxStateLevel, FxStateMeta>;
+}
+
+// ✅ Default returns for each CdFxStateLevel
+
+export const CD_FX_SUCCESS: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Success,
+  message: 'Success!',
+};
+
+export const CD_FX_FAIL: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Error,
+  message: 'Failed!',
+};
+
+export const CD_FX_PARTIAL_SUCCESS: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.PartialSuccess,
+  message: 'Partial success.',
+};
+
+export const CD_FX_LOGICAL_FAILURE: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.LogicalFailure,
+  message: 'Logical failure.',
+};
+
+export const CD_FX_WARNING: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Warning,
+  message: 'Warning issued.',
+};
+
+export const CD_FX_RECOVERABLE: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Recoverable,
+  message: 'Recoverable state.',
+};
+
+export const CD_FX_INFO: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Info,
+  message: 'Informational message.',
+};
+
+export const CD_FX_PENDING: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Pending,
+  message: 'Pending operation.',
+};
+
+export const CD_FX_CANCELLED: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Cancelled,
+  message: 'Operation cancelled.',
+};
+
+export const CD_FX_NOT_FOUND: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.NotFound,
+  message: 'Not found.',
+};
+
+export const CD_FX_NOT_IMPLEMENTED: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.NotImplemented,
+  message: 'Not implemented yet.',
+};
+
+export const CD_FX_SYSTEM_ERROR: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.SystemError,
+  message: 'System-level error occurred.',
+};
+
+export const CD_FX_FATAL: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Fatal,
+  message: 'Fatal error.',
+};
+
+export const CD_FX_UNKNOWN: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Unknown,
+  message: 'Unknown state or error.',
+};
+
 export interface ICdRequest {
   ctx: string;
   m: string;
@@ -46,6 +186,54 @@ export interface EnvelopFValItem {
   data?: any;
   extData?: any;
   jsonUpdate?: any;
+  /**
+   * Developer-specific objects (like cdObj, userObj, etc.)
+   * Any additional property is allowed here.
+   */
+  [key: string]: any;
+}
+
+/** Fields managed by backend that must not be supplied by client */
+export const MANAGED_FIELDS = ['Guid', 'docId', 'Enabled'];
+
+export interface ICdResponse {
+  app_state: IAppState;
+  data: any;
+}
+
+export interface IAppState {
+  success: boolean;
+  info: IRespInfo | null;
+  sess: ISessResp | null;
+  cache: object | null;
+  sConfig?: IServerConfig;
+}
+
+export interface IServerConfig {
+  usePush: boolean;
+  usePolling: boolean;
+  useCacheStore: boolean;
+}
+
+export interface IRespInfo {
+  messages: string[];
+  code: string | null;
+  app_msg: string | null;
+}
+
+export interface ISessResp {
+  cd_token?: string;
+  userId?: number | string | null;
+  jwt: {
+    jwtToken: string | null;
+    checked: boolean;
+    checkTime: number | null;
+    authorized: boolean;
+    ttl: number | null;
+  } | null;
+  ttl: number;
+  initUuid?: string;
+  initTime?: string;
 }
 ```
 
