@@ -1478,15 +1478,14 @@ export interface DimensionalityDescriptor {
   expand: {
   type: 'create' | 'replicate' | 'transform';
 
-
-    /**
-     * Nodes to create
-     */
+  /\*\*
+  - Nodes to create
+    \*/
     nodes?: DirectoryNodeDescriptor[];
 
-    /**
-     * Apply dimensionality rule (Σ)
-     */
+  /\*\*
+  - Apply dimensionality rule (Σ)
+    \*/
     applyDimensionality?: boolean;
 
 };
@@ -1790,15 +1789,14 @@ export interface DimensionalityDescriptor {
   expand: {
   type: 'create' | 'replicate' | 'transform';
 
-
-    /**
-     * Nodes to create
-     */
+  /\*\*
+  - Nodes to create
+    \*/
     nodes?: DirectoryNodeDescriptor[];
 
-    /**
-     * Apply dimensionality rule (Σ)
-     */
+  /\*\*
+  - Apply dimensionality rule (Σ)
+    \*/
     applyDimensionality?: boolean;
 
 };
@@ -5734,6 +5732,7 @@ link to saved file
 
 Below are ideas that explains how corpdesk descriptors and CdObj can work together to form foundation for effort to standardize corpdesk architectural traits.
 While tryng to develop hierarchy for descriptors one has to be aware that there are a few noted dimensions:
+
 - by inheritence
 - by application modeling
 - by corpdesk filing convention
@@ -5979,18 +5978,2068 @@ select * from cd_obj where cd_obj_type_guid='5ab9a944-1014-4664-ad96-8ceb737d185
 Just like it is possible to query for descriptors from the cd_obj, it is possible to query for cd_obj's that form application modle via the following cd_obj_types table.
 
 The following types are available in the cd_obj_types:
+
 - app_file
 - app_directory
 - code
 - module
 - controller
 - model
-- service 
-and other types including code components
-
-
+- service
+  and other types including code components
 
 //////////////////////////////
 
 Have you taken note of the content of cd_obj_role.json.
-Note that while what we have can give as a good hierarchial records of given directory, it is very crucial for our purpose to be able to analyse the hierarchiacal data in terms of nodes roles. So we can define a signature even when one changes the name of files. I was visualizing a situation where the content of cd_obj_roles forms part of grammer in the expressions.  Take a look into this angle and let me know.
+Note that while what we have can give as a good hierarchial records of given directory, it is very crucial for our purpose to be able to analyse the hierarchiacal data in terms of nodes roles. So we can define a signature even when one changes the name of files. I was visualizing a situation where the content of cd_obj_roles forms part of grammer in the expressions. Take a look into this angle and let me know.
+
+////////////////////////
+
+Roles from the database table cd_obj_role
+
+```json
+[
+  {
+    "cd_obj_role_guid": "8f57635a-f3aa-49fc-830d-8fb55cd2abf4",
+    "cd_obj_role_name": "configuration"
+  },
+  {
+    "cd_obj_role_guid": "9a7e46b1-4bbc-4d9c-9a2e-1c6fd8e93a57",
+    "cd_obj_role_name": "bootstrap"
+  },
+  {
+    "cd_obj_role_guid": "b3c2f1e0-5a6d-4b7c-8e9f-0a1b2c3d4e5f",
+    "cd_obj_role_name": "runtime"
+  },
+  {
+    "cd_obj_role_guid": "c4d5e6f7-8a9b-0c1d-2e3f-4a5b6c7d8e9f",
+    "cd_obj_role_name": "test"
+  },
+  {
+    "cd_obj_role_guid": "d5e6f7a8-9b0c-1d2e-3f4a-5b6c7d8e9f0a",
+    "cd_obj_role_name": "documentation"
+  },
+  {
+    "cd_obj_role_guid": "e6f7a8b9-0c1d-2e3f-4a5b-6c7d8e9f0a1b",
+    "cd_obj_role_name": "utility"
+  },
+  {
+    "cd_obj_role_guid": "f7a8b9c0-1d2e-3f4a-5b6c-7d8e9f0a1b2c",
+    "cd_obj_role_name": "controller"
+  },
+  {
+    "cd_obj_role_guid": "a8b9c0d1-2e3f-4a5b-6c7d-8e9f0a1b2c3d",
+    "cd_obj_role_name": "model"
+  },
+  {
+    "cd_obj_role_guid": "b9c0d1e2-3f4a-5b6c-7d8e-9f0a1b2c3d4e",
+    "cd_obj_role_name": "service"
+  },
+  {
+    "cd_obj_role_guid": "c0d1e2f3-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
+    "cd_obj_role_name": "version-control"
+  },
+  {
+    "cd_obj_role_guid": "d1e2f3a4-5b6c-7d8e-9f0a-1b2c3d4e5f6a",
+    "cd_obj_role_name": "ci-cd"
+  },
+  {
+    "cd_obj_role_guid": "e2f3a4b5-6c7d-8e9f-0a1b-2c3d4e5f6a7b",
+    "cd_obj_role_name": "noise"
+  }
+]
+```
+
+//////////////////////////////
+You can transpose the codes you have create to align with the code below.
+Notice there is:
+- src/CdCli/app/app-craft/controllers/cd-app.controller.ts
+- src/CdCli/app/app-craft/services/cd-app.service.ts
+Use the example of model file to create any reference model that you may deem necessary.
+The modle file will eventually be:
+- src/CdCli/app/app-craft/models/cd-app.model.ts
+Notice also that I have drafted the methods:
+- CdAppController.appScan() and 
+- CdAppService.appScan()
+You may need to create some helper methods as necessary
+
+The input in appScan() are:
+actionTargetName: string,
+    cdObjName: string,
+    cdObjTypeName: string,
+    cdToken: string,
+You can assume the following:
+actionTargetName = 'scan' // it is a pattern that allows more action to work in the same work-flow
+cdObjName = 'cd-cli' // can be any corpdesk sub application eg cd-api, cd-shell
+cdObjTypeName = 'application' // as opposed to a module, controller, service etc. 
+cdToken = '' //reserved for corpesk session tocken. At the moment this has not been activated
+
+```ts
+// src/CdCli/app/app-craft/controllers/cd-app.controller.ts
+import {
+  CdAssertReturn,
+  CdFxReturn,
+  IQuery,
+} from "../../../sys/base/i-base.js";
+import { CdAppDescriptor } from "../../../sys/dev-descriptor/models/cd-app.model.js";
+import CdLog from "../../../sys/cd-comm/controllers/cd-logger.controller.js";
+import { CdAppService } from "../services/cd-app.service.js";
+import { CdModuleService } from "../services/cd-module.service.js";
+
+export class CdAppController {
+  svCdApp: CdAppService;
+  svCdModule: CdModuleService;
+  constructor() {
+    this.svCdApp = new CdAppService();
+    this.svCdModule = new CdModuleService();
+    this.svCdApp.init();
+  }
+
+  /**
+   * Create a new module
+   *
+   * @param AppDescriptor
+   * @returns
+   */
+  async create(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug("Starting CdAppController::create()");
+    return this.svCdApp.create(
+      actionTargetName,
+      moduleName,
+      moduleType,
+      cdToken,
+    );
+  }
+
+  async read(q?: IQuery): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    return this.svCdApp.read(q);
+  }
+
+  async update(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    return this.svCdApp.update(
+      actionTargetName,
+      moduleName,
+      moduleType,
+      cdToken,
+    );
+  }
+
+  async delete(q: IQuery): Promise<CdFxReturn<null>> {
+    return this.svCdApp.delete(q);
+  }
+
+  // Get all applications
+  async getAllModules(): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    return await this.svCdApp.getAllModules();
+  }
+
+  // Get a single module by name
+  async getModuleByName(
+    name: string,
+  ): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    return this.svCdApp.getModuleByName(name);
+  }
+
+  async CreateModuleDirectories(moduleDir: string): Promise<CdFxReturn<null>> {
+    return await this.svCdModule.createModuleDirectories(moduleDir);
+  }
+
+  async upgrade(
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    version: string,
+    testTasks?: boolean,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug("Starting CdAppController::upgrade()");
+    return this.svCdApp.upgrade(
+      actionTargetName,
+      moduleName,
+      oEnv,
+      repoName,
+      version,
+      testTasks !== undefined ? String(testTasks) : undefined,
+    );
+  }
+
+  async derive(
+    actionTargetName: string,
+    cdObjName: string,
+    cdObjTypeName: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug("Starting CdAppController::derive()");
+    return this.svCdApp.derive(
+      actionTargetName,
+      cdObjName,
+      cdObjTypeName,
+      cdToken,
+    );
+  }
+
+  async appScan(
+    actionTargetName: string,
+    cdObjName: string,
+    cdObjTypeName: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug("Starting CdAppController::appScan()");
+    return this.svCdApp.derive(
+      actionTargetName,
+      cdObjName,
+      cdObjTypeName,
+      cdToken,
+    );
+  }
+}
+```
+
+```ts
+// src/CdCli/app/app-craft/services/cd-app.service.ts
+
+/* eslint-disable style/brace-style */
+
+import { basename, join } from 'path';
+import { GenericService } from '../../../sys/base/generic-service.js';
+import { HttpService } from '../../../sys/base/http.service.js';
+import {
+  CD_FX_FAIL,
+  CdAssertReturn,
+  CdFxReturn,
+  CdFxStateLevel,
+  IQuery,
+} from '../../../sys/base/i-base.js';
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
+import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
+import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
+import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
+import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
+import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
+import { mkdir, writeFile } from 'fs/promises';
+import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
+import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
+import { executeCommand } from '../../../sys/utils/cmd.util.js';
+import { CdAutoGitController } from '../../cd-auto-git/index.js';
+import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
+
+export class CdAppService {
+  cdToken;
+  svDevDescriptors;
+  private runner!: CICdRunnerService;
+
+  constructor() {
+    // super(CdObjModel);
+    this.svDevDescriptors = new DevDescriptorService();
+  }
+
+  init(): this {
+    this.runner = new CICdRunnerService();
+    return this;
+  }
+
+  async create(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.CREATE,
+      cdObjType,
+      moduleName,
+      moduleType,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: cdToken, // Pass the cdToken if needed
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  /**
+   * Create a new application
+   * CdApi:
+   * - setup development environment
+   *    - npm
+   *    - mysql
+   *    - redis
+   *    - ssl
+   * - migration files
+   * - clone corpdesk if not yet done
+   * - create repository for new module
+   * - sync workstation to repository
+   * - sync db data
+   *
+   * @param appDescriptor
+   * @returns
+   */
+  async createByAi(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async createByJson(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async createByWizard(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async createByContext(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async read(q?: IQuery): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    try {
+      /**
+       * The q is allowed to be null
+       * If null it is substituted by { where: {} }
+       * Which would then fetch all the data
+       */
+      const payload = this.svDevDescriptors.setEnvelope('Read', {
+        query: q ?? { where: {} },
+      });
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Read failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async update(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::update()');
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.CREATE,
+      cdObjType,
+      moduleName,
+      moduleType,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: cdToken, // Pass the cdToken if needed
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  async delete(q: IQuery): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Update failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  protected getTypeId(): number {
+    return 1; // CdApp type
+  }
+
+  // Get all applications
+  async getAllModules(): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    try {
+      return await this.read(); // Fetch all applications
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Failed to retrieve all apps: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  // Get a single app by name
+  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    try {
+      // Validate input
+      if (!name.trim()) {
+        return {
+          data: null,
+          state: false,
+          message: 'Application name is required.',
+        };
+      }
+
+      // Define the query
+      const q: IQuery = {
+        select: ['cdObjId', 'cdObjName', 'cdObjGuid', 'jDetails'], // Fields to select
+        where: { cdObjName: name }, // Fetch apps by name
+      };
+
+      return await this.read(q);
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Failed to retrieve app by name: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async derive(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::derive()');
+    CdLog.debug(`CdAppService::derive()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::derive()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::derive()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::derive()/cdToken: ${cdToken}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.DERIVE,
+      cdObjType,
+      moduleName,
+      moduleType,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: cdToken, // Pass the cdToken if needed
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  
+  async upgrade(
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    version?: string,
+    testTasks?: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::upgrade()');
+    CdLog.debug(`CdAppService::upgrade()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::upgrade()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::upgrade()/oEnv: ${oEnv}`);
+    CdLog.debug(`CdAppService::upgrade()/repoName: ${repoName}`);
+    CdLog.debug(`CdAppService::upgrade()/version: ${version}`);
+    CdLog.debug(`CdAppService::upgrade()/testTasks: ${testTasks}`);
+
+    // 🔁 Convert version string to SemanticVersionObject
+    const semanticResult = VersionService.toSemanticObject(version ?? '');
+    if (semanticResult.state !== CdFxStateLevel.Success || !semanticResult.data) {
+      return cdFx(CdFxStateLevel.LogicalFailure, `❌ Invalid version format: "${version}"`);
+    }
+
+    const versionObj = semanticResult.data;
+    CdLog.debug(`Parsed semantic version:`, versionObj);
+
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.UPGRADE,
+      cdObjType,
+      moduleName,
+      oEnv,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: '', // Pass the cdToken if needed
+        repoName: repoName,
+        appType: AppType.CdApi,
+        version: versionObj, // 👈 Pass object instead of string
+        testTasks: testTasks !== undefined ? String(testTasks) : undefined, // 👈 Convert to string if needed
+        oEnv: oEnv,
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::upgrade()/ No valid workflowModel`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  async appScan(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::appScan()');
+    CdLog.debug(`CdAppService::appScan()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::appScan()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::appScan()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::appScan()/cdToken: ${cdToken}`);
+    
+    /**
+     * Detail implementation using helper methods
+     */
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+}
+```
+// typical model. We need a new equivalent file cd-app.model.ts to serve the cd-app.service.ts
+```ts
+// src/CdCli/app/app-craft/models/app-craft.model.ts
+import { dirname, join, resolve } from 'node:path';
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { AppCraftController } from '../controllers/app-craft.controller.js';
+import { fileURLToPath } from "url";
+import { HOME } from '../../../sys/utils/fs.util.js';
+import { AppType } from '../../../sys/dev-descriptor/index.js';
+import { CdFxStateLevel, ICdRequest, ICdResponse } from './../../../sys/base/i-base.js';
+
+
+// Simulate __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export interface ITestLog {
+  timestamp: string;
+  category: 'request' | 'response' | 'error' | 'system' | 'info' | 'debug';
+  action: string;
+  controller: string;
+  request?: ICdRequest;
+  response?: ICdResponse | unknown;
+  message?: string;
+  state?: CdFxStateLevel;
+
+  /** 🔥 For display convenience */
+  label?: string;   // e.g., "Create User", "Step 1", or test-defined string
+  type?: 'request' | 'response' | 'error'; // alias for category in the CRUD context
+  payload?: any;    // flatten request/response/message into a single payload
+}
+
+
+export const InitModuleFromRepoPromptData: any = [
+  {
+    type: 'input',
+    name: 'remoteServer',
+    message: 'Enter development server address:',
+    default: '192.168.1.70',
+  },
+  {
+    type: 'input',
+    name: 'remoteUser',
+    message: 'Enter remote SSH user (default: devops):',
+    default: 'devops',
+  },
+  {
+    type: 'input',
+    name: 'sshKey',
+    message: 'Enter path to your SSH key:',
+    default: '~/path/to/sshKey',
+  },
+  {
+    type: 'input',
+    name: 'cdApiDir',
+    message: 'Enter directory on the server (e.g., ~/cd-api):',
+    default: '~/cd-api',
+  },
+];
+
+export interface PromptMeta {
+  type: string;
+  name: string;
+  message: string;
+  default: string;
+}
+
+export const DEFAULT_PROMPT_DATA = {
+  cdCliProfileName: '',
+  cdCliProfileData: null,
+  cdCliProfileTypeId: -1,
+  userId: -1,
+};
+
+export const SSH_TO_DEV_PROMPT_DATA: any = [
+  {
+    type: 'input',
+    name: 'remoteServer',
+    message: 'Enter development server address:',
+    default: '192.168.1.70',
+  },
+  {
+    type: 'input',
+    name: 'remoteUser',
+    message: 'Enter remote SSH user (default: devops):',
+    default: 'devops',
+  },
+  {
+    type: 'input',
+    name: 'sshKey',
+    message: 'Enter path to your SSH key:',
+    default: '~/path/to/sshKey',
+  },
+  {
+    type: 'input',
+    name: 'cdApiDir',
+    message: 'Enter directory on the server (e.g., ~/cd-api):',
+    default: '~/cd-api',
+  },
+];
+
+export const MODULE_CMD = {
+  /**
+   * Method to connect to a development server via SSH and clone a module repository into a cd-api project.
+   * This would be a module that was developed by a 3rd party or by the user.
+   * After cloning, it will set up the module structure and configure it for further development or use in the CorpDesk environment.
+   *
+   * Profile Selection: The user can pass the --profile flag (e.g., --profile=devServer-ssh-profile) in the command to use the specified profile. If the profile exists, the details are extracted and used for the SSH connection. If no profile is provided, the user is prompted to enter the SSH details manually.
+   * Profile Data Extraction: If a profile is provided, the method will read the profiles.json file, extract the profile data (e.g., sshKey, remoteUser, devServer, cdApiDir), and use it to connect to the development server.
+   * Command Construction: The command is constructed dynamically based on the provided or selected profile data. The ssh -i flag is used if an SSH key is provided; otherwise, it defaults to using ssh without a key.
+   *
+   * Usaging Profile:
+   * cd-cli module init --type=cd-api --repo=https://github.com/corpdesk/cd-geo --profile=devServer-ssh-profile
+   * This command will use the SSH settings from the devServer-ssh-profile profile to connect to the development server and clone the repository.
+   *
+   * Without profile:
+   * cd-cli module init --type=cd-api --repo=https://github.com/corpdesk/cd-geo --dev-srv=192.168.1.70
+   * If no profile is specified, the user will be prompted to enter the SSH connection details (server, user, key, etc.).
+   *
+   * Usage:
+   * cd-cli module init --type=cd-api --repo=https://github.com/corpdesk/cd-geo --profile=devServer-ssh-profile --debug 4
+   * Description:
+   * This command initializes a new module from a specified repository.
+   * It allows you to specify the type of module, the repository URL, and optionally a development server profile for SSH configuration.
+   * The command will clone the repository, set up the module structure, and configure it for use in the CorpDesk environment.
+   * Options:
+   * --type: Specifies the type of module template to use (e.g., cd-api, module-frontend).
+   * --repo: The Git repository URL from which to initialize the module.
+   * --dev-srv: Specifies the development server to SSH into, which can be overridden by a profile.
+   * --profile: The name of the profile for SSH configuration, which is optional.
+   */
+  name: 'module',
+  description: 'Manage modules.',
+  subcommands: [
+    {
+      name: 'init',
+      description: 'Initialize a new module from a repository.',
+      options: [
+        {
+          flags: '--type <templateType>',
+          description:
+            'Type of the module template (e.g. as per CdModuleTypeDescriptor: examples cd-api, module-frontend, cd-cli)',
+        },
+        {
+          flags: '--repo <gitRepo>',
+          description: 'Git repository URL of the module',
+        },
+        {
+          flags: '--dev-srv <devServer>',
+          description:
+            'Development server to SSH into (can be overridden by profile)',
+        },
+        {
+          flags: '--profile <profileName>',
+          description: 'Profile name for SSH configuration (optional)',
+        },
+      ],
+      action: {
+        execute: async (options: any) => {
+          const modCraftController = new AppCraftController();
+          await modCraftController.initModuleFromRepo(
+            options._optionValues.repo,
+            options._optionValues.profile,
+          );
+        },
+      },
+    },
+  ],
+};
+
+export const TEMPLATE_CMD = {
+  /**
+   * Method to initialize a new module template from repository.
+   * The template will be stored in the specified directory and configured for use by cd-cli to auto create modules.
+   *
+   * Usage:
+   * cd-cli template init --type=cd-api --url=https://github.com/corpdesk/abcd.git --debug 4
+   *
+   * */
+  name: 'template',
+  description: 'Manage module templates.',
+  subcommands: [
+    {
+      name: 'init',
+      description: 'Initialize a new module from a template.',
+      options: [
+        {
+          flags: '--type <templateType>',
+          description:
+            'Type of the module template (e.g., cd-api, module-frontend)',
+        },
+        {
+          flags: '--url <gitRepo>',
+          description: 'Git repository URL of the template',
+        },
+      ],
+      action: {
+        execute: async (options: any) => {
+          if (!options._optionValues.type || !options._optionValues.url) {
+            throw new Error('Both --type and --url options are required.');
+          }
+          const modCraftController = new AppCraftController();
+          await modCraftController.initTemplate(
+            options._optionValues.type,
+            options._optionValues.url,
+          );
+        },
+      },
+    },
+  ],
+};
+
+export const MOD_CRAFT_WORKSHOP_DIR = resolve(
+  HOME,
+  'cd-cli',
+  "dist/CdCli/app/app-craft/workshop"
+);
+
+
+// `${MOD_CRAFT_WORKSHOP_DIR}/${this.appType}/output`
+export function getModCraftOutputDir(appType: AppType): string {
+  CdLog.debug(`Getting output directory for module type: ${appType}`);
+  CdLog.debug(`MOD_CRAFT_WORKSHOP_DIR: ${MOD_CRAFT_WORKSHOP_DIR}`);
+  return join(MOD_CRAFT_WORKSHOP_DIR, appType, "output");
+}
+
+export interface WorkshopConfig {
+  moduleTemplateRepo: string;
+  moduleTemplatePath: string;
+
+  // Output folders (controllers, models, services)
+  moduleOutputPath: string;
+  moduleFolders: {
+    // base: string;
+    controllers: string;
+    models: string;
+    services: string;
+  };
+
+  // Model descriptor file path
+  moduleModelPath: string;
+
+  // Workflow file paths
+  moduleWorkflowPaths: {
+    create: string;
+    createTs: string;
+    createSql: string;
+    createBash: string;
+    edit: string;
+    [key: string]: string; // Allow future workflows like 'delete', 'review', etc.
+  };
+}
+
+export function workshopConfig(
+  moduleName: string | null,
+  moduleType: string | null,
+): WorkshopConfig {
+  CdLog.debug('Starting function workshopConfig()');
+  const basePath = `./src/CdCli/app/app-craft/workshop/${moduleType}`;
+  return {
+    moduleTemplateRepo: `https://github.com/corpdesk/abcd.git`,
+    moduleTemplatePath: `${basePath}/template/abcd`,
+    moduleModelPath: `${basePath}/model/${moduleName}-module.descriptor.json`,
+    moduleWorkflowPaths: {
+      create: `${basePath}/workflow/${moduleName}.create.workflow.json`,
+      createTs: `${basePath}/workflow/${moduleName}.create.workflow.ts`,
+      createSql: `${basePath}/workflow/${moduleName}.create.sql`,
+      createBash: `${basePath}/workflow/${moduleName}.create.sh`,
+      edit: `${basePath}/workflow/${moduleName}.edit.workflow.json`,
+    },
+    moduleOutputPath: `${basePath}/output/${moduleName}`,
+    moduleFolders: {
+      controllers: `${basePath}/output/${moduleName}/controllers`,
+      models: `${basePath}/output/${moduleName}/models`,
+      services: `${basePath}/output/${moduleName}/services`,
+    },
+  };
+}
+```
+
+//////////////////////////////////////////
+
+The roles in returns have an issue:
+Property 'allowedTypes' is missing in type '{ roleName: string; namingPattern: string; }' but required in type 'SeedRoleConfig'.
+```ts
+private loadScanConfig(moduleType: string): SeedConfig {
+    const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
+
+    try {
+      const raw = require(configPath);
+      return raw as SeedConfig;
+    } catch {
+      CdLog.warning(`Seed config not found for ${moduleType}, using default`);
+      return {
+        subsystemName: moduleType,
+        rootPath: process.cwd(),
+        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
+        includeExtensions: ['.ts', '.js', '.json'],
+        roles: [
+          { roleName: 'controller', namingPattern: '\\.controller\\.' },
+          { roleName: 'service', namingPattern: '\\.service\\.' },
+          { roleName: 'model', namingPattern: '\\.model\\.' },
+        ],
+        version: '1.0.0',
+        globals: {},
+      };
+    }
+  }
+```
+
+```ts
+export interface SeedConfig {
+  /** Subsystem name (e.g., cd-cli, cd-api, cd-shell) */
+  subsystemName: string;
+
+  /** Optional description for documentation */
+  description?: string;
+
+  /** Root path for scanning (relative or absolute) */
+  rootPath: string;
+
+  /** Expected file/directory roles and types mapping */
+  roles: SeedRoleConfig[];
+
+  /** Optional global variables or conventions for this subsystem */
+  globals?: Record<string, any>;
+
+  /** Optional patterns for ignoring files/folders during scanning */
+  ignorePatterns?: string[];
+
+  /** Optional template references to scaffold new artifacts */
+  templates?: TemplateReference[];
+
+  /** Optional metadata to guide mathematical expression engine */
+  expressionMetadata?: ExpressionMetadata;
+
+  /** Versioning to track evolution of seed */
+  version?: string;
+}
+
+export interface SeedRoleConfig {
+  /** Role name (e.g., bootstrap, controller, service) */
+  roleName: string;
+
+  /** Role GUID (if applicable) */
+  roleGuid?: string;
+
+  /** Expected object types for this role */
+  allowedTypes: CdObjType[];
+
+  /** Naming conventions (regex, prefix/suffix, kebab/camel case rules) */
+  namingPattern?: string;
+
+  /** Optional sub-role hierarchy (nested roles) */
+  children?: SeedRoleConfig[];
+
+  /** Optional weight/priority for scanning or analysis */
+  weight?: number;
+
+  /** Optional template reference to scaffold new instances of this role */
+  templateRef?: string;
+}
+
+export type CdObjType =
+  | "app_file"
+  | "app_directory"
+  | "module"
+  | "controller"
+  | "model"
+  | "service"
+  | "utility"
+  | "plugin"
+  | "code"
+  | "unknown";
+  
+```
+
+////////////////////////////
+In the method: groupFilesIntoModules() there is an issue:
+No overload matches this call.
+  Overload 1 of 3, '(pattern: string | RegExp, flags?: string | undefined): RegExp', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+      Type 'undefined' is not assignable to type 'string | RegExp'.
+  Overload 2 of 3, '(pattern: string | RegExp): RegExp', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+      Type 'undefined' is not assignable to type 'string | RegExp'.
+  Overload 3 of 3, '(pattern: string, flags?: string | undefined): RegExp', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+
+Affected line:
+```ts
+let matchedModule =
+        config.roles.find((r) => file.match(new RegExp(r.namingPattern)))?.roleName || 'root';
+```
+
+This is the existing state. You can give me the full corrected version
+```ts
+private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
+    const moduleMap: Record<string, CdModuleDescriptor> = {};
+
+    for (const file of files) {
+      // Determine module dynamically from SeedConfig
+      let matchedModule =
+        config.roles.find((r) => file.match(new RegExp(r.namingPattern)))?.roleName || 'root';
+
+      if (!moduleMap[matchedModule]) {
+        moduleMap[matchedModule] = {
+          name: matchedModule,
+          cdModuleType: { typeName: config.subsystemName as any }, // e.g., 'cd-cli'
+          ctx: CdCtx.App,
+          controllers: [],
+          services: [],
+          models: [],
+        };
+      }
+
+      this.assignFileToComponent(file, moduleMap[matchedModule], config);
+    }
+
+    return Object.values(moduleMap);
+  }
+```
+
+/////////////////////////////
+
+Similar issue is arising the following methods.
+You can give me the full refactored methods.
+
+Issue:
+No overload matches this call.
+  Overload 1 of 3, '(pattern: string | RegExp, flags?: string | undefined): RegExp', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+      Type 'undefined' is not assignable to type 'string | RegExp'.
+  Overload 2 of 3, '(pattern: string | RegExp): RegExp', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+      Type 'undefined' is not assignable to type 'string | RegExp'.
+  Overload 3 of 3, '(pattern: string, flags?: string | undefined): RegExp', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+
+```ts
+private buildDirectoryTree(files: string[], config: SeedConfig): DirectoryNode {
+    // Placeholder: can be expanded to build full recursive DirectoryNode tree
+    return {
+      name: config.subsystemName,
+      cdObjGuid: this.generateGuid(),
+      children: files.map((f) => ({
+        name: basename(f),
+        cdObjGuid: this.generateGuid(),
+        isFile: true,
+        cdObjRoleName: config.roles.find((r) => f.match(new RegExp(r.namingPattern)))?.roleName,
+      })),
+    };
+  }
+```
+
+Issue:
+No overload matches this call.
+  Overload 1 of 3, '(pattern: string | RegExp, flags?: string | undefined): RegExp', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+      Type 'undefined' is not assignable to type 'string | RegExp'.
+  Overload 2 of 3, '(pattern: string | RegExp): RegExp', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+      Type 'undefined' is not assignable to type 'string | RegExp'.
+  Overload 3 of 3, '(pattern: string, flags?: string | undefined): RegExp', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+
+```ts
+private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+    const name = basename(file);
+
+    for (const role of config.roles) {
+      if (name.match(new RegExp(role.namingPattern))) {
+        switch (role.roleName) {
+          case 'controller':
+            module.controllers.push({ name, type: ComponentType.Controller, fileName: file });
+            break;
+          case 'service':
+            module.services.push({ name, type: ComponentType.Service, fileName: file });
+            break;
+          case 'model':
+            module.models.push({ name, type: ComponentType.Model, fileName: file, fields: [] });
+            break;
+          default:
+            // Other roles can be added dynamically
+            break;
+        }
+      }
+    }
+  }
+```
+
+////////////////////////////
+Below are the corrected version of the methods.
+What I need us to add is:
+1. Very clear comment as method header that can allow anyone to follow what the method short description.
+This can be done with some achorage to known conventions.
+2. Process tracking/diagnosis logging points
+We use CdLog static methods: info, success, warning, error, debug
+Because it is large system, we need to always tell which class and method is being captured.
+The rest can be any text to signify which part of the method is being processed (but optional)
+We dont do any explanation except key words like 'starting...', 'ending...' but these are also optional.
+Then we use the exact variable name if we intend to show its value.
+
+Example:
+CdLog.debug(`[CdAppService][upgrade()]/actionTargetName: ${actionTargetName}`);
+
+Once done just give me a full output for all.
+
+```ts
+async appScan(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::appScan()');
+
+    try {
+      // 🔷 Load the seed config dynamically
+      const config: SeedConfig = this.loadScanConfig(moduleType);
+
+      // 🔷 Recursively scan the filesystem
+      const files = await this.scanDirectory(config.rootPath, config);
+
+      // 🔷 Build the app descriptor based on SeedConfig rules
+      const descriptor = await this.buildAppDescriptor(moduleName, files, config);
+
+      // 🔷 Write the descriptor JSON
+      await this.writeDescriptor(config.rootPath, descriptor);
+
+      return {
+        state: true,
+        data: [],
+        message: `App scan completed successfully for ${moduleName}`,
+      };
+    } catch (error) {
+      return {
+        state: false,
+        data: null,
+        message: `App scan failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  /** 🔷 Load Scan / Seed Config dynamically based on subsystem */
+  private loadScanConfig(moduleType: string): SeedConfig {
+    const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
+
+    try {
+      const raw = require(configPath);
+      return raw as SeedConfig;
+    } catch {
+      CdLog.warning(`Seed config not found for ${moduleType}, using default`);
+      return {
+        subsystemName: moduleType,
+        rootPath: process.cwd(),
+        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
+        includeExtensions: ['.ts', '.js', '.json'],
+        roles: [
+          { roleName: 'controller', namingPattern: '\\.controller\\.' },
+          { roleName: 'service', namingPattern: '\\.service\\.' },
+          { roleName: 'model', namingPattern: '\\.model\\.' },
+        ],
+        version: '1.0.0',
+        globals: {},
+      };
+    }
+  }
+
+  /** 🔷 Recursive directory scan */
+  private async scanDirectory(
+    dir: string,
+    config: SeedConfig,
+    results: string[] = [],
+  ): Promise<string[]> {
+    const entries = await import('fs/promises').then((fs) =>
+      fs.readdir(dir, { withFileTypes: true }),
+    );
+
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name);
+
+      if (config.ignorePatterns?.some((pat) => fullPath.includes(pat))) continue;
+
+      if (entry.isDirectory()) {
+        await this.scanDirectory(fullPath, config, results);
+      } else {
+        if (config.includeExtensions?.some((ext) => fullPath.endsWith(ext))) {
+          results.push(fullPath);
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /** 🔷 Build App Descriptor dynamically using SeedConfig */
+  private async buildAppDescriptor(
+    appName: string,
+    files: string[],
+    config: SeedConfig,
+  ): Promise<CdAppDescriptor> {
+    const modules = this.groupFilesIntoModules(files, config);
+
+    return {
+      name: appName,
+      parentProjectGuid: null,
+      modules,
+      description: `Auto-generated descriptor for ${appName}`,
+      directorySignature: {
+        signatureName: `${appName}-signature`,
+        root: this.buildDirectoryTree(files, config),
+        variables: config.globals,
+      },
+    };
+  }
+
+  /** 🔷 Group files into modules dynamically */
+  private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
+    const moduleMap: Record<string, CdModuleDescriptor> = {};
+
+    for (const file of files) {
+
+      // const moduleName = matchedRole?.roleName || 'root';
+      const matchedRole = this.resolveRole(file, config.roles);
+      const moduleName = matchedRole?.roleName || 'root';
+
+      if (!moduleMap[moduleName]) {
+        moduleMap[moduleName] = {
+          name: moduleName,
+          cdModuleType: { typeName: config.subsystemName as any },
+          ctx: moduleName === 'sys' ? CdCtx.Sys : CdCtx.App,
+          controllers: [],
+          services: [],
+          models: [],
+        };
+      }
+
+      this.assignFileToComponent(file, moduleMap[moduleName], config);
+    }
+
+    return Object.values(moduleMap);
+  }
+
+  private matchRole(file: string, roles: SeedRoleConfig[]): string {
+    for (const role of roles) {
+      if (!role.namingPattern) continue;
+
+      try {
+        const regex = new RegExp(role.namingPattern);
+        if (regex.test(file)) {
+          return role.roleName;
+        }
+      } catch {
+        CdLog.warning(`Invalid regex pattern: ${role.namingPattern}`);
+      }
+    }
+
+    return 'root';
+  }
+
+  private resolveModuleContext(roleName: string): CdCtx {
+    // 🔥 This can later come from SeedConfig or RFC rules
+
+    if (roleName === 'sys') return CdCtx.Sys;
+
+    return CdCtx.App;
+  }
+
+  private resolveRole(file: string, roles: SeedRoleConfig[]): SeedRoleConfig | undefined {
+    return roles.find((r) => {
+      if (!r.namingPattern) return false;
+      return new RegExp(r.namingPattern).test(file);
+    });
+  }
+
+  /** 🔷 Assign file to correct component based on SeedConfig roles */
+  private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+    const name = basename(file);
+
+    for (const role of config.roles) {
+      if (!role.namingPattern) continue;
+
+      const regex = new RegExp(role.namingPattern);
+
+      if (!regex.test(name)) continue;
+
+      switch (role.roleName) {
+        case 'controller':
+          module.controllers.push({
+            name,
+            type: ComponentType.Controller,
+            fileName: file,
+          });
+          break;
+
+        case 'service':
+          module.services.push({
+            name,
+            type: ComponentType.Service,
+            fileName: file,
+          });
+          break;
+
+        case 'model':
+          module.models.push({
+            name,
+            type: ComponentType.Model,
+            fileName: file,
+            fields: [],
+          });
+          break;
+
+        default:
+          // Future: dynamic mapping via SeedConfig
+          break;
+      }
+    }
+  }
+
+  /** 🔷 Build DirectoryNode tree */
+  private buildDirectoryTree(files: string[], config: SeedConfig): DirectoryNode {
+    return {
+      name: config.subsystemName,
+      cdObjGuid: this.generateGuid(),
+      children: files.map((f) => {
+        // Safe role resolution
+        // const matchedRole = config.roles.find((r) => {
+        //   if (!r.namingPattern) return false;
+        //   return new RegExp(r.namingPattern).test(f);
+        // });
+        const matchedRole = this.resolveRole(f, config.roles);
+
+        return {
+          name: basename(f),
+          cdObjGuid: this.generateGuid(),
+          isFile: true,
+          cdObjRoleName: matchedRole?.roleName,
+        };
+      }),
+    };
+  }
+
+  /** 🔷 Write descriptor to .cd folder */
+  private async writeDescriptor(root: string, descriptor: CdAppDescriptor) {
+    const cdDir = join(root, '.cd');
+    await mkdir(cdDir, { recursive: true });
+
+    const filePath = join(cdDir, 'cd-app.descriptor.json');
+    await writeFile(filePath, JSON.stringify(descriptor, null, 2));
+
+    CdLog.debug(`Descriptor written to ${filePath}`);
+  }
+
+  /** 🔷 GUID generator */
+  private generateGuid(): string {
+    return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () =>
+      ((Math.random() * 16) | 0).toString(16),
+    );
+  }
+```
+
+
+///////////////////////////////////////////////////
+
+I am not able to get the cd-cli dev to start.
+Below are the relevant codes.
+```log
+emp-12@emp-12 ~/cd-cli (main)> cd-cli dev --debug 4
+file:///home/emp-12/cd-cli/dist/CdCli/sys/cd-comm/controllers/cd-logger.controller.js:6
+import { CdAiLogRouterService } from '../../../app/cd-ai/services/cd-ai-log-router.service.js';
+         ^^^^^^^^^^^^^^^^^^^^
+SyntaxError: The requested module '../../../app/cd-ai/services/cd-ai-log-router.service.js' does not provide an export named 'CdAiLogRouterService'
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:123:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:191:5)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:337:24)
+    at async loadESM (node:internal/process/esm_loader:34:7)
+    at async handleMainPromise (node:internal/modules/run_main:106:12)
+
+Node.js v18.20.1
+emp-12@emp-12 ~/cd-cli (main) [1]> 
+```
+
+The main module that runs cd-cli is cd-cli module.
+However when `> cd-cli dev` is invoked, it delegates the process to dev-mode to manage the development mode.
+During this time it is on REPL.
+See the directory structure of dev-mode below.
+Notice the directory `src/CdCli/sys/dev-mode/dev-mode-commands` organizes the development of commands in a scalable manner.
+
+cd-cli module structure
+
+```sh
+emp-12@emp-12 ~/cd-cli (main)> tree src/CdCli/sys/cd-cli/
+src/CdCli/sys/cd-cli/
+├── controllers
+│   ├── cd-cli-profile.cointroller.spec.ts
+│   ├── cd-cli-profile.cointroller.ts
+│   ├── cd-cli-store.controller.ts
+│   ├── cd-cli-vault.controller.spec.ts
+│   ├── cd-cli-vault.controller.ts
+│   └── progress-tracker.controller..ts
+├── generate-index.sh
+├── index.ts
+├── models
+│   ├── cd-cli.model.spec.ts
+│   ├── cd-cli.model.ts
+│   ├── cd-cli-profile.model.spec.ts
+│   ├── cd-cli-profile.model.ts
+│   ├── cd-cli-store.model.ts
+│   ├── cd-cli-vault.model.spec.ts
+│   ├── cd-cli-vault.model.ts
+│   └── progress-tracker.model.ts
+├── module.json
+└── services
+    ├── cd-cli-profile.service.spec.ts
+    ├── cd-cli-profile.service.ts
+    ├── cd-cli-store.service.ts
+    ├── profile-store.service.ts
+    └── progress-tracker.service.ts
+
+4 directories, 22 files
+emp-12@emp-12 ~/cd-cli (main)>
+```
+
+dev-mode module directory structure.
+
+```sh
+emp-12@emp-12 ~/cd-cli (main)> tree src/CdCli/sys/dev-mode/
+src/CdCli/sys/dev-mode/
+├── controllers
+│   └── dev-mode.controller.ts
+├── dev-mode-commands
+│   ├── index.ts
+│   ├── subcommands
+│   │   ├── create.command.ts
+│   │   ├── delete.command.ts
+│   │   ├── derive.command.ts
+│   │   ├── exit.command.ts
+│   │   ├── generate.command.ts
+│   │   ├── migrate.command.ts
+│   │   ├── read.command.ts
+│   │   ├── scan.command.ts
+│   │   ├── show.command.ts
+│   │   ├── sync.command.ts
+│   │   ├── test.command.ts
+│   │   ├── update.command.ts
+│   │   ├── upgrade.command.ts
+│   │   └── workstation.command.ts
+│   └── utils
+│       ├── command-utils.ts
+│       └── post-execution.utils.ts
+├── generate-index.sh
+├── index.ts
+├── models
+│   └── dev-mode.model.ts
+├── module.json
+└── services
+    └── dev-mode.service.ts
+
+7 directories, 23 files
+emp-12@emp-12 ~/cd-cli (main)>
+```
+
+## DevMode initialization:
+
+```ts
+// src/main.ts
+/* eslint-disable unused-imports/no-unused-vars */
+/* eslint-disable node/prefer-global/process */
+/* eslint-disable unused-imports/no-unused-vars */
+/* eslint-disable node/prefer-global/process */
+import repl from 'node:repl';
+/* eslint-disable style/brace-style */
+import chalk from 'chalk';
+import { createCommand } from 'commander';
+import nodeCleanup from 'node-cleanup';
+import updateNotifier from 'update-notifier';
+// import pkg from '../package.json' with { type: 'json' };
+import { readFile } from 'fs/promises';
+import { CdCli } from './CdCli/sys/cd-cli/models/cd-cli.model.js';
+import CdLog from './CdCli/sys/cd-comm/controllers/cd-logger.controller.js';
+import { setLogLevel } from './CdCli/sys/cd-comm/controllers/cd-winston.js';
+import config from './config.js';
+import 'zx/globals';
+import { ProfileStoreService } from './CdCli/sys/cd-cli/services/profile-store.service.js';
+
+const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf-8'));
+
+export class Main {
+  async run() {
+    const startAt = Date.now();
+    const { name, version } = pkg;
+
+    // ✅ Load profiles once at app startup
+    const profileInitResult = await ProfileStoreService.init();
+    if (!profileInitResult.state) {
+      console.error(`App.run()/Failed to load profiles: ${profileInitResult.message}`);
+      return; // 🚨 stop bootstrapping if profiles aren’t available
+    }
+
+    // Cleanup handler
+    nodeCleanup((exitCode) => {
+      const message = exitCode
+        ? `${chalk.red.bold('error')} Command failed with exit code ${exitCode}.`
+        : `✨ Done in ${((Date.now() - startAt) / 1000).toFixed(2)}s.`;
+      console.log(message);
+    });
+
+    const program = createCommand(config.meta.name);
+    program
+      .version(config.meta.version)
+      .description(config.meta.description)
+      .showHelpAfterError('(add --help for additional information)');
+
+    // Global --debug flag
+    program.option(
+      '--debug <level>',
+      'Set the debug level dynamically during production',
+      (level) => {
+        setLogLevel(level);
+        CdLog.setDebugLevel(Number(level));
+        return level;
+      },
+      'info',
+    );
+
+    // Pre-action hook for update notifier
+    program.hook('preAction', () => {
+      updateNotifier({ pkg: { name, version } }).notify({ isGlobal: true });
+    });
+
+    for (const command of CdCli.commands) {
+      const cmd = program
+        .command(command.name)
+        .description(command.description)
+        .action(async (...args) => {
+          if (command.name === 'dev' && args.length === 1) {
+            // Only 'dev' was provided, no additional arguments or subcommands
+            console.log(chalk.green('Entering REPL mode (no extra arguments detected)...'));
+            const replServer = repl.start({
+              prompt: chalk.blueBright('cd-dev> '),
+              eval: async (input, context, filename, callback) => {
+                try {
+                  const [command, ...rest] = input.trim().split(/\s+/);
+
+                  if (command === 'exit') {
+                    console.log(chalk.yellow('Exiting development mode...'));
+                    process.exit(0);
+                  } else {
+                    callback(new Error(`Unknown command: ${command}`), undefined);
+                  }
+                } catch (error) {
+                  callback(error instanceof Error ? error : new Error(String(error)), undefined);
+                }
+              },
+            });
+
+            replServer.on('exit', () => {
+              console.log(chalk.yellow('Exited development mode.'));
+              process.exit(0);
+            });
+
+            return; // Skip further processing for `dev`
+          }
+
+          if (command.action && command.action.execute) {
+            try {
+              const options = args.pop(); // Extract options passed to the command
+              await command.action.execute(options);
+            } catch (error) {
+              console.error(chalk.red('Error executing command:'), error);
+            }
+          }
+        });
+
+      if (command.options) {
+        for (const option of command.options) {
+          cmd.option(option.flags, option.description);
+        }
+      }
+
+      if (command.subcommands) {
+        for (const subcommand of command.subcommands) {
+          const subCmd = cmd
+            .command(subcommand.name)
+            .description(subcommand.description)
+            .action(async (...args) => {
+              if (subcommand.action && subcommand.action.execute) {
+                try {
+                  const options = args.pop();
+                  await subcommand.action.execute(options);
+                } catch (error) {
+                  console.error(chalk.red('Error executing subcommand:'), error);
+                }
+              }
+            });
+
+          if (subcommand.options) {
+            for (const option of subcommand.options) {
+              subCmd.option(option.flags, option.description);
+            }
+          }
+        }
+      }
+    }
+
+    // Parse CLI arguments
+    await program.parse();
+  }
+}
+
+```
+
+```ts
+// src/CdCli/sys/dev-mode/dev-mode-commands/index.ts
+
+import { getSubcommand } from './utils/command-utils.js';
+import repl from 'node:repl';
+import chalk from 'chalk';
+import minimist from 'minimist';
+import CdLog from '../../cd-comm/controllers/cd-logger.controller.js';
+import { CdAiController } from '../../../app/cd-ai/index.js';
+
+// Branding utility for reusable prompt designs
+export const Branding = {
+  getPrompt: (mode: 'default' | 'py' | 'js' = 'default') => {
+    const branding = {
+      cd: chalk.bgHex('#FF6A00').white.bold('cd'),
+      separator: chalk.white(''),
+    };
+
+    const modes = {
+      default: chalk.bgGray.black.bold(' dev '),
+      py: chalk.bgBlue.white.bold(' py '),
+      js: chalk.bgYellow.black.bold(' js '),
+    };
+
+    const modeLabel = modes[mode] || modes.default;
+    return `${branding.cd}${branding.separator}${modeLabel} ${chalk.greenBright('>')} `;
+  },
+};
+
+let inputBuffer: string = '';
+let isCommandIncomplete = false;
+
+export const DEV_MODE_COMMANDS = {
+  name: 'dev',
+  description: 'Enter development mode to manage applications.',
+  action: {
+    execute: async () => {
+      console.log(chalk.green('[dev-mode] Entering development mode...'));
+
+      // 👇 Initialize AI services with timeout and safe fallback
+      try {
+        const aiTimeout = 8000; // 8 seconds timeout cap
+        const initAi = CdAiController.initAiRuntime();
+
+        await Promise.race([
+          initAi,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('AI init timeout')), aiTimeout),
+          ),
+        ]);
+
+        console.log(chalk.cyan('[dev-mode] AI services initialized.'));
+      } catch (e) {
+        CdLog.warning(`⚠ Failed to initialize AI services: ${(e as Error).message}`);
+        console.log(chalk.yellow('⚠ Proceeding without AI enhancements.'));
+      }
+
+      let currentMode: 'default' | 'py' | 'js' = 'default';
+
+      const replServer = repl.start({
+        prompt: Branding.getPrompt(currentMode),
+        eval: async (input, context, filename, callback) => {
+          try {
+            CdLog.debug(`DevMode::eval()/input:${input}`);
+            input = input.trim();
+            inputBuffer += input;
+
+            const hasDelimiterAtEnd = inputBuffer.endsWith(';');
+            const lastPart = inputBuffer.split(';').pop();
+            const hasTextAfterLastDelimiter =
+              lastPart && lastPart.trim().length > 0;
+
+            if (!hasDelimiterAtEnd || hasTextAfterLastDelimiter) {
+              callback(null, '...');
+              return;
+            }
+
+            const commands = inputBuffer.split(';').filter((cmd) => cmd.trim());
+            inputBuffer = '';
+
+            const executionResults = await Promise.all(
+              commands.map((cmd) => handleInput(`${cmd.trim()};`)),
+            );
+
+            callback(null, `✅ Executed ${commands.length} command(s).`);
+            replServer.displayPrompt();
+          } catch (err) {
+            callback(err instanceof Error ? err : new Error(String(err)), undefined);
+            replServer.displayPrompt();
+          }
+        },
+      });
+
+      replServer.defineCommand('mode', {
+        help: 'Switch between modes (default, py, js).',
+        action(newMode: string) {
+          if (['default', 'py', 'js'].includes(newMode)) {
+            currentMode = newMode as 'default' | 'py' | 'js';
+            replServer.setPrompt(Branding.getPrompt(currentMode));
+            replServer.displayPrompt();
+            this.write(`Switched to ${newMode} mode.\n`);
+          } else {
+            this.write(`❌ Unknown mode: ${newMode}. Available modes: default, py, js.\n`);
+          }
+        },
+      });
+
+      replServer.on('exit', () => {
+        console.log(chalk.yellow('[dev-mode] Exited development mode.'));
+        process.exit(0);
+      });
+    },
+  },
+
+  subcommands: [
+    getSubcommand('show'),
+    getSubcommand('sync'),
+    getSubcommand('exit'),
+    getSubcommand('create'),
+    getSubcommand('read'),
+    getSubcommand('update'),
+    getSubcommand('delete'),
+    getSubcommand('test'),
+    getSubcommand('upgrade'),
+    getSubcommand('migrate'),
+    getSubcommand('derive'),
+    getSubcommand('derive'),
+    getSubcommand('scan'),
+  ],
+};
+
+export async function handleInput(input: string) {
+  CdLog.debug(`DevModeModel::handleInput()/input:${input}`);
+
+  if (input.endsWith(';')) {
+    const commands = input.split(';').filter((cmd) => cmd.trim());
+    for (const command of commands) {
+      await executeCommand(command.trim());
+    }
+    inputBuffer = '';
+  } else {
+    inputBuffer += input;
+    console.log('...');
+    isCommandIncomplete = true;
+  }
+}
+
+export async function executeCommand(command: string) {
+  CdLog.debug(`DevModeModel::executeCommand()/command:${command}`);
+  command = command.replace(/;$/, '');
+  const [cmdName, ...args] = command.split(/\s+/);
+
+  const subcommand = DEV_MODE_COMMANDS.subcommands.find(
+    (sub) => sub.name === cmdName,
+  );
+
+  if (!subcommand) {
+    console.log(`Unknown command: ${cmdName}`);
+    return;
+  }
+
+  const options = minimist(args);
+  CdLog.debug(`DevModeModel::executeCommand()/options:${JSON.stringify(options)}`);
+
+  try {
+    if (subcommand.action?.execute) {
+      await subcommand.action.execute({
+        ...options,
+        _: args,
+      });
+    } else {
+      console.log(`No action defined for command: ${cmdName}`);
+    }
+  } catch (error) {
+    console.error(`Error executing command "${cmdName}":`, error);
+    throw error;
+  }
+}
+```
+
+```ts
+// src/CdCli/sys/cd-cli/models/cd-cli.model.ts
+
+import { CD_AUTO_GIT_CMD } from '../../../app/cd-auto-git/models/cd-auto-git.model.js';
+import { LOGIN_CMD, LOGOUT_CMD } from '../../user/models/user.model.js';
+import { PROFILE_CMD } from './cd-cli-profile.model.js';
+import { DEV_MODE_COMMANDS } from '../../dev-mode/dev-mode-commands/index.js';
+// import { CD_AI_LOGS_CMD, CD_OPEN_AI_CMD } from '../../../app/cd-ai-pwa/index.js';
+import {
+  MODULE_CMD,
+  TEMPLATE_CMD,
+} from '../../../app/app-craft/models/app-craft.model.js';
+import { CD_AI_LOGS_CMD, CD_OPEN_AI_CMD } from '../../../app/cd-ai/index.js';
+
+export const CdCli = {
+  commands: [
+    LOGIN_CMD,
+    LOGOUT_CMD,
+    PROFILE_CMD,
+    MODULE_CMD,
+    TEMPLATE_CMD,
+    CD_AUTO_GIT_CMD,
+    DEV_MODE_COMMANDS,
+    CD_OPEN_AI_CMD,
+    CD_AI_LOGS_CMD,
+  ] as any,
+};
+
+```
+
+//////////////////////////////////////
+
+Here is the file:
+
+```ts
+// src/CdCli/app/cd-ai/services/cd-ai-log-router.service.ts
+const LOG_BUFFER_LIMIT = 1000;
+
+export class CdAiLogRouterService {
+  private static logs: string[] = [];
+  private static writeToConsole = false; // Always route by default
+
+  /**
+   * If dev mode is enabled, disable console output and enable routing.
+   * @param enabled Whether dev mode is on.
+   */
+  static setDevMode(enabled: boolean) {
+    this.writeToConsole = !enabled;
+  }
+
+  /**
+   * Push an AI log message into memory buffer.
+   * @param message The log message
+   */
+  static push(message: string) {
+    if (this.writeToConsole) return; // prevent console leaks
+
+    this.logs.push(message);
+    if (this.logs.length > LOG_BUFFER_LIMIT) {
+      this.logs.shift();
+    }
+
+    // Optional: write to file
+    // fs.appendFileSync('/tmp/cd-ai.log', message + '\n');
+  }
+
+  static getLogs(): string[] {
+    return [...this.logs];
+  }
+
+  static clear() {
+    this.logs = [];
+  }
+}
+
+```
+
+//////////////////////////////////////
+
+Below is a cat for dist/CdCli/app/cd-ai/services/cd-ai-log-router.service.js
+```sh
+emp-12@emp-12 ~/cd-cli (main)> cat dist/CdCli/app/cd-ai/services/cd-ai-log-router.service.js 
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CdAiLogRouterService = void 0;
+// src/CdCli/app/cd-ai/services/cd-ai-log-router.service.ts
+const LOG_BUFFER_LIMIT = 1000;
+class CdAiLogRouterService {
+    static logs = [];
+    static writeToConsole = false; // Always route by default
+    /**
+     * If dev mode is enabled, disable console output and enable routing.
+     * @param enabled Whether dev mode is on.
+     */
+    static setDevMode(enabled) {
+        this.writeToConsole = !enabled;
+    }
+    /**
+     * Push an AI log message into memory buffer.
+     * @param message The log message
+     */
+    static push(message) {
+        if (this.writeToConsole)
+            return; // prevent console leaks
+        this.logs.push(message);
+        if (this.logs.length > LOG_BUFFER_LIMIT) {
+            this.logs.shift();
+        }
+        // Optional: write to file
+        // fs.appendFileSync('/tmp/cd-ai.log', message + '\n');
+    }
+    static getLogs() {
+        return [...this.logs];
+    }
+    static clear() {
+        this.logs = [];
+    }
+}
+exports.CdAiLogRouterService = CdAiLogRouterService;
+emp-12@emp-12 ~/cd-cli (main)> 
+```
+
+///////////////////////////////
+Here is the current setting for tsconfig.json
+This has been working well until now.
+```json
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "target": "ES2022",  
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./src",
+    "paths": {
+      "~/*": ["./*"],
+      "@CdCli/*": ["./CdCli/*"],
+      "@sys/*": ["./CdCli/sys/*"],
+      "@app/*": ["./CdCli/app/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ]
+}
+```
+
+/////////////////////////////
+Here is the package.json configuration
+```json
+{
+  "name": "@corpdesk/cd-cli",
+  "version": "0.1.2",
+  "description": "Corpdesk CLI to scaffold, generate, test, and publish modules for cd-shell",
+  "author": "George Oremo <george.oremo@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/corpdesk/cd-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/corpdesk/cd-cli.git/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/corpdesk/cd-cli.git#readme",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "cd-cli": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "build:watch": "tsc --watch",
+    "postbuild": "./scripts/post-build.sh"
+  },
+  "keywords": [],
+  "dependencies": {
+    "@jest/globals": "^29.7.0",
+    "@nestjs/common": "^10.4.15",
+    "@nestjs/core": "^10.4.15",
+    "@nestjs/testing": "^10.4.15",
+    "@octokit/plugin-rest-endpoint-methods": "^16.0.0",
+    "@octokit/rest": "^22.0.0",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "@swc/core": "^1.10.7",
+    "@types/inquirer": "^9.0.8",
+    "@types/minimist": "^1.2.5",
+    "@types/sqlite3": "^5.1.0",
+    "ast-types": "^0.14.2",
+    "axios": "^1.7.9",
+    "bcrypt": "^5.1.1",
+    "chalk": "^5.4.0",
+    "class-validator": "^0.14.1",
+    "cli-table3": "^0.6.5",
+    "cloudmailin": "^0.1.0",
+    "commander": "^12.1.0",
+    "date-fns": "^4.1.0",
+    "dayjs": "^1.11.13",
+    "device-detector-js": "^3.0.3",
+    "dotenv": "^16.4.7",
+    "execa": "^9.6.0",
+    "html-to-text": "^9.0.5",
+    "inquirer": "^9.2.12",
+    "inquirer-autocomplete-prompt": "^3.0.0",
+    "ioredis": "^5.6.0",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21",
+    "logger": "^0.0.1",
+    "minimist": "^1.2.8",
+    "moment": "^2.30.1",
+    "mysql2": "^3.14.1",
+    "node-cleanup": "^2.1.2",
+    "node-ssh": "^13.2.0",
+    "node-ts-cache": "^4.4.0",
+    "node-ts-cache-storage-memory": "^4.4.0",
+    "nodemailer": "^6.10.0",
+    "ora": "^8.2.0",
+    "path": "^0.12.7",
+    "puppeteer": "^24.4.0",
+    "pusher": "^5.2.0",
+    "recast": "^0.23.11",
+    "redis": "^4.7.0",
+    "rxjs": "^7.8.2",
+    "simple-git": "^3.28.0",
+    "sqlite3": "^5.1.7",
+    "ts-node": "^10.9.2",
+    "update-notifier": "^5.1.0",
+    "url": "^0.11.4",
+    "util": "^0.12.5",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "zx": "^7.2.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.15.30",
+    "@types/node-cleanup": "^2.1.5",
+    "@types/update-notifier": "^6.0.8",
+    "prettier": "^3.6.2",
+    "ts-node": "^10.9.2",
+    "typeorm": "0.3",
+    "typescript": "5"
+  }
+}
+```
+
+/////////////////////////////////
+
+
