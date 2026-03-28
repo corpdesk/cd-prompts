@@ -8041,5 +8041,858 @@ Here is the package.json configuration
 ```
 
 /////////////////////////////////
+Below are codes for CdAppController and CdAppService.
+We will be focusing on the CdAppController.scan ()and CdAppService.scan().
+ICdRequest will be landing in CdAppController.scan(), which then delegetes to CdAppService.scan().
+These are the codes that are meant to process the scanning of corpdesk subsystem directory.
+When working with cd-cli, the following codes is what will invoke request to land at the CdAppController.scan().
+scan --cd-app --name cd-cli --o-env test-bed --repo cd-cli;
+In the upcoming posts, I will be taking you though how that is processed.
+We will need to document that before proceeding with development and testing.
+```ts
+// src/CdCli/app/app-craft/controllers/cd-app.controller.ts
+import { CdAssertReturn, CdFxReturn, IQuery } from '../../../sys/base/i-base.js';
+import { CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { CdAppService } from '../services/cd-app.service.js';
+import { CdModuleService } from '../services/cd-module.service.js';
+
+export class CdAppController {
+  svCdApp: CdAppService;
+  svCdModule: CdModuleService;
+  constructor() {
+    this.svCdApp = new CdAppService();
+    this.svCdModule = new CdModuleService();
+    this.svCdApp.init();
+  }
+
+  /**
+   * Create a new module
+   *
+   * @param AppDescriptor
+   * @returns
+   */
+  async create(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppController::create()');
+    return this.svCdApp.create(actionTargetName, moduleName, moduleType, cdToken);
+  }
+
+  async read(q?: IQuery): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    return this.svCdApp.read(q);
+  }
+
+  async update(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    return this.svCdApp.update(actionTargetName, moduleName, moduleType, cdToken);
+  }
+
+  async delete(q: IQuery): Promise<CdFxReturn<null>> {
+    return this.svCdApp.delete(q);
+  }
+
+  // Get all applications
+  async getAllModules(): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    return await this.svCdApp.getAllModules();
+  }
+
+  // Get a single module by name
+  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    return this.svCdApp.getModuleByName(name);
+  }
+
+  async CreateModuleDirectories(moduleDir: string): Promise<CdFxReturn<null>> {
+    return await this.svCdModule.createModuleDirectories(moduleDir);
+  }
+
+  async upgrade(
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    version: string,
+    testTasks?: boolean,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppController::upgrade()');
+    return this.svCdApp.upgrade(
+      actionTargetName,
+      moduleName,
+      oEnv,
+      repoName,
+      version,
+      testTasks !== undefined ? String(testTasks) : undefined,
+    );
+  }
+
+  async derive(
+    actionTargetName: string,
+    cdObjName: string,
+    cdObjTypeName: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppController::derive()');
+    return this.svCdApp.derive(actionTargetName, cdObjName, cdObjTypeName, cdToken);
+  }
+
+  async scan(
+    actionTargetName: string,
+    cdObjName: string,
+    cdObjTypeName: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppController::scan()');
+    return this.svCdApp.scan(actionTargetName, cdObjName, cdObjTypeName, cdToken);
+  }
+}
+
+```
+
+```ts
+// src/CdCli/app/app-craft/services/cd-app.service.ts
+
+/* eslint-disable style/brace-style */
+
+import { basename, join } from 'path';
+import { GenericService } from '../../../sys/base/generic-service.js';
+import { HttpService } from '../../../sys/base/http.service.js';
+import {
+  CD_FX_FAIL,
+  CdAssertReturn,
+  CdFxReturn,
+  CdFxStateLevel,
+  IQuery,
+} from '../../../sys/base/i-base.js';
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
+import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
+import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
+import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
+import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
+import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
+import { mkdir, writeFile } from 'fs/promises';
+import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
+import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
+import { executeCommand } from '../../../sys/utils/cmd.util.js';
+import { CdAutoGitController } from '../../cd-auto-git/index.js';
+import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
+import { ExpressionContext, SeedConfig, SeedRoleConfig } from '../models/cd-app.model.js';
+import { CdCtx, CdModuleDescriptor, DirectoryNode } from '../../../sys/dev-descriptor/index.js';
+import { ComponentType } from '../../../sys/dev-descriptor/models/component-descriptor.model.js';
+
+export class CdAppService {
+  cdToken;
+  svDevDescriptors;
+  private runner!: CICdRunnerService;
+
+  constructor() {
+    // super(CdObjModel);
+    this.svDevDescriptors = new DevDescriptorService();
+  }
+
+  init(): this {
+    this.runner = new CICdRunnerService();
+    return this;
+  }
+
+  async create(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.CREATE,
+      cdObjType,
+      moduleName,
+      moduleType,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: cdToken, // Pass the cdToken if needed
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  /**
+   * Create a new application
+   * CdApi:
+   * - setup development environment
+   *    - npm
+   *    - mysql
+   *    - redis
+   *    - ssl
+   * - migration files
+   * - clone corpdesk if not yet done
+   * - create repository for new module
+   * - sync workstation to repository
+   * - sync db data
+   *
+   * @param appDescriptor
+   * @returns
+   */
+  async createByAi(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async createByJson(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async createByWizard(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async createByContext(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async read(q?: IQuery): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    try {
+      /**
+       * The q is allowed to be null
+       * If null it is substituted by { where: {} }
+       * Which would then fetch all the data
+       */
+      const payload = this.svDevDescriptors.setEnvelope('Read', {
+        query: q ?? { where: {} },
+      });
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Read failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async update(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::update()');
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.CREATE,
+      cdObjType,
+      moduleName,
+      moduleType,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: cdToken, // Pass the cdToken if needed
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  async delete(q: IQuery): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Update failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  protected getTypeId(): number {
+    return 1; // CdApp type
+  }
+
+  // Get all applications
+  async getAllModules(): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    try {
+      return await this.read(); // Fetch all applications
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Failed to retrieve all apps: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  // Get a single app by name
+  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    try {
+      // Validate input
+      if (!name.trim()) {
+        return {
+          data: null,
+          state: false,
+          message: 'Application name is required.',
+        };
+      }
+
+      // Define the query
+      const q: IQuery = {
+        select: ['cdObjId', 'cdObjName', 'cdObjGuid', 'jDetails'], // Fields to select
+        where: { cdObjName: name }, // Fetch apps by name
+      };
+
+      return await this.read(q);
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Failed to retrieve app by name: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async derive(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::derive()');
+    CdLog.debug(`CdAppService::derive()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::derive()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::derive()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::derive()/cdToken: ${cdToken}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.DERIVE,
+      cdObjType,
+      moduleName,
+      moduleType,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: cdToken, // Pass the cdToken if needed
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  async upgrade(
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    version?: string,
+    testTasks?: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::upgrade()');
+    CdLog.debug(`CdAppService::upgrade()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::upgrade()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::upgrade()/oEnv: ${oEnv}`);
+    CdLog.debug(`CdAppService::upgrade()/repoName: ${repoName}`);
+    CdLog.debug(`CdAppService::upgrade()/version: ${version}`);
+    CdLog.debug(`CdAppService::upgrade()/testTasks: ${testTasks}`);
+
+    // 🔁 Convert version string to SemanticVersionObject
+    const semanticResult = VersionService.toSemanticObject(version ?? '');
+    if (semanticResult.state !== CdFxStateLevel.Success || !semanticResult.data) {
+      return cdFx(CdFxStateLevel.LogicalFailure, `❌ Invalid version format: "${version}"`);
+    }
+
+    const versionObj = semanticResult.data;
+    CdLog.debug(`Parsed semantic version:`, versionObj);
+
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.UPGRADE,
+      cdObjType,
+      moduleName,
+      oEnv,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: '', // Pass the cdToken if needed
+        repoName: repoName,
+        appType: AppType.CdApi,
+        version: versionObj, // 👈 Pass object instead of string
+        testTasks: testTasks !== undefined ? String(testTasks) : undefined, // 👈 Convert to string if needed
+        oEnv: oEnv,
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::upgrade()/ No valid workflowModel`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+
+  /**
+   * [CdAppService][scan()]
+   * Entry point for application scanning pipeline.
+   * Orchestrates: config loading → filesystem scan → descriptor build → persistence.
+   */
+  async scan(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('[CdAppService][scan()]/starting...');
+    CdLog.debug(`[CdAppService][scan()]/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`[CdAppService][scan()]/moduleName: ${moduleName}`);
+    CdLog.debug(`[CdAppService][scan()]/moduleType: ${moduleType}`);
+
+    try {
+      const config: SeedConfig = this.loadScanConfig(moduleType);
+
+      const files = await this.scanDirectory(config.rootPath, config);
+      CdLog.debug(`[CdAppService][scan()]/files.length: ${files.length}`);
+
+      const descriptor = await this.buildAppDescriptor(moduleName, files, config);
+
+      await this.writeDescriptor(config.rootPath, descriptor);
+
+      CdLog.success('[CdAppService][scan()]/completed');
+
+      return {
+        state: true,
+        data: [],
+        message: `App scan completed successfully for ${moduleName}`,
+      };
+    } catch (error) {
+      CdLog.error(`[CdAppService][scan()]/error: ${(error as Error).message}`);
+
+      return {
+        state: false,
+        data: null,
+        message: `App scan failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  /**
+   * [CdAppService][loadScanConfig()]
+   * Loads SeedConfig for a given subsystem.
+   * Falls back to default config if not found.
+   */
+  private loadScanConfig(moduleType: string): SeedConfig {
+    CdLog.debug('[CdAppService][loadScanConfig()]/starting...');
+    CdLog.debug(`[CdAppService][loadScanConfig()]/moduleType: ${moduleType}`);
+
+    const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
+
+    try {
+      const raw = require(configPath);
+      CdLog.success('[CdAppService][loadScanConfig()]/loaded');
+      return raw as SeedConfig;
+    } catch {
+      CdLog.warning(`[CdAppService][loadScanConfig()]/fallback: ${moduleType}`);
+
+      return {
+        subsystemName: moduleType,
+        rootPath: process.cwd(),
+        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
+        includeExtensions: ['.ts', '.js', '.json'],
+        roles: [
+          { roleName: 'controller', namingPattern: '\\.controller\\.' },
+          { roleName: 'service', namingPattern: '\\.service\\.' },
+          { roleName: 'model', namingPattern: '\\.model\\.' },
+        ],
+        version: '1.0.0',
+        globals: {},
+      };
+    }
+  }
+
+  /**
+   * [CdAppService][scanDirectory()]
+   * Recursively scans filesystem based on SeedConfig rules.
+   */
+  private async scanDirectory(
+    dir: string,
+    config: SeedConfig,
+    results: string[] = [],
+  ): Promise<string[]> {
+    CdLog.debug(`[CdAppService][scanDirectory()]/dir: ${dir}`);
+
+    const entries = await import('fs/promises').then((fs) =>
+      fs.readdir(dir, { withFileTypes: true }),
+    );
+
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name);
+
+      if (config.ignorePatterns?.some((pat) => fullPath.includes(pat))) {
+        CdLog.debug(`[CdAppService][scanDirectory()]/ignored: ${fullPath}`);
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        await this.scanDirectory(fullPath, config, results);
+      } else {
+        if (config.includeExtensions?.some((ext) => fullPath.endsWith(ext))) {
+          results.push(fullPath);
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * [CdAppService][buildAppDescriptor()]
+   * Constructs CdAppDescriptor from scanned files using SeedConfig rules.
+   */
+  private async buildAppDescriptor(
+    appName: string,
+    files: string[],
+    config: SeedConfig,
+  ): Promise<CdAppDescriptor> {
+    CdLog.debug('[CdAppService][buildAppDescriptor()]/starting...');
+    CdLog.debug(`[CdAppService][buildAppDescriptor()]/appName: ${appName}`);
+
+    const modules = this.groupFilesIntoModules(files, config);
+
+    const descriptor: CdAppDescriptor = {
+      name: appName,
+      parentProjectGuid: null,
+      modules,
+      description: `Auto-generated descriptor for ${appName}`,
+      directorySignature: {
+        signatureName: `${appName}-signature`,
+        root: this.buildDirectoryTree(files, config),
+        variables: config.globals,
+      },
+    };
+
+    CdLog.success('[CdAppService][buildAppDescriptor()]/built');
+
+    return descriptor;
+  }
+
+  /**
+   * [CdAppService][groupFilesIntoModules()]
+   * Groups files into logical modules based on role resolution.
+   */
+  private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
+    CdLog.debug('[CdAppService][groupFilesIntoModules()]/starting...');
+
+    const moduleMap: Record<string, CdModuleDescriptor> = {};
+
+    for (const file of files) {
+      const matchedRole = this.resolveRole(file, config.roles);
+      const moduleName = matchedRole?.roleName || 'root';
+
+      if (!moduleMap[moduleName]) {
+        moduleMap[moduleName] = {
+          name: moduleName,
+          cdModuleType: { typeName: config.subsystemName as any },
+          ctx: this.resolveModuleContext(moduleName),
+          controllers: [],
+          services: [],
+          models: [],
+        };
+      }
+
+      this.assignFileToComponent(file, moduleMap[moduleName], config);
+    }
+
+    CdLog.debug(
+      `[CdAppService][groupFilesIntoModules()]/modules: ${Object.keys(moduleMap).length}`,
+    );
+
+    return Object.values(moduleMap);
+  }
+
+  /**
+   * [CdAppService][matchRole()]
+   * Matches file against role patterns (legacy regex-based).
+   */
+  private matchRole(file: string, roles: SeedRoleConfig[]): string {
+    for (const role of roles) {
+      if (!role.namingPattern) continue;
+
+      try {
+        const regex = new RegExp(role.namingPattern);
+        if (regex.test(file)) {
+          return role.roleName;
+        }
+      } catch {
+        CdLog.warning(`[CdAppService][matchRole()]/invalidPattern: ${role.namingPattern}`);
+      }
+    }
+
+    return 'root';
+  }
+
+  /**
+   * [CdAppService][resolveModuleContext()]
+   * Determines module context (sys/app) based on role.
+   */
+  private resolveModuleContext(roleName: string): CdCtx {
+    if (roleName === 'sys') return CdCtx.Sys;
+    return CdCtx.App;
+  }
+
+  /**
+   * [CdAppService][resolveRole()]
+   * Resolves role using namingPattern rules.
+   */
+  private resolveRole(file: string, roles: SeedRoleConfig[]): SeedRoleConfig | undefined {
+    for (const role of roles) {
+      if (!role.namingPattern) continue;
+
+      try {
+        const regex = new RegExp(role.namingPattern);
+        if (regex.test(file)) {
+          return role;
+        }
+      } catch {
+        CdLog.warning(`[CdAppService][resolveRole()]/invalidPattern: ${role.namingPattern}`);
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * [CdAppService][assignFileToComponent()]
+   * Assigns scanned file to correct module component (controller/service/model).
+   */
+  private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+    const name = basename(file);
+
+    const role = this.resolveRole(file, config.roles);
+    if (!role) return;
+
+    switch (role.roleName) {
+      case 'controller':
+        module.controllers.push({
+          name,
+          type: ComponentType.Controller,
+          fileName: file,
+        });
+        break;
+
+      case 'service':
+        module.services.push({
+          name,
+          type: ComponentType.Service,
+          fileName: file,
+        });
+        break;
+
+      case 'model':
+        module.models.push({
+          name,
+          type: ComponentType.Model,
+          fileName: file,
+          fields: [],
+        });
+        break;
+    }
+  }
+
+  /**
+   * [CdAppService][buildDirectoryTree()]
+   * Builds DirectoryNode structure for descriptor signature.
+   */
+  private buildDirectoryTree(files: string[], config: SeedConfig): DirectoryNode {
+    CdLog.debug('[CdAppService][buildDirectoryTree()]/starting...');
+
+    return {
+      name: config.subsystemName,
+      cdObjGuid: this.generateGuid(),
+      children: files.map((f) => {
+        const role = this.resolveRole(f, config.roles);
+
+        return {
+          name: basename(f),
+          cdObjGuid: this.generateGuid(),
+          isFile: true,
+          cdObjRoleName: role?.roleName,
+        };
+      }),
+    };
+  }
+
+  /**
+   * [CdAppService][writeDescriptor()]
+   * Persists generated descriptor to .cd directory.
+   */
+  private async writeDescriptor(root: string, descriptor: CdAppDescriptor) {
+    CdLog.debug('[CdAppService][writeDescriptor()]/starting...');
+    CdLog.debug(`[CdAppService][writeDescriptor()]/root: ${root}`);
+
+    const cdDir = join(root, '.cd');
+    await mkdir(cdDir, { recursive: true });
+
+    const filePath = join(cdDir, 'cd-app.descriptor.json');
+    await writeFile(filePath, JSON.stringify(descriptor, null, 2));
+
+    CdLog.success(`[CdAppService][writeDescriptor()]/filePath: ${filePath}`);
+  }
+
+  /**
+   * [CdAppService][generateGuid()]
+   * Generates pseudo GUID for descriptor nodes.
+   */
+  private generateGuid(): string {
+    return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () =>
+      ((Math.random() * 16) | 0).toString(16),
+    );
+  }
+
+  /**
+   * [CdAppService][buildExpressionContext()]
+   * Builds evaluation context (cell) for DNA execution from file path.
+   */
+  private buildExpressionContext(file: string): ExpressionContext {
+    CdLog.debug('[CdAppService][buildExpressionContext()]/starting...');
+    CdLog.debug(`[CdAppService][buildExpressionContext()]/file: ${file}`);
+
+    const name = basename(file);
+
+    const ctx: ExpressionContext = {
+      filePath: file,
+      fileName: name,
+      extension: name.split('.').pop() || '',
+      moduleHint: file.includes('/sys/') ? 'sys' : file.includes('/app/') ? 'app' : 'unknown',
+    };
+
+    CdLog.debug(`[CdAppService][buildExpressionContext()]/fileName: ${ctx.fileName}`);
+    CdLog.debug(`[CdAppService][buildExpressionContext()]/extension: ${ctx.extension}`);
+    CdLog.debug(`[CdAppService][buildExpressionContext()]/moduleHint: ${ctx.moduleHint}`);
+
+    return ctx;
+  }
+
+  /**
+   * [CdAppService][evaluateExpression()]
+   * Executes DNA expression against ExpressionContext.
+   * Converts expression → JS-compatible → evaluates result.
+   */
+  private evaluateExpression(expression: string, ctx: ExpressionContext): boolean {
+    CdLog.debug('[CdAppService][evaluateExpression()]/starting...');
+    CdLog.debug(`[CdAppService][evaluateExpression()]/expression: ${expression}`);
+
+    try {
+      let exp = expression;
+
+      // 🔷 Variable substitution
+      exp = exp.replace(/file\.name/g, `"${ctx.fileName}"`);
+      exp = exp.replace(/file\.ext/g, `"${ctx.extension}"`);
+      exp = exp.replace(/file\.path/g, `"${ctx.filePath}"`);
+      exp = exp.replace(/ctx/g, `"${ctx.moduleHint}"`);
+
+      CdLog.debug(`[CdAppService][evaluateExpression()]/afterVariables: ${exp}`);
+
+      // 🔷 Operator transformation
+      exp = exp
+        .replace(/CONTAINS/g, '.includes')
+        .replace(/STARTS_WITH/g, '.startsWith')
+        .replace(/ENDS_WITH/g, '.endsWith')
+        .replace(/EQUALS/g, '===')
+        .replace(/AND/g, '&&')
+        .replace(/OR/g, '||');
+
+      CdLog.debug(`[CdAppService][evaluateExpression()]/afterOperators: ${exp}`);
+
+      // 🔷 Execution
+      // eslint-disable-next-line no-eval
+      const result = Boolean(eval(exp));
+
+      CdLog.debug(`[CdAppService][evaluateExpression()]/result: ${result}`);
+
+      return result;
+    } catch (e) {
+      CdLog.error(`[CdAppService][evaluateExpression()]/error: ${(e as Error).message}`);
+      return false;
+    }
+  }
+}
+
+```
 
 
