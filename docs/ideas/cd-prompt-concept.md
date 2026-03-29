@@ -8895,4 +8895,1551 @@ export class CdAppService {
 
 ```
 
+//////////////////////////////////////////
+
+Do analysis of the logs.
+This is the first run of the command against AppCraft.
+
+```sh
+cd dev  > scan --cd-app --name cd-cli --o-env test-bed --repo cd-cli;
+[2026-03-28 11:24:39] 🛠️ DevMode::eval()/input:scan --cd-app --name cd-cli --o-env test-bed --repo cd-cli;
+
+[2026-03-28 11:24:39] 🛠️ DevModeModel::handleInput()/input:scan --cd-app --name cd-cli --o-env test-bed --repo cd-cli;
+[2026-03-28 11:24:39] 🛠️ DevModeModel::executeCommand()/command:scan --cd-app --name cd-cli --o-env test-bed --repo cd-cli
+[2026-03-28 11:24:39] 🛠️ DevModeModel::executeCommand()/options:{"_":[],"cd-app":true,"name":"cd-cli","o-env":"test-bed","repo":"cd-cli"}
+scan.command::execute()/starting
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand() action=SCAN, name=cd-cli, o-env=test-bed, options={
+  _: [
+    '--cd-app',
+    '--name',
+    'cd-cli',
+    '--o-env',
+    'test-bed',
+    '--repo',
+    'cd-cli'
+  ],
+  'cd-app': true,
+  name: 'cd-cli',
+  'o-env': 'test-bed',
+  repo: 'cd-cli'
+}
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/projResult:{
+  state: 1,
+  message: "Project 'cd-cli' validated successfully.",
+  data: 'cd-cli'
+}
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/resultValidEnv:{
+  state: 1,
+  message: "Output environment 'test-bed' validated successfully.",
+  data: { name: 'test-bed', label: 'Test Bed', context: 'testing' }
+}
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/name:cd-cli
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/oEnv:test-bed
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/selectedTarget:{
+  cdObjTypeId: 33,
+  cdObjTypeName: 'cd-app',
+  cdObjTypeGuid: 'd6507c5d-a7ca-41fb-ad5f-dc5ceba46489',
+  modCraftController: 'CdApp'
+})
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/actionTargetName:cd-app
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/01
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/repoName:cd-cli
+[2026-03-28 11:24:39] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-03-28 11:24:39] 🛠️ CdCliProfileController::loadProfiles():01
+[2026-03-28 11:24:39] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-03-28 11:24:39] 🛠️ CdCliProfileController::loadProfiles():01
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/appType: undefined
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/filePath: /home/emp-12/cd-cli/dist/CdCli/app/app-craft/workshop/cd-app/workflow/test-bed/cd-cli-workshop.model.js
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/02
+[2026-03-28 11:24:39] 🛠️ SessionController::getSession()/profileName: | Context: [object Object]
+[2026-03-28 11:24:39] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-03-28 11:24:39] 🛠️ CdCliProfileController::loadProfiles():01
+[2026-03-28 11:24:39] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-03-28 11:24:39] 🛠️ CdCliProfileController::loadProfiles():01
+[2026-03-28 11:24:39] ℹ️ cdToken has been set
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/03
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/05
+[2026-03-28 11:24:39] 🛠️ DevModeModel::getRegistry()/action:20
+[2026-03-28 11:24:39] 🛠️ DevModeModel::getRegistry()/cdObjName:cd-cli
+[2026-03-28 11:24:39] 🛠️ DevModeModel::getRegistry()/appType:undefined
+[2026-03-28 11:24:39] 🛠️ DevModeModel::getRegistry()/actionTargetName:cd-app
+[2026-03-28 11:24:39] 🛠️ DevModeModel::getRegistry()/actionStr:scan
+[2026-03-28 11:24:39] 🛠️ DevModeModel::getRegistry()/actionLabel:Scan
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/06
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/resultItemRegistry:[object Object]
+[2026-03-28 11:24:39] 🛠️ DevModeService::getRegistryForCdObj()/07
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/registryCount:35
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/{ actionTargetName, name, oEnv, repo },:{
+  actionTargetName: 'cd-app',
+  name: 'cd-cli',
+  oEnv: 'test-bed',
+  repo: 'cd-cli'
+}
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/options:{
+  _: [
+    '--cd-app',
+    '--name',
+    'cd-cli',
+    '--o-env',
+    'test-bed',
+    '--repo',
+    'cd-cli'
+  ],
+  'cd-app': true,
+  name: 'cd-cli',
+  'o-env': 'test-bed',
+  repo: 'cd-cli'
+}
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/selectedItem:{
+  name: 'cd-app',
+  flag: 'cd-app',
+  label: 'cd-app',
+  description: 'Scan a developer cd-app environment',
+  action: 20,
+  actionTarget: {
+    cdObjTypeId: 33,
+    cdObjTypeName: 'cd-app',
+    cdObjTypeGuid: 'd6507c5d-a7ca-41fb-ad5f-dc5ceba46489',
+    modCraftController: 'CdApp'
+  },
+  requiredOptions: [ 'name', 'o-env' ],
+  targetName: 'cd-cli',
+  targetType: undefined,
+  cdRequest: {
+    ctx: 'app',
+    m: 'app-craft',
+    c: 'CdApp',
+    a: 'scan',
+    dat: { f_vals: [Array], token: '' },
+    args: null
+  }
+}
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/args:{
+  actionTargetName: 'cd-app',
+  name: 'cd-cli',
+  oEnv: 'test-bed',
+  repo: 'cd-cli'
+}
+[2026-03-28 11:24:39] 🛠️ DevModeService::executeCrudCommand()/request:{
+  ctx: 'app',
+  m: 'app-craft',
+  c: 'CdApp',
+  a: 'scan',
+  dat: { f_vals: [ { data: null } ], token: '' },
+  args: {
+    actionTargetName: 'cd-app',
+    name: 'cd-cli',
+    oEnv: 'test-bed',
+    repo: 'cd-cli'
+  }
+}
+[2026-03-28 11:24:40] 🛠️ DevDescriptorService::init()/starting...
+[2026-03-28 11:24:40] 🛠️ DevDescriptorService::init()/starting...
+[2026-03-28 11:24:40] 🛠️ Starting CdAppController::scan()
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scan()]/starting...
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scan()]/actionTargetName: cd-app
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scan()]/moduleName: cd-cli
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scan()]/moduleType: test-bed
+[2026-03-28 11:24:40] 🛠️ [CdAppService][loadScanConfig()]/starting...
+[2026-03-28 11:24:40] 🛠️ [CdAppService][loadScanConfig()]/moduleType: test-bed
+[2026-03-28 11:24:40] ℹ⚠️ [CdAppService][loadScanConfig()]/fallback: test-bed
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/.git
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/.gitignore
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/.vscode
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/dist
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/node_modules
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/scripts
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/scripts/clear-dist-dir.sh
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/sdk
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/sdk/docs
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/.gitkeep
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/model
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/output
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/template
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/template/abcd
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/template/abcd/.git
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/template/abcd/.gitignore
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/template/abcd/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/template/abcd/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/template/abcd/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/workflow
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/workflow/package
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/workflow/production
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/workflow/sandbox
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-api/workflow/test-bed
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/model
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/output
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/template
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/template/abcd
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/template/abcd/.git
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/template/abcd/.gitignore
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/template/abcd/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/template/abcd/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/template/abcd/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow/cd-action
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow/cd-app
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow/cd-controller
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow/cd-method
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow/cd-module
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow/package
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow/production
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow/sandbox
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-app/workflow/test-bed
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/model
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/output
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/template
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/template/abcd
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/template/abcd/.git
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/template/abcd/.gitignore
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/template/abcd/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/template/abcd/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/template/abcd/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/workflow
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/workflow/package
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/workflow/production
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/workflow/sandbox
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/workflow/test-bed
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cd-module/workflow/workshop
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cli
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cli/model
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cli/template
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/cli/workflow
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/frontend
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/frontend/model
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/frontend/template
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/app-craft/workshop/frontend/workflow
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-ai
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/cd-ai/.cd
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/cd-ai/.git
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/cd-ai/.gitignore
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-ai/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/cd-ai/controllers/.gitkeep
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-ai/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/cd-ai/models/.gitkeep
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-ai/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/cd-ai/services/.gitkeep
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-aws
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-aws/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-aws/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-aws/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-azure
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-azure/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-azure/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-azure/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-do
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-gcp
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-gcp/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-gcp/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-gcp/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-git
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-git/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-git/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-git/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-git/tests
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-k8s
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-k8s/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-k8s/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-auto-k8s/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-geo
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/cd-geo/.git
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-geo/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-geo/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/cd-geo/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/coops
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/CdCli/app/coops/.git
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/coops/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/coops/extra
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/coops/extra/africa-coop-data
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/coops/extra/geo-data
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/coops/extra/sub-division-data
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/coops/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/app/coops/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/base
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-cli
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-cli/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-cli/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-cli/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-comm
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-comm/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-comm/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-comm/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-push
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-push/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-push/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-push/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-scheduler
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-scheduler/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-scheduler/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/cd-scheduler/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-descriptor
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-descriptor/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-descriptor/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-descriptor/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-mode
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-mode/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-mode/dev-mode-commands
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-mode/dev-mode-commands/subcommands
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-mode/dev-mode-commands/utils
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-mode/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/dev-mode/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/moduleman
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/moduleman/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/moduleman/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/moduleman/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/user
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/user/controllers
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/user/models
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/user/services
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/CdCli/sys/utils
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/configs
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/devops-scripts
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/devops-scripts/cd-api
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/devops-scripts/cd-frontend
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/devops-scripts/migration
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/environments
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/ignored: /home/emp-12/cd-cli/src/environments/dist
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scanDirectory()]/dir: /home/emp-12/cd-cli/src/utils
+[2026-03-28 11:24:40] 🛠️ [CdAppService][scan()]/files.length: 518
+[2026-03-28 11:24:40] 🛠️ [CdAppService][buildAppDescriptor()]/starting...
+[2026-03-28 11:24:40] 🛠️ [CdAppService][buildAppDescriptor()]/appName: cd-cli
+[2026-03-28 11:24:40] 🛠️ [CdAppService][groupFilesIntoModules()]/starting...
+[2026-03-28 11:24:40] 🛠️ [CdAppService][groupFilesIntoModules()]/modules: 4
+[2026-03-28 11:24:40] 🛠️ [CdAppService][buildDirectoryTree()]/starting...
+[2026-03-28 11:24:40] ℹ✨ [CdAppService][buildAppDescriptor()]/built
+[2026-03-28 11:24:40] 🛠️ [CdAppService][writeDescriptor()]/starting...
+[2026-03-28 11:24:40] 🛠️ [CdAppService][writeDescriptor()]/root: /home/emp-12/cd-cli
+[2026-03-28 11:24:40] ℹ✨ [CdAppService][writeDescriptor()]/filePath: /home/emp-12/cd-cli/.cd/cd-app.descriptor.json
+[2026-03-28 11:24:40] ℹ✨ [CdAppService][scan()]/completed
+scan.command::execute()/ending
+scan.command::execute()/result:{
+  state: true,
+  data: [],
+  message: 'App scan completed successfully for cd-cli'
+}
+[2026-03-28 11:24:40] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-03-28 11:24:40] 🛠️ CdCliProfileController::loadProfiles():01
+[2026-03-28 11:24:40] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-03-28 11:24:40] 🛠️ CdCliProfileController::loadProfiles():01
+handleCommandResponse()/start
+handleCommandResponse()/isArray-01
+[28/03/2026, 11:24:40] [CiCdService::handleCommandResponse():34]: tasts — []
+[28/03/2026, 11:24:40] [CiCdService::handleCommandResponse():34]: index — '01'
+[28/03/2026, 11:24:40] [CiCdService::handleCommandResponse():34]: index — '02'
+
+┌──────────────────────────────┬──────────────────────────────┬────────────┬────────────────────────────────────────────────────────────┐
+│ Stage                        │ Task                         │ Status     │ Message                                                    │
+└──────────────────────────────┴──────────────────────────────┴────────────┴────────────────────────────────────────────────────────────┘
+
+Summary: 0 succeeded, 0 failed, 0 warnings/other
+
+[28/03/2026, 11:24:40] [CiCdService::handleCommandResponse():34]: index — '03'
+handleCommandResponse()/isArray-03
+✅ All tasks completed successfully
+handleCommandResponse()/end
+[2026-03-28 11:24:40] 🛠️ SessionController::getSession()/profileName: | Context: [object Object]
+[2026-03-28 11:24:40] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-03-28 11:24:40] 🛠️ CdCliProfileController::loadProfiles():01
+[2026-03-28 11:24:40] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-03-28 11:24:40] 🛠️ CdCliProfileController::loadProfiles():01
+'✅ Executed 1 command(s).'
+```
+
+
+////////////////////////////////////////
+
+That was to save those ideas as is.
+We will come back to them for further development based on practical experience.
+
+Remember the result of the first test on AppCraft.scan(): Now knowing all that you know about what needs to be done do a short term plan on how we move foward towards a working POC of
+Below are a few examples I have in mind:
+1. Working on the ICdResponse return payload.
+- Note that the interface for the return tree had already been worked out to be: DirectorySignatureDescriptor (see references below)
+- tree was designed to be save in the root directory of the scanned directory in a folder called .cd.  The file name is cd-app.descriptor.json
+The json type is CdAppDescriptor.
+Note that the content of return need to be attached to the file as per the CdAppDescriptor structure where directorySignature?: DirectorySignatureDescriptor; is integrated.
+
+2. We have worked on the 'scan'. The next capacity building is 'creating' a subsystem directory. More like the reverse of the scan.
+There are important references shared from the file: src/CdCli/app/app-craft/models/cd-app.model.ts
+
+```ts
+export interface CdAppDescriptor extends BaseDescriptor {
+  $schema?: string;
+  name: string;
+  projectGuid?: string;
+  parentProjectGuid: string | null;
+  modules: CdModuleDescriptor[];
+  cdCi?: CiCdDescriptor;
+  description?: string;
+  language?: LanguageDescriptor; // getLanguageByName(name: string,languages: LanguageDescriptor[],)
+  environments?: EnvironmentDescriptor[]; // Development environment settings
+  versionControl?: VersionControlDescriptor; // Version control details
+  directorySignature?: DirectorySignatureDescriptor;
+}
+
+export interface DirectorySignatureDescriptor extends BaseDescriptor {
+  /** The root label of this signature (e.g., 'cd-api-v1-standard') */
+  signatureName: string;
+  /** The root node of the tree */
+  root: DirectoryNode;
+  /** Global variables used across the signature (e.g., Namespace, Scope) */
+  variables?: Record<string, string>;
+}
+
+export interface DirectoryNode extends BaseDescriptor {
+  /** The segment name. Can be a literal 'src' or a variable '${slug}' */
+  name: string;
+  /** corpdesk cd-obj-guid used for unique id */
+  cdObjGuid: string;
+  /** As per corpdesk database. Represents the architectural role (S, A, U, Leaf, Genome, etc.) */
+  cdObjRoleName?: string;
+  /** As per corpdesk database. Represents the architectural role (S, A, U, Leaf, Genome, etc.) */
+  cdObjRoleGuid?: string;
+  /** As per corpdesk database. Represents the parent object */
+  parentObj?: string;
+  /** Weighting for the Auditor/Scanner logic */
+  weight?: number;
+  /** If true, this node is a file; otherwise, it is a directory */
+  isFile?: boolean;
+  /** Optional: Template reference for file content generation */
+  templateRef?: string;
+  /** Recursive children (for directories) */
+  children?: DirectoryNode[];
+}
+```
+
+```ts
+export interface ICdRequest {
+  ctx: string;
+  m: string;
+  c: string;
+  a: string;
+  dat: EnvelopDat;
+  args: any | null;
+}
+
+export interface EnvelopDat {
+  f_vals: EnvelopFValItem[];
+  token: string | null;
+}
+
+export interface EnvelopFValItem {
+  query?: IQuery | null;
+  data?: any;
+  extData?: any;
+  jsonUpdate?: any;
+  /**
+   * Developer-specific objects (like cdObj, userObj, etc.)
+   * Any additional property is allowed here.
+   */
+  [key: string]: any;
+}
+
+/** Fields managed by backend that must not be supplied by client */
+export const MANAGED_FIELDS = ['Guid', 'docId', 'Enabled'];
+
+export interface ICdResponse {
+  app_state: IAppState;
+  data: any;
+}
+
+export interface IAppState {
+  success: boolean;
+  info: IRespInfo | null;
+  sess: ISessResp | null;
+  cache: object | null;
+  sConfig?: IServerConfig;
+}
+
+export interface IServerConfig {
+  usePush: boolean;
+  usePolling: boolean;
+  useCacheStore: boolean;
+}
+
+export interface IRespInfo {
+  messages: string[];
+  code: string | null;
+  app_msg: string | null;
+}
+
+export interface ISessResp {
+  cd_token?: string;
+  userId?: number | string | null;
+  jwt: {
+    jwtToken: string | null;
+    checked: boolean;
+    checkTime: number | null;
+    authorized: boolean;
+    ttl: number | null;
+  } | null;
+  ttl: number;
+  initUuid?: string;
+  initTime?: string;
+}
+```
+
+```ts
+// src/CdCli/app/app-craft/models/cd-app.model.ts
+
+/**
+ * Root SeedConfig for a specific Corpdesk subsystem
+ */
+export interface SeedConfig {
+  /** Subsystem name (e.g., cd-cli, cd-api, cd-shell) */
+  subsystemName: string;
+
+  /** Optional description for documentation */
+  description?: string;
+
+  /** Root path for scanning (relative or absolute) */
+  rootPath: string;
+
+  /** Expected file/directory roles and types mapping */
+  roles: SeedRoleConfig[];
+
+  /** Optional global variables or conventions for this subsystem */
+  globals?: Record<string, any>;
+
+  /** Optional patterns for ignoring files/folders during scanning */
+  ignorePatterns?: string[];
+
+  /** Optional template references to scaffold new artifacts */
+  templates?: TemplateReference[];
+
+  /** Optional metadata to guide mathematical expression engine */
+  expressionMetadata?: ExpressionMetadata;
+
+  /** Versioning to track evolution of seed */
+  version?: string;
+
+  includeExtensions?: string[]; // e.g., [".ts", ".js", ".json"]
+}
+
+/**
+ * Role-specific configuration
+ * Maps cd_obj_role to expected types, naming patterns, and scanning rules
+ */
+export interface SeedRoleConfig {
+  /** Role name (e.g., bootstrap, controller, service) */
+  roleName: string;
+
+  /** Role GUID (if applicable) */
+  roleGuid?: string;
+
+  /** Expected object types for this role */
+  allowedTypes?: CdObjType[];
+
+  /** Naming conventions (regex, prefix/suffix, kebab/camel case rules) */
+  namingPattern?: string;
+
+  /** Optional sub-role hierarchy (nested roles) */
+  children?: SeedRoleConfig[];
+
+  /** Optional weight/priority for scanning or analysis */
+  weight?: number;
+
+  /** Optional template reference to scaffold new instances of this role */
+  templateRef?: string;
+}
+
+/**
+ * Template reference for scaffolding
+ */
+export interface TemplateReference {
+  /** Name/label of the template */
+  name: string;
+
+  /** Path to template file or stub */
+  path: string;
+
+  /** Optional roles this template applies to */
+  roles?: string[];
+
+  /** Optional metadata for template processing */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Metadata to guide mathematical expressions and grammar
+ */
+export interface ExpressionMetadata {
+  /** Optional grammar rules for transcriber */
+  grammarRules?: string[];
+
+  /** Optional weights for purity/pollution scoring */
+  scoringWeights?: Record<string, number>;
+
+  /** Optional flags for LLM prompt generation */
+  promptFlags?: Record<string, any>;
+}
+
+/**
+ * cd_obj_type enumeration
+ */
+export type CdObjType =
+  | "app_file"
+  | "app_directory"
+  | "module"
+  | "controller"
+  | "model"
+  | "service"
+  | "utility"
+  | "plugin"
+  | "code"
+  | "unknown";
+
+/**
+ * Example usage: SeedConfig for cd-cli
+ */
+const cdCliSeed: SeedConfig = {
+  subsystemName: "cd-cli",
+  rootPath: "./cd-cli",
+  roles: [
+    {
+      roleName: "bootstrap",
+      allowedTypes: ["app_file"],
+      namingPattern: "^main\\.ts$",
+      weight: 100,
+    },
+    {
+      roleName: "controller",
+      allowedTypes: ["controller"],
+      namingPattern: ".*Controller\\.ts$",
+    },
+    {
+      roleName: "service",
+      allowedTypes: ["service"],
+      namingPattern: ".*Service\\.ts$",
+    },
+    {
+      roleName: "module",
+      allowedTypes: ["app_directory", "module"],
+      children: [
+        {
+          roleName: "controller",
+          allowedTypes: ["controller"],
+        },
+        {
+          roleName: "service",
+          allowedTypes: ["service"],
+        },
+      ],
+    },
+  ],
+  ignorePatterns: ["node_modules", "*.spec.ts"],
+  templates: [
+    {
+      name: "default-controller",
+      path: "./templates/controller.template.ts",
+      roles: ["controller"],
+    },
+  ],
+  expressionMetadata: {
+    grammarRules: ["role -> type", "children recursion allowed"],
+    scoringWeights: { purity: 0.7, pollution: 0.3 },
+    promptFlags: { generateLLMPrompt: true },
+  },
+  version: "1.0.0",
+};
+
+export interface SeedRoleConfig {
+  /** Role name (e.g., bootstrap, controller, service) */
+  roleName: string;
+
+  /** Role GUID (if applicable) */
+  roleGuid?: string;
+
+  /** Expected object types for this role */
+  allowedTypes?: CdObjType[];
+
+  /** Naming conventions (regex, prefix/suffix, kebab/camel case rules) */
+  namingPattern?: string;
+
+  /**
+   * DNA Expression instead of regex
+   * Example:
+   * "file.name CONTAINS '.controller.'"
+   */
+  expression?: string;
+
+  /** Optional sub-role hierarchy (nested roles) */
+  children?: SeedRoleConfig[];
+
+  /** Optional weight/priority for scanning or analysis */
+  weight?: number;
+
+  /** Optional template reference to scaffold new instances of this role */
+  templateRef?: string;
+}
+
+export interface ExpressionContext {
+  filePath: string;
+  fileName: string;
+  extension: string;
+  moduleHint?: string;
+  depth?: number;
+}
+
+
+```
+
+///////////////////////////////////////////
+With all the above references, we can now refine CdAppService to return data the fits the picture.
+```ts
+// src/CdCli/app/app-craft/services/cd-app.service.ts
+
+/* eslint-disable style/brace-style */
+
+import { basename, join } from 'path';
+import { GenericService } from '../../../sys/base/generic-service.js';
+import { HttpService } from '../../../sys/base/http.service.js';
+import {
+  CD_FX_FAIL,
+  CdAssertReturn,
+  CdFxReturn,
+  CdFxStateLevel,
+  IQuery,
+} from '../../../sys/base/i-base.js';
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
+import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
+import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
+import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
+import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
+import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
+import { mkdir, writeFile } from 'fs/promises';
+import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
+import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
+import { executeCommand } from '../../../sys/utils/cmd.util.js';
+import { CdAutoGitController } from '../../cd-auto-git/index.js';
+import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
+import { ExpressionContext, SeedConfig, SeedRoleConfig } from '../models/cd-app.model.js';
+import { CdCtx, CdModuleDescriptor, DirectoryNode } from '../../../sys/dev-descriptor/index.js';
+import { ComponentType } from '../../../sys/dev-descriptor/models/component-descriptor.model.js';
+
+export class CdAppService {
+  cdToken;
+  svDevDescriptors;
+  private runner!: CICdRunnerService;
+
+  constructor() {
+    // super(CdObjModel);
+    this.svDevDescriptors = new DevDescriptorService();
+  }
+
+  init(): this {
+    this.runner = new CICdRunnerService();
+    return this;
+  }
+
+  async create(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.CREATE,
+      cdObjType,
+      moduleName,
+      moduleType,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: cdToken, // Pass the cdToken if needed
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  /**
+   * Create a new application
+   * CdApi:
+   * - setup development environment
+   *    - npm
+   *    - mysql
+   *    - redis
+   *    - ssl
+   * - migration files
+   * - clone corpdesk if not yet done
+   * - create repository for new module
+   * - sync workstation to repository
+   * - sync db data
+   *
+   * @param appDescriptor
+   * @returns
+   */
+  async createByAi(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async createByJson(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async createByWizard(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async createByContext(d: CdAppDescriptor): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Creation failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async read(q?: IQuery): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    try {
+      /**
+       * The q is allowed to be null
+       * If null it is substituted by { where: {} }
+       * Which would then fetch all the data
+       */
+      const payload = this.svDevDescriptors.setEnvelope('Read', {
+        query: q ?? { where: {} },
+      });
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Read failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async update(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::update()');
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.CREATE,
+      cdObjType,
+      moduleName,
+      moduleType,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: cdToken, // Pass the cdToken if needed
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  async delete(q: IQuery): Promise<CdFxReturn<null>> {
+    try {
+      return CD_FX_FAIL; // placeholder until this method is properly implemented
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Update failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  protected getTypeId(): number {
+    return 1; // CdApp type
+  }
+
+  // Get all applications
+  async getAllModules(): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    try {
+      return await this.read(); // Fetch all applications
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Failed to retrieve all apps: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  // Get a single app by name
+  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    try {
+      // Validate input
+      if (!name.trim()) {
+        return {
+          data: null,
+          state: false,
+          message: 'Application name is required.',
+        };
+      }
+
+      // Define the query
+      const q: IQuery = {
+        select: ['cdObjId', 'cdObjName', 'cdObjGuid', 'jDetails'], // Fields to select
+        where: { cdObjName: name }, // Fetch apps by name
+      };
+
+      return await this.read(q);
+    } catch (error) {
+      return {
+        data: null,
+        state: false,
+        message: `Failed to retrieve app by name: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  async derive(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::derive()');
+    CdLog.debug(`CdAppService::derive()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::derive()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::derive()/moduleType: ${moduleType}`);
+    CdLog.debug(`CdAppService::derive()/cdToken: ${cdToken}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.DERIVE,
+      cdObjType,
+      moduleName,
+      moduleType,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: cdToken, // Pass the cdToken if needed
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::create()/workflowModel is invalid`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+  async upgrade(
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    version?: string,
+    testTasks?: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppService::upgrade()');
+    CdLog.debug(`CdAppService::upgrade()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`CdAppService::upgrade()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdAppService::upgrade()/oEnv: ${oEnv}`);
+    CdLog.debug(`CdAppService::upgrade()/repoName: ${repoName}`);
+    CdLog.debug(`CdAppService::upgrade()/version: ${version}`);
+    CdLog.debug(`CdAppService::upgrade()/testTasks: ${testTasks}`);
+
+    // 🔁 Convert version string to SemanticVersionObject
+    const semanticResult = VersionService.toSemanticObject(version ?? '');
+    if (semanticResult.state !== CdFxStateLevel.Success || !semanticResult.data) {
+      return cdFx(CdFxStateLevel.LogicalFailure, `❌ Invalid version format: "${version}"`);
+    }
+
+    const versionObj = semanticResult.data;
+    CdLog.debug(`Parsed semantic version:`, versionObj);
+
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CICdRunnerService();
+    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
+      DevModeAction.UPGRADE,
+      cdObjType,
+      moduleName,
+      oEnv,
+      {
+        actionTargetName: actionTargetName,
+        descriptor: 'CdAppDescriptor',
+        cdToken: '', // Pass the cdToken if needed
+        repoName: repoName,
+        appType: AppType.CdApi,
+        version: versionObj, // 👈 Pass object instead of string
+        testTasks: testTasks !== undefined ? String(testTasks) : undefined, // 👈 Convert to string if needed
+        oEnv: oEnv,
+      },
+    );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdAppService::upgrade()/ No valid workflowModel`,
+      };
+    }
+    return await this.runner.run(descriptor, workflowModel);
+  }
+
+
+  /**
+   * [CdAppService][scan()]
+   * Entry point for application scanning pipeline.
+   * Orchestrates: config loading → filesystem scan → descriptor build → persistence.
+   */
+  async scan(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('[CdAppService][scan()]/starting...');
+    CdLog.debug(`[CdAppService][scan()]/actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`[CdAppService][scan()]/moduleName: ${moduleName}`);
+    CdLog.debug(`[CdAppService][scan()]/moduleType: ${moduleType}`);
+
+    try {
+      const config: SeedConfig = this.loadScanConfig(moduleType);
+
+      const files = await this.scanDirectory(config.rootPath, config);
+      CdLog.debug(`[CdAppService][scan()]/files.length: ${files.length}`);
+
+      const descriptor = await this.buildAppDescriptor(moduleName, files, config);
+
+      await this.writeDescriptor(config.rootPath, descriptor);
+
+      CdLog.success('[CdAppService][scan()]/completed');
+
+      return {
+        state: true,
+        data: [],
+        message: `App scan completed successfully for ${moduleName}`,
+      };
+    } catch (error) {
+      CdLog.error(`[CdAppService][scan()]/error: ${(error as Error).message}`);
+
+      return {
+        state: false,
+        data: null,
+        message: `App scan failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  /**
+   * [CdAppService][loadScanConfig()]
+   * Loads SeedConfig for a given subsystem.
+   * Falls back to default config if not found.
+   */
+  private loadScanConfig(moduleType: string): SeedConfig {
+    CdLog.debug('[CdAppService][loadScanConfig()]/starting...');
+    CdLog.debug(`[CdAppService][loadScanConfig()]/moduleType: ${moduleType}`);
+
+    const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
+
+    try {
+      const raw = require(configPath);
+      CdLog.success('[CdAppService][loadScanConfig()]/loaded');
+      return raw as SeedConfig;
+    } catch {
+      CdLog.warning(`[CdAppService][loadScanConfig()]/fallback: ${moduleType}`);
+
+      return {
+        subsystemName: moduleType,
+        rootPath: process.cwd(),
+        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
+        includeExtensions: ['.ts', '.js', '.json'],
+        roles: [
+          { roleName: 'controller', namingPattern: '\\.controller\\.' },
+          { roleName: 'service', namingPattern: '\\.service\\.' },
+          { roleName: 'model', namingPattern: '\\.model\\.' },
+        ],
+        version: '1.0.0',
+        globals: {},
+      };
+    }
+  }
+
+  /**
+   * [CdAppService][scanDirectory()]
+   * Recursively scans filesystem based on SeedConfig rules.
+   */
+  private async scanDirectory(
+    dir: string,
+    config: SeedConfig,
+    results: string[] = [],
+  ): Promise<string[]> {
+    CdLog.debug(`[CdAppService][scanDirectory()]/dir: ${dir}`);
+
+    const entries = await import('fs/promises').then((fs) =>
+      fs.readdir(dir, { withFileTypes: true }),
+    );
+
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name);
+
+      if (config.ignorePatterns?.some((pat) => fullPath.includes(pat))) {
+        CdLog.debug(`[CdAppService][scanDirectory()]/ignored: ${fullPath}`);
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        await this.scanDirectory(fullPath, config, results);
+      } else {
+        if (config.includeExtensions?.some((ext) => fullPath.endsWith(ext))) {
+          results.push(fullPath);
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * [CdAppService][buildAppDescriptor()]
+   * Constructs CdAppDescriptor from scanned files using SeedConfig rules.
+   */
+  private async buildAppDescriptor(
+    appName: string,
+    files: string[],
+    config: SeedConfig,
+  ): Promise<CdAppDescriptor> {
+    CdLog.debug('[CdAppService][buildAppDescriptor()]/starting...');
+    CdLog.debug(`[CdAppService][buildAppDescriptor()]/appName: ${appName}`);
+
+    const modules = this.groupFilesIntoModules(files, config);
+
+    const descriptor: CdAppDescriptor = {
+      name: appName,
+      parentProjectGuid: null,
+      modules,
+      description: `Auto-generated descriptor for ${appName}`,
+      directorySignature: {
+        signatureName: `${appName}-signature`,
+        root: this.buildDirectoryTree(files, config),
+        variables: config.globals,
+      },
+    };
+
+    CdLog.success('[CdAppService][buildAppDescriptor()]/built');
+
+    return descriptor;
+  }
+
+  /**
+   * [CdAppService][groupFilesIntoModules()]
+   * Groups files into logical modules based on role resolution.
+   */
+  private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
+    CdLog.debug('[CdAppService][groupFilesIntoModules()]/starting...');
+
+    const moduleMap: Record<string, CdModuleDescriptor> = {};
+
+    for (const file of files) {
+      const matchedRole = this.resolveRole(file, config.roles);
+      const moduleName = matchedRole?.roleName || 'root';
+
+      if (!moduleMap[moduleName]) {
+        moduleMap[moduleName] = {
+          name: moduleName,
+          cdModuleType: { typeName: config.subsystemName as any },
+          ctx: this.resolveModuleContext(moduleName),
+          controllers: [],
+          services: [],
+          models: [],
+        };
+      }
+
+      this.assignFileToComponent(file, moduleMap[moduleName], config);
+    }
+
+    CdLog.debug(
+      `[CdAppService][groupFilesIntoModules()]/modules: ${Object.keys(moduleMap).length}`,
+    );
+
+    return Object.values(moduleMap);
+  }
+
+  /**
+   * [CdAppService][matchRole()]
+   * Matches file against role patterns (legacy regex-based).
+   */
+  private matchRole(file: string, roles: SeedRoleConfig[]): string {
+    for (const role of roles) {
+      if (!role.namingPattern) continue;
+
+      try {
+        const regex = new RegExp(role.namingPattern);
+        if (regex.test(file)) {
+          return role.roleName;
+        }
+      } catch {
+        CdLog.warning(`[CdAppService][matchRole()]/invalidPattern: ${role.namingPattern}`);
+      }
+    }
+
+    return 'root';
+  }
+
+  /**
+   * [CdAppService][resolveModuleContext()]
+   * Determines module context (sys/app) based on role.
+   */
+  private resolveModuleContext(roleName: string): CdCtx {
+    if (roleName === 'sys') return CdCtx.Sys;
+    return CdCtx.App;
+  }
+
+  /**
+   * [CdAppService][resolveRole()]
+   * Resolves role using namingPattern rules.
+   */
+  private resolveRole(file: string, roles: SeedRoleConfig[]): SeedRoleConfig | undefined {
+    for (const role of roles) {
+      if (!role.namingPattern) continue;
+
+      try {
+        const regex = new RegExp(role.namingPattern);
+        if (regex.test(file)) {
+          return role;
+        }
+      } catch {
+        CdLog.warning(`[CdAppService][resolveRole()]/invalidPattern: ${role.namingPattern}`);
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * [CdAppService][assignFileToComponent()]
+   * Assigns scanned file to correct module component (controller/service/model).
+   */
+  private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+    const name = basename(file);
+
+    const role = this.resolveRole(file, config.roles);
+    if (!role) return;
+
+    switch (role.roleName) {
+      case 'controller':
+        module.controllers.push({
+          name,
+          type: ComponentType.Controller,
+          fileName: file,
+        });
+        break;
+
+      case 'service':
+        module.services.push({
+          name,
+          type: ComponentType.Service,
+          fileName: file,
+        });
+        break;
+
+      case 'model':
+        module.models.push({
+          name,
+          type: ComponentType.Model,
+          fileName: file,
+          fields: [],
+        });
+        break;
+    }
+  }
+
+  /**
+   * [CdAppService][buildDirectoryTree()]
+   * Builds DirectoryNode structure for descriptor signature.
+   */
+  private buildDirectoryTree(files: string[], config: SeedConfig): DirectoryNode {
+    CdLog.debug('[CdAppService][buildDirectoryTree()]/starting...');
+
+    return {
+      name: config.subsystemName,
+      cdObjGuid: this.generateGuid(),
+      children: files.map((f) => {
+        const role = this.resolveRole(f, config.roles);
+
+        return {
+          name: basename(f),
+          cdObjGuid: this.generateGuid(),
+          isFile: true,
+          cdObjRoleName: role?.roleName,
+        };
+      }),
+    };
+  }
+
+  /**
+   * [CdAppService][writeDescriptor()]
+   * Persists generated descriptor to .cd directory.
+   */
+  private async writeDescriptor(root: string, descriptor: CdAppDescriptor) {
+    CdLog.debug('[CdAppService][writeDescriptor()]/starting...');
+    CdLog.debug(`[CdAppService][writeDescriptor()]/root: ${root}`);
+
+    const cdDir = join(root, '.cd');
+    await mkdir(cdDir, { recursive: true });
+
+    const filePath = join(cdDir, 'cd-app.descriptor.json');
+    await writeFile(filePath, JSON.stringify(descriptor, null, 2));
+
+    CdLog.success(`[CdAppService][writeDescriptor()]/filePath: ${filePath}`);
+  }
+
+  /**
+   * [CdAppService][generateGuid()]
+   * Generates pseudo GUID for descriptor nodes.
+   */
+  private generateGuid(): string {
+    return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () =>
+      ((Math.random() * 16) | 0).toString(16),
+    );
+  }
+
+  /**
+   * [CdAppService][buildExpressionContext()]
+   * Builds evaluation context (cell) for DNA execution from file path.
+   */
+  private buildExpressionContext(file: string): ExpressionContext {
+    CdLog.debug('[CdAppService][buildExpressionContext()]/starting...');
+    CdLog.debug(`[CdAppService][buildExpressionContext()]/file: ${file}`);
+
+    const name = basename(file);
+
+    const ctx: ExpressionContext = {
+      filePath: file,
+      fileName: name,
+      extension: name.split('.').pop() || '',
+      moduleHint: file.includes('/sys/') ? 'sys' : file.includes('/app/') ? 'app' : 'unknown',
+    };
+
+    CdLog.debug(`[CdAppService][buildExpressionContext()]/fileName: ${ctx.fileName}`);
+    CdLog.debug(`[CdAppService][buildExpressionContext()]/extension: ${ctx.extension}`);
+    CdLog.debug(`[CdAppService][buildExpressionContext()]/moduleHint: ${ctx.moduleHint}`);
+
+    return ctx;
+  }
+
+  /**
+   * [CdAppService][evaluateExpression()]
+   * Executes DNA expression against ExpressionContext.
+   * Converts expression → JS-compatible → evaluates result.
+   */
+  private evaluateExpression(expression: string, ctx: ExpressionContext): boolean {
+    CdLog.debug('[CdAppService][evaluateExpression()]/starting...');
+    CdLog.debug(`[CdAppService][evaluateExpression()]/expression: ${expression}`);
+
+    try {
+      let exp = expression;
+
+      // 🔷 Variable substitution
+      exp = exp.replace(/file\.name/g, `"${ctx.fileName}"`);
+      exp = exp.replace(/file\.ext/g, `"${ctx.extension}"`);
+      exp = exp.replace(/file\.path/g, `"${ctx.filePath}"`);
+      exp = exp.replace(/ctx/g, `"${ctx.moduleHint}"`);
+
+      CdLog.debug(`[CdAppService][evaluateExpression()]/afterVariables: ${exp}`);
+
+      // 🔷 Operator transformation
+      exp = exp
+        .replace(/CONTAINS/g, '.includes')
+        .replace(/STARTS_WITH/g, '.startsWith')
+        .replace(/ENDS_WITH/g, '.endsWith')
+        .replace(/EQUALS/g, '===')
+        .replace(/AND/g, '&&')
+        .replace(/OR/g, '||');
+
+      CdLog.debug(`[CdAppService][evaluateExpression()]/afterOperators: ${exp}`);
+
+      // 🔷 Execution
+      // eslint-disable-next-line no-eval
+      const result = Boolean(eval(exp));
+
+      CdLog.debug(`[CdAppService][evaluateExpression()]/result: ${result}`);
+
+      return result;
+    } catch (e) {
+      CdLog.error(`[CdAppService][evaluateExpression()]/error: ${(e as Error).message}`);
+      return false;
+    }
+  }
+}
+
+```
+
+//////////////////////////////
+There is some critical alignment within the confines of CdWire, that we must do.
+Note that cd-cli is mostly using CdWire<CdFxReturn> for returns.
+More specifically, all the AppCraftService action methods are returning CdFxReturn.
+But an interesting configuration is adopted around BaseService.invokeCdRequest().
+It is expected to return a CdWire<CdFxReturn>, yet it is calling AppCraft in the context of CdWire<ICdRequest/ICdResponse>.
+If you study the CdWire definitions, you will notice that this is not a conflict.
+Notice that the full definition of CdReturn is CdFxReturn<T>
+So T can be ICdResponse.
+CdWire: https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/corpdesk-rfc-0003-cd-wire.md
+
+```ts
+export class BaseService<T extends ObjectLiteral> extends AbstractBaseService<T> {
+async invokeCdRequest<T = any>(cdRequest?: ICdRequest): Promise<CdFxReturn<T>> {
+    
+    this.logger.logDebug('BaseService::invokeCdRequest() → Starting dispatch...');
+
+    if (!cdRequest) {
+      return { state: false, message: 'cdRequest is undefined or null.' };
+    }
+
+    const { ctx, m, c, a, args, dat } = cdRequest;
+
+    try {
+      const contextRoot = ctx.toLowerCase() === 'sys' ? 'sys' : 'app';
+      // const moduleName = `${m}`;
+      const controllerName = `${c}Controller`;
+      const controllerkebab = toKebabCase(c);
+      const modulePath = `../../${contextRoot}/${m}/controllers/${controllerkebab}.controller.js`;
+
+      this.logger.logDebug(`BaseService::invokeCdRequest() → Importing: ${modulePath}`);
+
+      const importedModule = await import(modulePath);
+      const ControllerClass = importedModule?.[controllerName];
+
+      if (!ControllerClass) {
+        return {
+          state: false,
+          message: `Controller not found: ${controllerName} at ${modulePath}`,
+        };
+      }
+
+      const controllerInstance = new ControllerClass();
+
+      if (typeof controllerInstance[a] !== 'function') {
+        return { state: false, message: `Action method not found: ${a}` };
+      }
+
+      const result = await controllerInstance[a](...(args ? Object.values(args) : []), dat);
+
+      if (!result?.state) {
+        this.logger.logError(`BaseService::invokeCdRequest() → Task failed: ${result.message}`);
+        return result;
+      }
+
+      return result as CdFxReturn<T>;
+    } catch (err: any) {
+      const message = `Error executing cdRequest: ${err.message}`;
+      this.logger.logError(`BaseService::invokeCdRequest() → ${message}`);
+      return {
+        state: false,
+        message,
+      };
+    }
+  }
+}
+```
+Extracts from CdWire.
+```ts
+export interface CdFxReturn<T> {
+  data?: T | null;
+  state: boolean | CdFxStateLevel; // Interpreted through semantic map
+  message?: string | null;
+}
+
+export enum CdFxStateLevel {
+  Error = 0,
+  Success = 1,
+  PartialSuccess = 2,
+  LogicalFailure = 3,
+  Warning = 4,
+  Recoverable = 5,
+  Info = 6,
+  Pending = 7,
+  Cancelled = 8,
+  NotFound = 9,
+  NotImplemented = 10,
+  SystemError = 11,
+  Fatal = 12,
+  Unknown = 13,
+  NetworkError = 17,
+  PermissionDenied = 18,
+}
+```
+
+////////////////////////////////////////
+
+I am thinking what you are mentioning can only be confined to BaseService.invokeCdRequest().
+Corpdesk is a very large system and I am aware this is the only method so far where we have to look for an alignment solution between CdFxReturn and ICdRequest/ICdResponse. 
+In my opinion, whatever solution we workout now should not affect wider scope effect.
+Note that BaseService.invokeCdRequest() being at the base, and assuming it is returning CdFxReturn where the data property has ICdResponse, the calling module or controller the expects to return ICdResponse can be a liberty to implement a bridging method to peel out the CdFxReturn and manage its own preferred return.
+There may not be enough of this kind of process to justify realigning all methods of cd-cli (which is already hosting lots of sys and app module relying on earlier definitions.)
+
 
