@@ -10442,4 +10442,5295 @@ In my opinion, whatever solution we workout now should not affect wider scope ef
 Note that BaseService.invokeCdRequest() being at the base, and assuming it is returning CdFxReturn where the data property has ICdResponse, the calling module or controller the expects to return ICdResponse can be a liberty to implement a bridging method to peel out the CdFxReturn and manage its own preferred return.
 There may not be enough of this kind of process to justify realigning all methods of cd-cli (which is already hosting lots of sys and app module relying on earlier definitions.)
 
+///////////////////////////
+
+One of the reasons AppCraf module 'scan' facility was the first development implementation that was taken, was to save the current state of cd-cli, cd-shell and cd-api, which have been developed over the years, to act as practical samples for defining what corpdesk is.
+
+We have now run scan on the 3 corpdesk subsystems.
+
+cd-cli: A cli orchestrator for corpdesk development automation
+cd-api: corpdesk API engine
+cd-shell: modular PWA front end build with the concept of 'shell' where its modularity is such that user can:
+- configure ui-system to use. At POC level it can switch between Bootstrap and Material
+- configure themes. The themes can be built by 3rd party 
+- relies on corpdesk modules similar to the ones for cd-cli and cd-api to operate.
+
+I have attached the 3 files.
+All the files were originally named cd-app-descriptor.json. But I have renamed them to distinguish them.
+You will notice the similarity in directory structure.
+Analise the variation and and similarity between the 3 files with the view of developing context to define what corpdesk is based on the current development intensions involving:
+- Capacity to use mathematically oriented expressions to define corpesk and use the same to build, maintain and upgrade corpdesk components.
+- 
+
+Some references:
+```ts
+/**
+ * Root SeedConfig for a specific Corpdesk subsystem
+ */
+export interface SeedConfig {
+  /** Subsystem name (e.g., cd-cli, cd-api, cd-shell) */
+  subsystemName: string;
+
+  /** Optional description for documentation */
+  description?: string;
+
+  /** Root path for scanning (relative or absolute) */
+  rootPath: string;
+
+  /** Expected file/directory roles and types mapping */
+  roles: SeedRoleConfig[];
+
+  /** Optional global variables or conventions for this subsystem */
+  globals?: Record<string, any>;
+
+  /** Optional patterns for ignoring files/folders during scanning */
+  ignorePatterns?: string[];
+
+  /** Optional template references to scaffold new artifacts */
+  templates?: TemplateReference[];
+
+  /** Optional metadata to guide mathematical expression engine */
+  expressionMetadata?: ExpressionMetadata;
+
+  /** Versioning to track evolution of seed */
+  version?: string;
+
+  includeExtensions?: string[]; // e.g., [".ts", ".js", ".json"]
+}
+
+/**
+ * Role-specific configuration
+ * Maps cd_obj_role to expected types, naming patterns, and scanning rules
+ */
+export interface SeedRoleConfig {
+  /** Role name (e.g., bootstrap, controller, service) */
+  roleName: string;
+
+  /** Role GUID (if applicable) */
+  roleGuid?: string;
+
+  /** Expected object types for this role */
+  allowedTypes?: CdObjType[];
+
+  /** Naming conventions (regex, prefix/suffix, kebab/camel case rules) */
+  namingPattern?: string;
+
+  /** Optional sub-role hierarchy (nested roles) */
+  children?: SeedRoleConfig[];
+
+  /** Optional weight/priority for scanning or analysis */
+  weight?: number;
+
+  /** Optional template reference to scaffold new instances of this role */
+  templateRef?: string;
+}
+
+/**
+ * Template reference for scaffolding
+ */
+export interface TemplateReference {
+  /** Name/label of the template */
+  name: string;
+
+  /** Path to template file or stub */
+  path: string;
+
+  /** Optional roles this template applies to */
+  roles?: string[];
+
+  /** Optional metadata for template processing */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Metadata to guide mathematical expressions and grammar
+ */
+export interface ExpressionMetadata {
+  /** Optional grammar rules for transcriber */
+  grammarRules?: string[];
+
+  /** Optional weights for purity/pollution scoring */
+  scoringWeights?: Record<string, number>;
+
+  /** Optional flags for LLM prompt generation */
+  promptFlags?: Record<string, any>;
+}
+
+/**
+ * cd_obj_type enumeration
+ */
+export type CdObjType =
+  | "app_file"
+  | "app_directory"
+  | "module"
+  | "controller"
+  | "model"
+  | "service"
+  | "utility"
+  | "plugin"
+  | "code"
+  | "unknown";
+
+/**
+ * Example usage: SeedConfig for cd-cli
+ */
+const cdCliSeed: SeedConfig = {
+  subsystemName: "cd-cli",
+  rootPath: "./cd-cli",
+  roles: [
+    {
+      roleName: "bootstrap",
+      allowedTypes: ["app_file"],
+      namingPattern: "^main\\.ts$",
+      weight: 100,
+    },
+    {
+      roleName: "controller",
+      allowedTypes: ["controller"],
+      namingPattern: ".*Controller\\.ts$",
+    },
+    {
+      roleName: "service",
+      allowedTypes: ["service"],
+      namingPattern: ".*Service\\.ts$",
+    },
+    {
+      roleName: "module",
+      allowedTypes: ["app_directory", "module"],
+      children: [
+        {
+          roleName: "controller",
+          allowedTypes: ["controller"],
+        },
+        {
+          roleName: "service",
+          allowedTypes: ["service"],
+        },
+      ],
+    },
+  ],
+  ignorePatterns: ["node_modules", "*.spec.ts"],
+  templates: [
+    {
+      name: "default-controller",
+      path: "./templates/controller.template.ts",
+      roles: ["controller"],
+    },
+  ],
+  expressionMetadata: {
+    grammarRules: ["role -> type", "children recursion allowed"],
+    scoringWeights: { purity: 0.7, pollution: 0.3 },
+    promptFlags: { generateLLMPrompt: true },
+  },
+  version: "1.0.0",
+};
+
+export interface SeedRoleConfig {
+  /** Role name (e.g., bootstrap, controller, service) */
+  roleName: string;
+
+  /** Role GUID (if applicable) */
+  roleGuid?: string;
+
+  /** Expected object types for this role */
+  allowedTypes?: CdObjType[];
+
+  /** Naming conventions (regex, prefix/suffix, kebab/camel case rules) */
+  namingPattern?: string;
+
+  /**
+   * DNA Expression instead of regex
+   * Example:
+   * "file.name CONTAINS '.controller.'"
+   */
+  expression?: string;
+
+  /** Optional sub-role hierarchy (nested roles) */
+  children?: SeedRoleConfig[];
+
+  /** Optional weight/priority for scanning or analysis */
+  weight?: number;
+
+  /** Optional template reference to scaffold new instances of this role */
+  templateRef?: string;
+}
+
+export interface ExpressionContext {
+  filePath: string;
+  fileName: string;
+  extension: string;
+  moduleHint?: string;
+  depth?: number;
+}
+```
+
+///////////////////////////////////////////////
+You may have lost context with this question.
+I was experiencing very poor internet connection.
+So I am repeating it with suggestion on how to use dynamic import to resolve a variable.
+loadScanConfig() is locked in its own configPath.
+But configPath should be relative the cdObj being scanned.
+
+Another subtle issue:
+The signature for scan() was also mislieading.
+The correct one should be:
+async scan(
+    actionTargetName: string,
+    cdObjName: string,
+    cdObjTypeName: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<ICdResponse>>
+
+Earlier the 2nd and 3rd argument read: moduleName and moduleTypeName respectively.
+
+Expected correction on loadScanConfig()
+```ts
+// Old version
+// const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
+
+// Corrected version
+    const configPath = join(CD_OBJ_PATH, '.cd', `${moduleType}.seed.json`);
+```
+
+I have used CD_OBJ_PATH as place holder to represent the area that needs to be resolved based on given command.
+I need you to refactor loadScanConfig() to resolve CD_OBJ_PATH.
+Note that currently, the following is what is always logged.
+But the path should be variable based on the directory being scanned. Even though cd-cli is the orchestrator, this should not be locked to it.
+```log
+[2026-03-29 19:37:11] 🛠️ [CdAppService][loadScanConfig()] configPath:, /home/emp-12/cd-cli/.cd/test-bed.seed.json
+```
+
+
+loadScanConfig() is called here.
+We need to expand the arguments to include 
+```ts
+async scan(
+    actionTargetName: string,
+    cdObjName: string,
+    cdObjTypeName: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<ICdResponse>> {
+    CdLog.debug(`[CdAppService][scan()] start`);
+    CdLog.debug(`[CdAppService][scan()] actionTargetName:, ${actionTargetName}`);
+    CdLog.debug(`[CdAppService][scan()] cdObjName:, ${cdObjName}`);
+    CdLog.debug(`[CdAppService][scan()] cdObjTypeName:, ${cdObjTypeName}`);
+
+    try {
+      const config = this.loadScanConfig(cdObjTypeName);
+      CdLog.debug(`[CdAppService][scan()] config.rootPath:, ${config.rootPath}`);
+
+      const files = await this.scanDirectory(config.rootPath, config);
+      CdLog.debug(`[CdAppService][scan()] files.count:, ${files.length}`);
+
+      const descriptor = await this.buildAppDescriptor(cdObjName, files, config);
+      CdLog.debug(`[CdAppService][scan()] descriptor.name:, ${descriptor.name}`);
+
+      await this.writeDescriptor(config.rootPath, descriptor);
+
+      CdLog.success(`[CdAppService][scan()] completed successfully`);
+
+      return {
+        state: CdFxStateLevel.Success,
+        data: {
+          app_state: {
+            success: true,
+            info: {
+              messages: [`Scan completed for ${cdObjName}`],
+              code: null,
+              app_msg: null,
+            },
+            sess: null,
+            cache: null,
+          },
+          data: descriptor,
+        },
+        message: 'Scan completed successfully',
+      };
+    } catch (error) {
+      CdLog.error(`[CdAppService][scan()] error:, ${(error as Error).message}`);
+
+      return {
+        state: CdFxStateLevel.Error,
+        data: null,
+        message: 'Scan failed',
+      };
+    }
+  }
+
+  /**
+   * ============================================================
+   * 🔷 CONFIG LOADING
+   * ============================================================
+   */
+  private loadScanConfig(cdObjTypeName: string): SeedConfig {
+    CdLog.debug(`[CdAppService][loadScanConfig()] moduleType:, ${cdObjTypeName}`);
+
+    // const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
+    const configPath = join(CD_OBJ_PATH, '.cd', `${cdObjTypeName}.seed.json`);
+    CdLog.debug(`[CdAppService][loadScanConfig()] configPath:, ${configPath}`);
+
+    try {
+      const raw = require(configPath);
+      CdLog.success(`[CdAppService][loadScanConfig()] loaded custom config`);
+      return raw as SeedConfig;
+    } catch {
+      CdLog.warning(`[CdAppService][loadScanConfig()] fallback to default config`);
+
+      return {
+        subsystemName: cdObjTypeName,
+        rootPath: process.cwd(),
+        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
+        includeExtensions: ['.ts', '.js', '.json'],
+        roles: [
+          { roleName: 'controller', namingPattern: '\\.controller\\.' },
+          { roleName: 'service', namingPattern: '\\.service\\.' },
+          { roleName: 'model', namingPattern: '\\.model\\.' },
+        ],
+        version: '1.0.0',
+        globals: {},
+      };
+    }
+  }
+```
+To work out the value of APP_PATH, we need to look at `${cdObjName}-workshop.model.ts`
+You can dynamically import { cdApiVersionControl } from '../workshop/cd-app/workflow/test-bed/${cdObjName}-workshop.model.js'; This can allow us to search and resolved the required values.
+To get this to work, loadScanConfig() will have to introduce an argument that resolve ${cdObjName}
+Below is example for cd-shell-workshop.model.ts
+Note that 
+```ts
+// src/CdCli/app/app-craft/workshop/cd-app/workflow/test-bed/cd-shell-workshop.model.ts
+import { DevModeAction, getCreateRegistry, getRegistry, IDevModeInstructionDescriptor } from "../../../../../../sys/dev-mode/index.js";
+import { AppType, envCdShell, envCdShellApp, envCdShellSys, envTestBed, envWorkshop, VersionControlDescriptor } from "../../../../../../sys/dev-descriptor/index.js";
+import { CdFxReturn } from "../../../../../../sys/base/i-base.js";
+
+export const cdApiVersionControl: VersionControlDescriptor = {
+  name: 'CdShell',
+  repository: {
+    name: 'cd-shell',
+    url: 'https://github.com/corpdesk/cd-shell.git',
+    type: 'git',
+    enabled: true,
+    isPrivate: false,
+    credentials: {
+      repoHost: 'corpdesk', // Organization or user hosting the repository
+    },
+    directories: [
+      {
+        environment: envWorkshop,
+        path: '/home/emp-12/cd-shell/dist/CdShell/app/app-craft/workshop/cd-shell/output/cd-shell',
+        purpose: 'Auto-generated source files',
+        isDefault: true,
+      },
+      {
+        environment: envTestBed,
+        path: '/home/emp-12/cd-shell/src/CdShell/app/cd-shell',
+        purpose: 'Integration and live testing',
+      },
+      {
+        environment: envCdShellApp,
+        path: '/home/emp-12/cd-shell/src/CdShell/app',
+        purpose: 'cd-shell apps directory',
+      },
+      {
+        environment: envCdShellSys,
+        path: '/home/emp-12/cd-shell/src/CdShell/sys',
+        purpose: 'cd-shell system directory',
+      },
+      {
+        environment: envCdShell,
+        path: '/home/emp-12/cd-shell',
+        purpose: 'cd-shell root directory',
+      },
+    ],
+  },
+};
+
+export function getItemRegistry(
+  action: DevModeAction,
+  moduleName: string,
+  appType: AppType,
+  actionTargetName: string,
+): CdFxReturn<IDevModeInstructionDescriptor[]> {
+  return getRegistry(action, moduleName, appType, actionTargetName);
+}
+```
+
+Note that the above file relies on the following
+```ts
+// src/CdCli/sys/dev-descriptor/models/environment.model.ts
+export enum CdEnvName {
+  WORKSHOP = 'workshop',
+  TEST_BED = 'test-bed',
+  PRODUCTION = 'production',
+  CI_CD = 'ci-cd',
+  SANDBOX = 'sandbox',
+  CUSTOM = 'custom',
+  LOCAL_CD_API_APP = 'local-cd-api-app',
+  LOCAL_CD_API_SYS = 'local-cd-api-sys',
+  LOCAL_CD_API = 'local-cd-api',
+  LOCAL_CD_CLI = 'local-cd-cli',
+  LOCAL_CD_CLI_APP = 'local-cd-cli-app',
+  LOCAL_CD_CLI_SYS = 'local-cd-cli-sys',
+  LOCAL_CD_SHELL = 'local-cd-shell',
+  LOCAL_CD_SHELL_APP = 'local-cd-shell-app',
+  LOCAL_CD_SHELL_SYS = 'local-cd-shell-sys',
+  LOCAL_FRONTEND = 'local-frontend',
+  LOCAL_PWA = 'local-pwa',
+}
+
+export interface EnvironmentVariablesDescriptor extends BaseDescriptor {
+  global?: Record<string, string>; // Variables common across all environments
+  perEnvironment?: Record<string, Record<string, string>>; // Variables per environment (e.g., local, staging, production)
+}
+
+// ─── Environments ──────────────────────────────────────────────────────────────
+
+export const envWorkshop: EnvironmentDescriptor = {
+  name: CdEnvName.WORKSHOP,
+  type: 'dev',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envTestBed: EnvironmentDescriptor = {
+  name: CdEnvName.TEST_BED,
+  type: 'testing',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envCdApiApp: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_CD_API_APP,
+  type: 'local-cd-api-app',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envCdApiSys: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_CD_API_SYS,
+  type: 'local-cd-api-sys',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envCdApi: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_CD_API,
+  type: 'local-cd-api',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envProduction: EnvironmentDescriptor = {
+  name: CdEnvName.PRODUCTION,
+  type: 'deployment',
+  workstation: workstations.find((w) => w.name === 'emp-07') || defaultWorkstation,
+};
+
+/**
+ * This environment represents the local development environment for the CD CLI tool. It is used for developing and testing the CD CLI application itself, including its commands, features, and integrations. The workstation is set to 'emp-12', which is the primary development machine for CD CLI development. This environment can be used to run the CD CLI in a local context, allowing developers to iterate quickly and validate changes before they are integrated into the main codebase or deployed to other environments.
+ */
+export const envCdCli: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_CD_CLI,
+  type: 'local-cd-cli',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envCdCliApp: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_CD_CLI_APP,
+  type: 'local-cd-cli-app',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envCdCliSys: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_CD_CLI_SYS,
+  type: 'local-cd-cli-sys',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+/**
+ * This environment represents the local development environment for the CD SHELL tool. 
+ * It is used for developing and testing the CD SHELL application itself, including its commands, features, and integrations. The workstation is set to 'emp-12', which is the primary development machine for CD SHELL development. This environment can be used to run the CD SHELL in a local context, allowing developers to iterate quickly and validate changes before they are integrated into the main codebase or deployed to other environments.
+ */
+
+export const envCdShell: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_CD_SHELL,
+  type: 'local-cd-shell',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envCdShellApp: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_CD_SHELL_APP,
+  type: 'local-cd-shell-app',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envCdShellSys: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_CD_CLI_SYS,
+  type: 'local-cd-cli-sys',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envFrontend: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_FRONTEND,
+  type: 'local-cd-cli',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+export const envPwa: EnvironmentDescriptor = {
+  name: CdEnvName.LOCAL_PWA,
+  type: 'local-cd-cli',
+  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+};
+
+```
+
+//////////////////////////////
+
+You can dynamically import { cdApiVersionControl } from '../workshop/cd-app/workflow/test-bed/${cdObjName}-workshop.model.js';
+
+This can allow us to search and resolved the required values.
+
+/////////////////////////////////////
+
+
+Based on your analysis, you can review the following definitions (only where necessary)
+For example:
+- you can compare your updated recommendation for mathematical expression to be enforcable via interface definitions.
+- while I was with the scan output, I figure in an automated system, every node of records should have a property for last update. This also considers possibility of selecting nodes or branches to work on.
+
+```ts
+// src/CdCli/app/app-craft/models/cd-app.model.ts
+
+/**
+ * Root SeedConfig for a specific Corpdesk subsystem
+ */
+export interface SeedConfig {
+  /** Subsystem name (e.g., cd-cli, cd-api, cd-shell) */
+  subsystemName: string;
+
+  /** Optional description for documentation */
+  description?: string;
+
+  /** Root path for scanning (relative or absolute) */
+  rootPath: string;
+
+  /** Expected file/directory roles and types mapping */
+  roles: SeedRoleConfig[];
+
+  /** Optional global variables or conventions for this subsystem */
+  globals?: Record<string, any>;
+
+  /** Optional patterns for ignoring files/folders during scanning */
+  ignorePatterns?: string[];
+
+  /** Optional template references to scaffold new artifacts */
+  templates?: TemplateReference[];
+
+  /** Optional metadata to guide mathematical expression engine */
+  expressionMetadata?: ExpressionMetadata;
+
+  /** Versioning to track evolution of seed */
+  version?: string;
+
+  includeExtensions?: string[]; // e.g., [".ts", ".js", ".json"]
+}
+
+/**
+ * Role-specific configuration
+ * Maps cd_obj_role to expected types, naming patterns, and scanning rules
+ */
+export interface SeedRoleConfig {
+  /** Role name (e.g., bootstrap, controller, service) */
+  roleName: string;
+
+  /** Role GUID (if applicable) */
+  roleGuid?: string;
+
+  /** Expected object types for this role */
+  allowedTypes?: CdObjType[];
+
+  /** Naming conventions (regex, prefix/suffix, kebab/camel case rules) */
+  namingPattern?: string;
+
+  /** Optional sub-role hierarchy (nested roles) */
+  children?: SeedRoleConfig[];
+
+  /** Optional weight/priority for scanning or analysis */
+  weight?: number;
+
+  /** Optional template reference to scaffold new instances of this role */
+  templateRef?: string;
+}
+
+/**
+ * Template reference for scaffolding
+ */
+export interface TemplateReference {
+  /** Name/label of the template */
+  name: string;
+
+  /** Path to template file or stub */
+  path: string;
+
+  /** Optional roles this template applies to */
+  roles?: string[];
+
+  /** Optional metadata for template processing */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Metadata to guide mathematical expressions and grammar
+ */
+export interface ExpressionMetadata {
+  /** Optional grammar rules for transcriber */
+  grammarRules?: string[];
+
+  /** Optional weights for purity/pollution scoring */
+  scoringWeights?: Record<string, number>;
+
+  /** Optional flags for LLM prompt generation */
+  promptFlags?: Record<string, any>;
+}
+
+/**
+ * cd_obj_type enumeration
+ */
+export type CdObjType =
+  | "app_file"
+  | "app_directory"
+  | "module"
+  | "controller"
+  | "model"
+  | "service"
+  | "utility"
+  | "plugin"
+  | "code"
+  | "unknown";
+
+/**
+ * Example usage: SeedConfig for cd-cli
+ */
+const cdCliSeed: SeedConfig = {
+  subsystemName: "cd-cli",
+  rootPath: "./cd-cli",
+  roles: [
+    {
+      roleName: "bootstrap",
+      allowedTypes: ["app_file"],
+      namingPattern: "^main\\.ts$",
+      weight: 100,
+    },
+    {
+      roleName: "controller",
+      allowedTypes: ["controller"],
+      namingPattern: ".*Controller\\.ts$",
+    },
+    {
+      roleName: "service",
+      allowedTypes: ["service"],
+      namingPattern: ".*Service\\.ts$",
+    },
+    {
+      roleName: "module",
+      allowedTypes: ["app_directory", "module"],
+      children: [
+        {
+          roleName: "controller",
+          allowedTypes: ["controller"],
+        },
+        {
+          roleName: "service",
+          allowedTypes: ["service"],
+        },
+      ],
+    },
+  ],
+  ignorePatterns: ["node_modules", "*.spec.ts"],
+  templates: [
+    {
+      name: "default-controller",
+      path: "./templates/controller.template.ts",
+      roles: ["controller"],
+    },
+  ],
+  expressionMetadata: {
+    grammarRules: ["role -> type", "children recursion allowed"],
+    scoringWeights: { purity: 0.7, pollution: 0.3 },
+    promptFlags: { generateLLMPrompt: true },
+  },
+  version: "1.0.0",
+};
+
+export interface SeedRoleConfig {
+  /** Role name (e.g., bootstrap, controller, service) */
+  roleName: string;
+
+  /** Role GUID (if applicable) */
+  roleGuid?: string;
+
+  /** Expected object types for this role */
+  allowedTypes?: CdObjType[];
+
+  /** Naming conventions (regex, prefix/suffix, kebab/camel case rules) */
+  namingPattern?: string;
+
+  /**
+   * DNA Expression instead of regex
+   * Example:
+   * "file.name CONTAINS '.controller.'"
+   */
+  expression?: string;
+
+  /** Optional sub-role hierarchy (nested roles) */
+  children?: SeedRoleConfig[];
+
+  /** Optional weight/priority for scanning or analysis */
+  weight?: number;
+
+  /** Optional template reference to scaffold new instances of this role */
+  templateRef?: string;
+}
+
+export interface ExpressionContext {
+  filePath: string;
+  fileName: string;
+  extension: string;
+  moduleHint?: string;
+  depth?: number;
+}
+
+
+```
+
+
+```ts
+// src/CdCli/sys/dev-descriptor/models/cd-app.model.ts
+export interface CdAppDescriptor extends BaseDescriptor {
+  $schema?: string;
+  name: string;
+  projectGuid?: string;
+  parentProjectGuid: string | null;
+  modules: CdModuleDescriptor[];
+  cdCi?: CiCdDescriptor;
+  description?: string;
+  language?: LanguageDescriptor; // getLanguageByName(name: string,languages: LanguageDescriptor[],)
+  environments?: EnvironmentDescriptor[]; // Development environment settings
+  versionControl?: VersionControlDescriptor; // Version control details
+  directorySignature?: DirectorySignatureDescriptor;
+}
+
+export enum AppType {
+  Frontend = 'frontend', // User-facing web or app interfaces
+  Api = 'api', // Backend APIs
+  CdApi = 'cd-api', // Corpdesk backend APIs
+  CdApiModule = 'cd-module',
+  PushServer = 'push-server', // Services for push notifications
+  Cli = 'cli', // Command-line interfaces
+  CdCli = 'cd-cli', // Corpdesk command-line interfaces
+  Pwa = 'pwa', // Progressive Web Apps
+  DesktopPwa = 'desktop-pwa', // PWAs optimized for desktop
+  Mobile = 'mobile', // General mobile apps
+  MobileHybrid = 'mobile-hybrid', // Hybrid apps using shared codebases
+  MobileNative = 'mobile-native', // Fully native mobile apps
+  Desktop = 'desktop', // Desktop applications
+  Iot = 'iot', // Internet of Things services/devices
+  Game = 'game', // Game applications
+  Embedded = 'embedded', // Embedded systems or firmware
+  Robotics = 'robotics', // Robotics and mechatronics
+  Plugin = 'plugin', // Plugins or extensions
+  Microservice = 'microservice', // Small, modular backend services
+  SDN = 'sdn', // Software-Defined Networking applications
+  CbO = 'cbo', // CloudBrix Orchestrator
+}
+
+export interface DirectorySignatureDescriptor extends BaseDescriptor {
+  /** The root label of this signature (e.g., 'cd-api-v1-standard') */
+  signatureName: string;
+  /** The root node of the tree */
+  root: DirectoryNode;
+  /** Global variables used across the signature (e.g., Namespace, Scope) */
+  variables?: Record<string, string>;
+}
+
+export interface DirectoryNode extends BaseDescriptor {
+  /** The segment name. Can be a literal 'src' or a variable '${slug}' */
+  name: string;
+  /** corpdesk cd-obj-guid used for unique id */
+  cdObjGuid: string;
+  /** As per corpdesk database. Represents the architectural role (S, A, U, Leaf, Genome, etc.) */
+  cdObjRoleName?: string;
+  /** As per corpdesk database. Represents the architectural role (S, A, U, Leaf, Genome, etc.) */
+  cdObjRoleGuid?: string;
+  /** As per corpdesk database. Represents the parent object */
+  parentObj?: string;
+  /** Weighting for the Auditor/Scanner logic */
+  weight?: number;
+  /** If true, this node is a file; otherwise, it is a directory */
+  isFile?: boolean;
+  /** Optional: Template reference for file content generation */
+  templateRef?: string;
+  /** Recursive children (for directories) */
+  children?: DirectoryNode[];
+}
+```
+
+//////////////////////////////////////////////////
+
+Before getting lost in the details, I want us to home back to birds eye view on what we have achieved. 
+
+- conceptualize mathematical expressions as the definition for what corpdesk is and its conventions.
+- use some of the concepts to develop a scanner for corpdesk subsystems
+  - the interface of scanned result is CdAppDescriptor type.
+  - CdAppDescriptorinterface has directorySignature?: DirectorySignatureDescriptor; which is one of the new compliance for corpdesk systems.
+- use scanner to scan the current state of cd-cli, cd-api, cd-shell
+- we analize the results for cd-cli and cd-api (cd-shell chould not be analyzed together with all due to free account limitations)
+- analysis result is used to imporove mathematical expressions
+
+What we are after:
+To define and implement a modern software which has the capacity develops and maintains itself in a recursive manner.
+- Rather than being fully under AI, it is constrained by conventions that are embeded in its DNA. So it can only work within the laid down rules.
+- Apart from the the mathematical jargons, the tangible process is tied to traditional development process where it is easy for humans to intervene or interact in a intuitive way.
+
+Suggested Direction of work:
+- Focus of ability to develop a POC with the end goal being:
+Instructions to develop a simple corpdesk module -> module is developed -> module is tested -> module is refined based on test result -> controlled cycles of tests and improvements -> final result is posted to cd-registry -> simulated android downloads and is installed and is working as designed.
+
+- but the journey to above need to be broken down into several achievable pieces.
+
+Do an overview plan.
+
+We will keep interacting to break down that plan into small achievable goals like the achieved pieces we have above.
+
+
+///////////////////////////////////////////////////////////
+
+Assuming we go by baby steps and focus on just 'improved scanning'.
+So we just say we want to do another scanning tests.
+While we have a number of improvements, we want to focus on having a good scan for zygote(main.ts)
+Apart from other expected data to produce, given the improved interfaces, the output should give us something that can be used to replicate and evolve the element with the set constratins and conventions.
+I have updated some new features but there could be some details still missing.
+Give it some refinement to conform.
+You can give me back all the methods in their improved state to meet the above requirement.
+```ts
+// src/CdCli/app/app-craft/services/cd-app.service.ts
+
+/* eslint-disable style/brace-style */
+
+import { basename, join, relative, sep } from 'path';
+import { GenericService } from '../../../sys/base/generic-service.js';
+import { HttpService } from '../../../sys/base/http.service.js';
+import {
+  CD_FX_FAIL,
+  CdAssertReturn,
+  CdFxReturn,
+  CdFxStateLevel,
+  ICdResponse,
+  IQuery,
+} from '../../../sys/base/i-base.js';
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
+import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
+import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
+import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
+import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
+import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
+import { mkdir, writeFile } from 'fs/promises';
+import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
+import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
+import { executeCommand } from '../../../sys/utils/cmd.util.js';
+import { CdAutoGitController } from '../../cd-auto-git/index.js';
+import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
+import {
+  CdExpression,
+  ExpressionContext,
+  SeedConfig,
+  SeedRoleConfig,
+} from '../models/cd-app.model.js';
+import { CdCtx, CdModuleDescriptor, DirectoryNode } from '../../../sys/dev-descriptor/index.js';
+import { ComponentType } from '../../../sys/dev-descriptor/models/component-descriptor.model.js';
+// import { cdApiVersionControl } from '../workshop/cd-app/workflow/test-bed/cd-shell-workshop.model.js';
+
+export class CdAppService {
+  cdToken;
+  svDevDescriptors;
+  private runner!: CICdRunnerService;
+
+  constructor() {
+    // super(CdObjModel);
+    this.svDevDescriptors = new DevDescriptorService();
+  }
+
+  /**
+   * ============================================================
+   * 🔷 PUBLIC: SCAN ENTRY POINT (Aligned with CdWire)
+   * ============================================================
+   */
+  async scan(
+    actionTargetName: string, // e.g., 'test-bed'
+    cdObjName: string, // e.g., 'cd-cli'
+    oEnv: string, // e.g., 'cd-app'
+    cdToken: string,
+  ): Promise<CdFxReturn<ICdResponse>> {
+    CdLog.debug(`[CdAppService][scan()] start`);
+    CdLog.debug(`[CdAppService][scan()] actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`[CdAppService][scan()] cdObjName: ${cdObjName}`);
+    CdLog.debug(`[CdAppService][scan()] oEnv: ${oEnv}`);
+
+    try {
+      // 1. Dynamically resolve the physical path (CD_OBJ_PATH)
+      const cdObjPath = await this.resolveCdObjPath(cdObjName, oEnv);
+      CdLog.debug(`[CdAppService][scan()] resolved CD_OBJ_PATH: ${cdObjPath}`);
+
+      // 2. Load config relative to the resolved path
+      const config = await this.loadScanConfig(cdObjName, cdObjPath);
+
+      // Ensure the scanner targets the resolved path, not the CLI's cwd
+      const targetRoot = cdObjPath;
+      CdLog.debug(`[CdAppService][scan()] config.rootPath set to: ${targetRoot}`);
+
+      const files = await this.scanDirectory(targetRoot, config);
+      CdLog.debug(`[CdAppService][scan()] files.count: ${files.length}`);
+
+      const descriptor = await this.buildAppDescriptor(cdObjName, files, config);
+      CdLog.debug(`[CdAppService][scan()] descriptor.name: ${descriptor.name}`);
+
+      await this.writeDescriptor(targetRoot, descriptor);
+
+      CdLog.success(`[CdAppService][scan()] completed successfully`);
+
+      return {
+        state: CdFxStateLevel.Success,
+        data: {
+          app_state: {
+            success: true,
+            info: { messages: [`Scan completed for ${cdObjName}`], code: null, app_msg: null },
+            sess: null,
+            cache: null,
+          },
+          data: descriptor,
+        },
+        message: 'Scan completed successfully',
+      };
+    } catch (error) {
+      CdLog.error(`[CdAppService][scan()] error: ${(error as Error).message}`);
+      return {
+        state: CdFxStateLevel.Error,
+        data: null,
+        message: `Scan failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  /**
+   * 🔷 RESOLVE CD_OBJ_PATH
+   * Uses dynamic import to locate the workshop model and extract the environment path.
+   */
+
+  private async resolveCdObjPath(cdObjName: string, oEnv: string): Promise<string> {
+    const method = 'resolveCdObjPath';
+
+    try {
+      if (!cdObjName || !oEnv) {
+        CdLog.error(
+          `[CdAppService][${method}] Invalid inputs cdObjName:, ${cdObjName}, oEnv:, ${oEnv}`,
+        );
+        throw new Error(`Invalid inputs provided`);
+      }
+
+      // Construct dynamic path to the workshop model
+      const modelPath = `../workshop/cd-app/workflow/${oEnv}/${cdObjName}-workshop.model.js`;
+
+      CdLog.debug(`[CdAppService][${method}] modelPath: ${modelPath}`);
+
+      // Dynamic import
+      const module = await import(modelPath);
+      const vcd = module.cdApiVersionControl;
+
+      if (!vcd?.repository?.directories) {
+        CdLog.error(`[CdAppService][${method}] Invalid VCD structure:, ${JSON.stringify(vcd)}`);
+        throw new Error(`Invalid VersionControlDescriptor in ${modelPath}`);
+      }
+
+      CdLog.debug(`[CdAppService][${method}] directories:, ${vcd.repository.directories}`);
+
+      let normalizedEnvName = cdObjName.toLowerCase();
+      normalizedEnvName = `local-${normalizedEnvName}`; // ensure prefix for matching, e.g., 'local-cd-shell'
+
+      // ✅ Correct matching: environment.name vs oEnv
+      const dirEntry = vcd.repository.directories.find((d: any) => {
+        const envName = d.environment?.name?.toLowerCase();
+
+        CdLog.debug(
+          `[CdAppService][${method}] checking env:, ${envName}, against:, ${normalizedEnvName}`,
+        );
+
+        return envName === normalizedEnvName;
+      });
+
+      if (!dirEntry) {
+        CdLog.debug(
+          `[CdAppService][${method}] No match found for env:, ${normalizedEnvName} in:, ${cdObjName}`,
+        );
+        throw new Error(`Environment '${oEnv}' not found in ${cdObjName} workshop model.`);
+      }
+
+      if (!dirEntry.path) {
+        CdLog.debug(
+          `[CdAppService][${method}] Match found but path missing:, ${JSON.stringify(dirEntry)}`,
+        );
+        throw new Error(`Resolved directory has no path for ${cdObjName}`);
+      }
+
+      CdLog.debug(`[CdAppService][${method}] Resolved path:, ${dirEntry.path}`);
+
+      return dirEntry.path;
+    } catch (err) {
+      CdLog.error(
+        `[CdAppService][${method}] ERROR resolving path for:, ${cdObjName}, error:, ${(err as Error).message}`,
+      );
+      throw new Error(`Failed to resolve path for ${cdObjName}: ${(err as Error).message}`);
+    }
+  }
+
+  /**
+   * 🔷 CONFIG LOADING (Refactored)
+   * Resolved CD_OBJ_PATH is used as the base for .cd/ seed files.
+   */
+  private async loadScanConfig(cdObjName: string, cdObjPath: string): Promise<any> {
+    CdLog.debug(`[CdAppService][loadScanConfig()] cdObjName: ${cdObjName}`);
+
+    const configPath = join(cdObjPath, '.cd', `${cdObjName}.seed.json`);
+    CdLog.debug(`[CdAppService][loadScanConfig()] configPath: ${configPath}`);
+
+    try {
+      // In ESM/Dynamic environments, use fs or dynamic import for JSON
+      // If using Node 'require', ensure absolute path is handled
+      const raw = require(configPath);
+      CdLog.success(`[CdAppService][loadScanConfig()] loaded custom config from ${cdObjPath}`);
+      return raw;
+    } catch {
+      CdLog.warning(`[CdAppService][loadScanConfig()] fallback to default config at ${cdObjPath}`);
+
+      return {
+        subsystemName: cdObjName,
+        rootPath: cdObjPath, // CRITICAL: rootPath must match the object being scanned
+        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
+        includeExtensions: ['.ts', '.js', '.json'],
+        roles: [
+          { roleName: 'controller', namingPattern: '\\.controller\\.' },
+          { roleName: 'service', namingPattern: '\\.service\\.' },
+          { roleName: 'model', namingPattern: '\\.model\\.' },
+        ],
+        version: '1.0.0',
+        globals: {},
+      };
+    }
+  }
+
+  /**
+   * ============================================================
+   * 🔷 FILE SYSTEM SCAN
+   * ============================================================
+   */
+  private async scanDirectory(
+    dir: string,
+    config: SeedConfig,
+    results: string[] = [],
+  ): Promise<string[]> {
+    CdLog.debug(`[CdAppService][scanDirectory()] dir:, ${dir}`);
+
+    const fs = await import('fs/promises');
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+
+    CdLog.debug(`[CdAppService][scanDirectory()] entries.count:, ${entries.length}`);
+
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name);
+
+      if (config.ignorePatterns?.some((p) => fullPath.includes(p))) {
+        CdLog.debug(`[CdAppService][scanDirectory()] ignored:, ${fullPath}`);
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        await this.scanDirectory(fullPath, config, results);
+      } else {
+        if (config.includeExtensions?.some((ext) => fullPath.endsWith(ext))) {
+          results.push(fullPath);
+          CdLog.debug(`[CdAppService][scanDirectory()] added file:, ${fullPath}`);
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 DESCRIPTOR BUILD
+   * ============================================================
+   */
+  private async buildAppDescriptor(
+    appName: string,
+    files: string[],
+    config: SeedConfig,
+  ): Promise<CdAppDescriptor> {
+    CdLog.debug(`[CdAppService][buildAppDescriptor()] appName:, ${appName}`);
+    CdLog.debug(`[CdAppService][buildAppDescriptor()] files.count:, ${files.length}`);
+
+    const modules = this.groupFilesIntoModules(files, config);
+    CdLog.debug(`[CdAppService][buildAppDescriptor()] modules.count:, ${modules.length}`);
+
+    const rootTree = this.buildDirectoryTree(config.rootPath, files, config);
+
+    CdLog.success(`[CdAppService][buildAppDescriptor()] descriptor built`);
+
+    return {
+      name: appName,
+      parentProjectGuid: null,
+      modules,
+      description: `Auto-generated descriptor for ${appName}`,
+      directorySignature: {
+        signatureName: `${appName}-signature`,
+        root: rootTree,
+        variables: config.globals,
+      },
+    };
+  }
+
+  /**
+   * ============================================================
+   * 🔷 MODULE GROUPING
+   * ============================================================
+   */
+  private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
+    CdLog.debug(`[CdAppService][groupFilesIntoModules()] start`);
+
+    const moduleMap: Record<string, CdModuleDescriptor> = {};
+
+    for (const file of files) {
+      const role = this.resolveRole(file, config.roles);
+      const moduleName = role?.roleName || 'root';
+
+      CdLog.debug(`[CdAppService][groupFilesIntoModules()] file:, ${file}`);
+      CdLog.debug(`[CdAppService][groupFilesIntoModules()] resolvedRole:, ${moduleName}`);
+
+      if (!moduleMap[moduleName]) {
+        moduleMap[moduleName] = {
+          name: moduleName,
+          cdModuleType: { typeName: config.subsystemName as any },
+          ctx: this.resolveModuleContext(moduleName),
+          controllers: [],
+          services: [],
+          models: [],
+        };
+      }
+
+      this.assignFileToComponent(file, moduleMap[moduleName], config);
+    }
+
+    CdLog.debug(
+      `[CdAppService][groupFilesIntoModules()] modules.total:, ${Object.keys(moduleMap).length}`,
+    );
+
+    return Object.values(moduleMap);
+  }
+
+  private resolveModuleContext(roleName: string): CdCtx {
+    return roleName === 'sys' ? CdCtx.Sys : CdCtx.App;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 ROLE RESOLUTION (DNA + REGEX)
+   * ============================================================
+   */
+  private resolveRole(file: string, roles: SeedRoleConfig[]): SeedRoleConfig | undefined {
+    const ctx = this.buildExpressionContext(file);
+
+    for (const role of roles) {
+      // if (role.expression && this.evaluateExpression(role.expression, ctx)) {
+      //   return role;
+      // }
+      if (role.expression && this.evaluateExpression(role.expression, ctx)) {
+        return role;
+      }
+
+      if (role.namingPattern) {
+        try {
+          if (new RegExp(role.namingPattern).test(file)) {
+            return role;
+          }
+        } catch {}
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 COMPONENT ASSIGNMENT
+   * ============================================================
+   */
+  private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+    const name = basename(file);
+    const role = this.resolveRole(file, config.roles);
+
+    if (!role) return;
+
+    switch (role.roleName) {
+      case 'controller':
+        module.controllers.push({ name, type: ComponentType.Controller, fileName: file });
+        break;
+      case 'service':
+        module.services.push({ name, type: ComponentType.Service, fileName: file });
+        break;
+      case 'model':
+        module.models.push({ name, type: ComponentType.Model, fileName: file, fields: [] });
+        break;
+    }
+  }
+
+  /**
+   * ============================================================
+   * 🔷 TRUE TREE BUILDER (HIERARCHICAL)
+   * ============================================================
+   */
+  private buildDirectoryTree(rootPath: string, files: string[], config: SeedConfig): DirectoryNode {
+    CdLog.debug(`[CdAppService][buildDirectoryTree()] start`);
+
+    const root: DirectoryNode = {
+      name: config.subsystemName,
+      cdObjGuid: this.generateGuid(),
+      children: [],
+    };
+
+    for (const file of files) {
+      const relPath = relative(rootPath, file);
+      const parts = relPath.split(/[/\\]+/);
+
+      // CdLog.debug(`[CdAppService][buildDirectoryTree()] file:, ${file}`);
+      // CdLog.debug(`[CdAppService][buildDirectoryTree()] relPath:, ${relPath}`);
+
+      let current = root;
+
+      parts.forEach((part, index) => {
+        let next = current.children?.find((c) => c.name === part);
+
+        if (!next) {
+          const role = this.resolveRole(file, config.roles);
+
+          next = {
+            name: part,
+            cdObjGuid: this.generateGuid(),
+            isFile: index === parts.length - 1,
+            cdObjRoleName: role?.roleName,
+            weight: this.assignWeight(role?.roleName),
+            children: [],
+          };
+
+          current.children = current.children || [];
+          current.children.push(next);
+
+          // CdLog.debug(`[CdAppService][buildDirectoryTree()] nodeCreated:, ${part}`);
+          // CdLog.debug(`[CdAppService][buildDirectoryTree()] role:, ${role?.roleName}`);
+        }
+
+        current = next;
+      });
+    }
+
+    CdLog.success(`[CdAppService][buildDirectoryTree()] tree built`);
+
+    return root;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 WEIGHT ASSIGNMENT (Stage 5 Hook)
+   * ============================================================
+   */
+  private assignWeight(roleName?: string): number {
+    const weights: Record<string, number> = {
+      controller: 8,
+      service: 8,
+      model: 8,
+      sys: 9,
+      app: 8,
+      utils: 5,
+    };
+
+    return roleName ? weights[roleName] || 1 : 1;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 WRITE DESCRIPTOR
+   * ============================================================
+   */
+  private async writeDescriptor(root: string, descriptor: CdAppDescriptor) {
+    CdLog.debug(`[CdAppService][writeDescriptor()] root:, ${root}`);
+
+    const cdDir = join(root, '.cd');
+    await mkdir(cdDir, { recursive: true });
+
+    const filePath = join(cdDir, 'cd-app.descriptor.json');
+
+    await writeFile(filePath, JSON.stringify(descriptor, null, 2));
+
+    CdLog.success(`[CdAppService][writeDescriptor()] filePath:, ${filePath}`);
+  }
+
+  /**
+   * ============================================================
+   * 🔷 EXPRESSION ENGINE
+   * ============================================================
+   */
+  private buildExpressionContext(file: string): ExpressionContext {
+    const name = basename(file);
+
+    return {
+      filePath: file,
+      fileName: name,
+      extension: name.split('.').pop() || '',
+      moduleHint: file.includes('/sys/') ? 'sys' : file.includes('/app/') ? 'app' : 'unknown',
+    };
+  }
+
+  private evaluateExpression(expression: CdExpression, ctx: ExpressionContext): boolean {
+    switch (expression.op) {
+      case 'contains':
+        return String(ctx[expression.field]).includes(expression.value);
+
+      case 'startsWith':
+        return String(ctx[expression.field]).startsWith(expression.value);
+
+      case 'endsWith':
+        return String(ctx[expression.field]).endsWith(expression.value);
+
+      case 'equals':
+        return String(ctx[expression.field]) === expression.value;
+
+      case 'and':
+        return expression.conditions.every((cond) => this.evaluateExpression(cond, ctx));
+
+      case 'or':
+        return expression.conditions.some((cond) => this.evaluateExpression(cond, ctx));
+
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * ============================================================
+   * 🔷 UTIL
+   * ============================================================
+   */
+  private generateGuid(): string {
+    return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () =>
+      ((Math.random() * 16) | 0).toString(16),
+    );
+  }
+
+  private computeMetrics(root: DirectoryNode) {
+    let total = 0;
+    let compliant = 0;
+    let foreign = 0;
+
+    function walk(node: DirectoryNode) {
+      total++;
+
+      if (node.isCdCompliant) compliant++;
+      if (node.isCdForeign) foreign++;
+
+      node.children?.forEach(walk);
+    }
+
+    walk(root);
+
+    return {
+      CR: compliant / total,
+      infectionRatio: foreign / total,
+      totalNodes: total,
+      compliantNodes: compliant,
+      foreignNodes: foreign,
+    };
+  }
+}
+
+```
+
+/////////////////////////////////
+
+```ts
+private evaluateExpression(expression: CdExpression, ctx: ExpressionContext): boolean {
+    const method = 'evaluateExpression';
+
+    CdLog.debug(`[CdAppService][${method}] expression:, ${JSON.stringify(expression)}`);
+    CdLog.debug(`[CdAppService][${method}] ctx:, ${JSON.stringify(ctx)}`);
+
+    let result = false;
+
+    switch (expression.op) {
+      case 'contains':
+        result = String(ctx[expression.field]).includes(expression.value);
+        break;
+
+      case 'startsWith':
+        result = String(ctx[expression.field]).startsWith(expression.value);
+        break;
+
+      case 'endsWith':
+        result = String(ctx[expression.field]).endsWith(expression.value);
+        break;
+
+      case 'equals':
+        result = String(ctx[expression.field]) === expression.value;
+        break;
+
+      case 'and':
+        result = expression.conditions.every((cond) => this.evaluateExpression(cond, ctx));
+        break;
+
+      case 'or':
+        result = expression.conditions.some((cond) => this.evaluateExpression(cond, ctx));
+        break;
+
+      default:
+        CdLog.warning(`[CdAppService][${method}] unknown op:, ${expression.op}`);
+        result = false;
+    }
+
+    CdLog.debug(`[CdAppService][${method}] result:, ${result}`);
+    return result;
+  }
+```
+
+```ts
+export type CdExpression =
+  | {
+      op: 'contains' | 'startsWith' | 'endsWith' | 'equals';
+      field: keyof ExpressionContext;
+      value: string;
+    }
+  | {
+      op: 'and' | 'or';
+      conditions: CdExpression[];
+    };
+```
+
+//////////////////////////////////////////////
+
+I have run another test with cd-cli. But this time, I would like you to see what you can read from the saved descriptor.
+
+Below are some key interfaces:
+
+```ts
+// src/CdCli/sys/dev-descriptor/models/cd-app.model.ts
+import type { CdRequest, ICdRequest } from '../../base/i-base.js';
+import type { BaseDescriptor } from './base-descriptor.model.js';
+import type { CdModuleDescriptor } from './cd-module-descriptor.model.js';
+import type { CiCdDescriptor } from './cicd-descriptor.model.js';
+import type { EnvironmentDescriptor } from './environment.model.js';
+import CdLog from '../../cd-comm/controllers/cd-logger.controller.js';
+import { LanguageDescriptor } from './language.model.js';
+import { LicenseDescriptor } from './license.model.js';
+import {
+  CdControllerDescriptor,
+  CdModelDescriptor,
+  CdServiceDescriptor,
+  ContributorDescriptor,
+  VersionControlDescriptor,
+} from '../index.js';
+
+export interface CdAppDescriptor extends BaseDescriptor {
+  $schema?: string;
+  name: string;
+  projectGuid?: string;
+  parentProjectGuid: string | null;
+  modules: CdModuleDescriptor[];
+  cdCi?: CiCdDescriptor;
+  description?: string;
+  language?: LanguageDescriptor; // getLanguageByName(name: string,languages: LanguageDescriptor[],)
+  environments?: EnvironmentDescriptor[]; // Development environment settings
+  versionControl?: VersionControlDescriptor; // Version control details
+  directorySignature?: DirectorySignatureDescriptor;
+}
+
+export enum AppType {
+  Frontend = 'frontend', // User-facing web or app interfaces
+  Api = 'api', // Backend APIs
+  CdApi = 'cd-api', // Corpdesk backend APIs
+  CdApiModule = 'cd-module',
+  PushServer = 'push-server', // Services for push notifications
+  Cli = 'cli', // Command-line interfaces
+  CdCli = 'cd-cli', // Corpdesk command-line interfaces
+  Pwa = 'pwa', // Progressive Web Apps
+  DesktopPwa = 'desktop-pwa', // PWAs optimized for desktop
+  Mobile = 'mobile', // General mobile apps
+  MobileHybrid = 'mobile-hybrid', // Hybrid apps using shared codebases
+  MobileNative = 'mobile-native', // Fully native mobile apps
+  Desktop = 'desktop', // Desktop applications
+  Iot = 'iot', // Internet of Things services/devices
+  Game = 'game', // Game applications
+  Embedded = 'embedded', // Embedded systems or firmware
+  Robotics = 'robotics', // Robotics and mechatronics
+  Plugin = 'plugin', // Plugins or extensions
+  Microservice = 'microservice', // Small, modular backend services
+  SDN = 'sdn', // Software-Defined Networking applications
+  CbO = 'cbo', // CloudBrix Orchestrator
+}
+
+export interface DirectorySignatureDescriptor extends BaseDescriptor {
+  /** The root label of this signature (e.g., 'cd-api-v1-standard') */
+  signatureName: string;
+  /** The root node of the tree */
+  root: DirectoryNode;
+  /** Global variables used across the signature (e.g., Namespace, Scope) */
+  variables?: Record<string, string>;
+
+  // 🔥 NEW — Graph edges
+  edges?: CdGraphEdge[];
+}
+
+export interface DirectoryNode extends BaseDescriptor {
+  /** The segment name. Can be a literal 'src' or a variable '${slug}' */
+  name: string;
+  /** corpdesk cd-obj-guid used for unique id */
+  cdObjGuid: string;
+  /** As per corpdesk database. Represents the architectural role (S, A, U, Leaf, Genome, etc.) */
+  cdObjRoleName?: string;
+  /** As per corpdesk database. Represents the architectural role (S, A, U, Leaf, Genome, etc.) */
+  cdObjRoleGuid?: string;
+  /** As per corpdesk database. Represents the parent object */
+  parentObj?: string;
+  /** Weighting for the Auditor/Scanner logic */
+  weight?: number;
+  /** If true, this node is a file; otherwise, it is a directory */
+  isFile?: boolean;
+  /** Optional: Template reference for file content generation */
+  templateRef?: string;
+  /** Recursive children (for directories) */
+  children?: DirectoryNode[];
+
+  // 🔥 NEW — Audit Classification
+  classification?: 'expected' | 'omega-valid' | 'omega-invalid';
+
+  classificationReason?: string;
+
+  /**
+   * lastUpdated can be used for:
+   * Incremental scanning
+   * scan only nodes where lastUpdated changed
+   * ✅ Selective AI execution
+   * apply fix only to selected branch
+   * ✅ Version-aware evolution
+   * compare snapshots over time
+   */
+  lastUpdated?: number; // ISO timestamp of last update
+
+  isSelected?: boolean;
+
+  // ✅ CD compliance system
+  isCdCompliant?: boolean;
+  isCdForeign?: boolean;
+
+  // 🔥 recommended (future-safe)
+  cdState?: 'compliant' | 'foreign' | 'unknown';
+  origin?: 'generated' | 'scanned' | 'external';
+}
+
+export interface ScanNode {
+  path: string;
+  name: string;
+  isFile: boolean;
+  extension?: string;
+
+  role?: string;
+  module?: string;
+
+  lastModified: number;
+
+  children?: ScanNode[];
+
+  // 🔥 NEW: compliance tracking
+  isCdCompliant?: boolean;
+  isCdForeign?: boolean;
+  cdState: 'compliant' | 'foreign' | 'unknown';
+}
+
+export interface ComplianceMetrics {
+  CR: number;
+  infectionRatio: number;
+
+  totalNodes: number;
+  expectedNodes: number;
+  unknownNodes: number;
+}
+
+/**
+ * Add capacity for:
+ * cross-module references
+ * dependency mapping
+ * future AI reasoning
+ */
+export interface CdGraphEdge {
+  from: string; // cdObjGuid
+  to: string; // cdObjGuid
+  type: 'hierarchy' | 'dependency' | 'reference';
+}
+
+```
+
+
+/////////////////////////////////////
+One of the main focus of the upgrade of the AppCraftService.scan() was to test capacity for capturing zygote structure in terms of dependancy mapping and assesment of the code structure during the booding process. Was there significant capture in this regard.
+Below are some relevant interfaces.
+
+```ts
+// src/CdCli/app/app-craft/models/cd-app.model.ts
+
+/**
+ * Root SeedConfig for a specific Corpdesk subsystem
+ */
+export interface SeedConfig {
+  /** Subsystem name (e.g., cd-cli, cd-api, cd-shell) */
+  subsystemName: string;
+
+  /** Optional description for documentation */
+  description?: string;
+
+  /** Root path for scanning (relative or absolute) */
+  rootPath: string;
+
+  /** Expected file/directory roles and types mapping */
+  roles: SeedRoleConfig[];
+
+  /** Optional global variables or conventions for this subsystem */
+  globals?: Record<string, any>;
+
+  /** Optional patterns for ignoring files/folders during scanning */
+  ignorePatterns?: string[];
+
+  /** Optional template references to scaffold new artifacts */
+  templates?: TemplateReference[];
+
+  /** Optional metadata to guide mathematical expression engine */
+  expressionMetadata?: ExpressionMetadata;
+
+  /** Versioning to track evolution of seed */
+  version?: string;
+
+  includeExtensions?: string[]; // e.g., [".ts", ".js", ".json"]
+}
+
+/**
+ * Role-specific configuration
+ * Maps cd_obj_role to expected types, naming patterns, and scanning rules
+ */
+export interface SeedRoleConfig {
+  /** Role name (e.g., bootstrap, controller, service) */
+  roleName: string;
+
+  /** Role GUID (if applicable) */
+  roleGuid?: string;
+
+  /** Expected object types for this role */
+  allowedTypes?: CdObjType[];
+
+  /** Naming conventions (regex, prefix/suffix, kebab/camel case rules) */
+  namingPattern?: string;
+
+  /** Optional sub-role hierarchy (nested roles) */
+  children?: SeedRoleConfig[];
+
+  /** Optional weight/priority for scanning or analysis */
+  weight?: number;
+
+  /** Optional template reference to scaffold new instances of this role */
+  templateRef?: string;
+
+  /** Optional expression for advanced role classification; for CR calculation */
+  required?: boolean;
+}
+
+/**
+ * Template reference for scaffolding
+ */
+export interface TemplateReference {
+  /** Name/label of the template */
+  name: string;
+
+  /** Path to template file or stub */
+  path: string;
+
+  /** Optional roles this template applies to */
+  roles?: string[];
+
+  /** Optional metadata for template processing */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Metadata to guide mathematical expressions and grammar
+ */
+export interface ExpressionMetadata {
+  /** Optional grammar rules for transcriber */
+  grammarRules?: string[];
+
+  /** Optional weights for purity/pollution scoring */
+  scoringWeights?: Record<string, number>;
+
+  /** Optional flags for LLM prompt generation */
+  promptFlags?: Record<string, any>;
+}
+
+/**
+ * cd_obj_type enumeration
+ */
+export type CdObjType =
+  | 'app_file'
+  | 'app_directory'
+  | 'module'
+  | 'controller'
+  | 'model'
+  | 'service'
+  | 'utility'
+  | 'plugin'
+  | 'code'
+  | 'unknown';
+
+/**
+ * Example usage: SeedConfig for cd-cli
+ */
+const cdCliSeed: SeedConfig = {
+  subsystemName: 'cd-cli',
+  rootPath: './cd-cli',
+  roles: [
+    {
+      roleName: 'bootstrap',
+      allowedTypes: ['app_file'],
+      namingPattern: '^main\\.ts$',
+      weight: 100,
+    },
+    {
+      roleName: 'controller',
+      allowedTypes: ['controller'],
+      namingPattern: '.*Controller\\.ts$',
+    },
+    {
+      roleName: 'service',
+      allowedTypes: ['service'],
+      namingPattern: '.*Service\\.ts$',
+    },
+    {
+      roleName: 'module',
+      allowedTypes: ['app_directory', 'module'],
+      children: [
+        {
+          roleName: 'controller',
+          allowedTypes: ['controller'],
+        },
+        {
+          roleName: 'service',
+          allowedTypes: ['service'],
+        },
+      ],
+    },
+  ],
+  ignorePatterns: ['node_modules', '*.spec.ts'],
+  templates: [
+    {
+      name: 'default-controller',
+      path: './templates/controller.template.ts',
+      roles: ['controller'],
+    },
+  ],
+  expressionMetadata: {
+    grammarRules: ['role -> type', 'children recursion allowed'],
+    scoringWeights: { purity: 0.7, pollution: 0.3 },
+    promptFlags: { generateLLMPrompt: true },
+  },
+  version: '1.0.0',
+};
+
+export interface SeedRoleConfig {
+  /** Role name (e.g., bootstrap, controller, service) */
+  roleName: string;
+
+  /** Role GUID (if applicable) */
+  roleGuid?: string;
+
+  /** Expected object types for this role */
+  allowedTypes?: CdObjType[];
+
+  /** Naming conventions (regex, prefix/suffix, kebab/camel case rules) */
+  namingPattern?: string;
+
+  /**
+   * DNA Expression instead of regex
+   * Example:
+   * "file.name CONTAINS '.controller.'"
+   */
+  // expression?: string;
+  expression?: CdExpression;
+
+  /** Optional sub-role hierarchy (nested roles) */
+  children?: SeedRoleConfig[];
+
+  /** Optional weight/priority for scanning or analysis */
+  weight?: number;
+
+  /** Optional template reference to scaffold new instances of this role */
+  templateRef?: string;
+
+  // 🔥 NEW — partition definition (replaces hardcoded S/A/U)
+  partitions?: string[];
+
+  // 🔥 NEW — omega policy
+  omegaPolicy?: {
+    allowUnknown?: boolean;
+    classifyExtensions?: boolean;
+  };
+}
+
+export interface ExpressionContext {
+  filePath: string;
+  fileName: string;
+  extension: string;
+  moduleHint?: string;
+  depth?: number;
+  isFile?: boolean;
+  parentPath?: string;
+}
+
+// export type CdExpression =
+//   | { op: 'contains'; field: keyof ExpressionContext; value: string }
+//   | { op: 'equals'; field: keyof ExpressionContext; value: string }
+//   | { op: 'regex'; field: keyof ExpressionContext; value: string }
+//   | { op: 'and'; expressions: CdExpression[] }
+//   | { op: 'or'; expressions: CdExpression[] };
+
+export type CdExpression =
+  | {
+      op: 'contains' | 'startsWith' | 'endsWith' | 'equals';
+      field: keyof ExpressionContext;
+      value: string;
+    }
+  | {
+      op: 'and' | 'or';
+      conditions: CdExpression[];
+    };
+
+export interface CdAuditResult {
+  CR: number;
+  I: number;
+
+  totalNodes: number;
+  expectedNodes: number;
+  omegaNodes: number;
+
+  omega: {
+    nodeGuid: string;
+    classification: 'omega-valid' | 'omega-invalid';
+    reason: string;
+  }[];
+}
+
+
+
+```
+//////////////////////////////
+I have to points that you can comment on:
+1. Mathematical expressions access:
+At the moment, you are refering to the mathematical expressions from your contxtualization.
+I had earlier made it available at https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/5.%20integration-of-mathematical-expression.md.
+We may need to work on how to formaliz its standard reference point.
+There can be optional sources with policy of prioritization.
+One of the optionas I also thought about was cd-api which is already in the corpdesk ecosystem.
+Its access can also be done in a way that it can be cached, selectively queried, etc.
+We dont have to work on the details now but I thought it is something that we must start strategizing on.
+2. Need for review of currently save version:
+What we have done so far may prompt us to consider reviewing the last saved state of the expressions model.
+See below for your consideration:
+
+```ts
+Below is a **refined, RFC-grade + patent-ready document (v2)** that integrates:
+
+* Your original vision
+* Real implementation constraints (scan outputs)
+* Corrections from analysis
+* The **Ω (Omega) closure model**
+* Explicit **role-resolution + graph formalism**
+* Alignment with **CdWire + ICdRequest/ICdResponse**
+
+It is written to be:
+
+* defensible
+* implementable
+* extensible toward asymptotic improvement (as you noted)
+
+---
+
+# 📄 RFC: Corpdesk Mathematical Architecture & Autonomous Development Framework (v2)
+
+**RFC ID:** corpdesk-rfc-0004
+**Title:** Mathematical Representation, Generation, and Audit of Software Systems
+**Status:** Draft (Revision 2)
+**Author:** Corpdesk Architecture
+**Date:** 2026-03-30
+
+---
+
+# 1. Abstract
+
+This document defines a **computable architectural framework** for software systems within Corpdesk.
+
+The framework enables:
+
+* Deterministic **generation** of system structure (Genesis)
+* Deterministic **analysis and scoring** of existing systems (Audit)
+* Continuous **alignment toward an asymptotic ideal architecture**
+
+All execution is performed through:
+
+* **ICdRequest / ICdResponse**
+* Transported via **CdWire**
+
+The system models software as a:
+
+> **role-driven, descriptor-governed semantic graph with explicit boundary definition**
+
+This allows both human and AI agents to:
+
+* construct systems
+* evaluate compliance
+* detect structural anomalies
+* iteratively improve toward industrial-grade architecture
+
+---
+
+# 2. Terminology
+
+* **CdWire**: Transport layer enforcing request/response execution.
+* **ICdRequest / ICdResponse**: Standard execution contract.
+* **AppCraft**: Execution engine for architectural transformation.
+* **Genesis Engine (Layer 1)**: Forward constructor from formal definition.
+* **Executor (Layer 2)**: Logic population engine.
+* **Auditor (Scanner)**: Reverse compiler from filesystem to formal model.
+* **Γ (Genome)**: Descriptor defining expected structure.
+* **Σ (Dimensionality)**: Role set derived from Γ.
+* **E (Expected Set)**: Elements conforming to Γ.
+* **Ω (Omega Set)**: Elements outside Γ.
+* **CR (Conformity Ratio)**: Degree of structural compliance.
+* **I (Infection Ratio)**: Degree of structural deviation.
+
+---
+
+# 3. System Overview
+
+Corpdesk defines a **bidirectional architecture compiler**:
+
+```text
+Formal Model ⇄ Semantic Graph ⇄ Filesystem Structure ⇄ Execution Model
+```
+
+---
+
+## 3.1 Modes of Operation
+
+### 3.1.1 Genesis Mode (Forward Construction)
+
+* Input: Formal model (Γ, Σ, partitions)
+* Output: Filesystem structure
+
+---
+
+### 3.1.2 Audit Mode (Reverse Analysis)
+
+* Input: Filesystem
+* Output:
+
+  * Semantic graph
+  * Formal reconstruction
+  * Compliance metrics (CR, I, Ω)
+
+---
+
+# 4. Mathematical Model
+
+---
+
+## 4.1 System Definition
+
+A Corpdesk system is defined as:
+
+```math
+System = (N, E)
+```
+
+Where:
+
+* **N** = set of nodes (files, directories, modules)
+* **E** = set of edges (hierarchy, dependency, reference)
+
+---
+
+## 4.2 Expected and Omega Sets
+
+```math
+E_expected = f(Γ)
+Ω = N − E_expected
+```
+
+Where:
+
+* **E_expected** = nodes satisfying descriptor Γ
+* **Ω** = nodes outside defined structure
+
+---
+
+## 4.3 Structural Composition
+
+```math
+System = E_expected ∪ Ω
+```
+
+---
+
+## 4.4 Dimensionality (Σ)
+
+```math
+Σ = Γ.roles
+```
+
+Examples:
+
+* cd-cli → {controller, service}
+* cd-api → {controller, service, model}
+* cd-shell → {ui-adaptor, render-engine, service}
+
+---
+
+## 4.5 Partitions (Symmetry)
+
+Partitions are defined by Γ:
+
+```math
+Partitions = Γ.partitions
+```
+
+Examples:
+
+```text
+{sys, app, utils}
+{sys, app, ui}
+```
+
+---
+
+## 4.6 Role Resolution Function
+
+Roles are not statically defined but computed:
+
+```math
+Role(node) = f(Expression, Context)
+```
+
+Where:
+
+* Expression from Γ (e.g., naming rules)
+* Context = filePath, fileName, extension
+
+---
+
+# 5. Compliance Metrics
+
+---
+
+## 5.1 Conformity Ratio (CR)
+
+```math
+CR = |E_actual ∩ E_expected| / |E_expected|
+```
+
+Weighted:
+
+```math
+CR_w = Σ(w(n) ∈ matched) / Σ(w(n) ∈ E_expected)
+```
+
+---
+
+## 5.2 Infection Ratio (I)
+
+```math
+I = |Ω| / |N|
+```
+
+---
+
+## 5.3 Omega Classification
+
+```math
+Ω = Ω_valid ∪ Ω_invalid
+```
+
+Where:
+
+* **Ω_valid** → extensions (plugins, experiments)
+* **Ω_invalid** → violations
+
+---
+
+# 6. Production Rules (Genesis)
+
+---
+
+## 6.1 Root Expansion
+
+Defined by Γ:
+
+```math
+Root → Γ.rootStructure
+```
+
+---
+
+## 6.2 Partition Expansion
+
+```math
+∀ p ∈ Partitions:
+    create(p)
+```
+
+---
+
+## 6.3 Dimensional Expansion
+
+```math
+∀ module ∈ System:
+    module → Σ
+```
+
+---
+
+## 6.4 Descriptor Anchoring
+
+```text
+.cd/app-descriptor.json MUST exist
+```
+
+Defines Γ.
+
+---
+
+# 7. Audit Engine (Scanner)
+
+---
+
+## 7.1 Responsibilities
+
+* Traverse filesystem
+* Build semantic graph
+* Resolve roles via expressions
+* Classify nodes into:
+
+  * E_expected
+  * Ω
+* Compute CR and I
+
+---
+
+## 7.2 Output Descriptor (Γ Output)
+
+```json
+{
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "formula": {
+    "Σ": [],
+    "partitions": [],
+    "Γ": ".cd/app-descriptor.json"
+  },
+  "metrics": {
+    "CR": 0.92,
+    "I": 0.08
+  },
+  "omega": [
+    {
+      "node": "tmp/",
+      "classification": "violation",
+      "reason": "not defined in Γ"
+    }
+  ]
+}
+```
+
+---
+
+# 8. Execution Architecture (CdWire)
+
+---
+
+## 8.1 Mandatory Execution Model
+
+All operations MUST pass through:
+
+* ICdRequest
+* ICdResponse
+* CdWire
+
+---
+
+## 8.2 CLI Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant cd-cli
+    participant DevModeService
+    participant CdWire
+    participant AppCraft
+
+    User->>cd-cli: scan --cd-app
+    cd-cli->>DevModeService: execute
+    DevModeService->>CdWire: ICdRequest
+    CdWire->>AppCraft: scan()
+    AppCraft-->>CdWire: ICdResponse
+    CdWire-->>cd-cli: response
+```
+
+---
+
+## 8.3 AI Agent Flow
+
+```mermaid
+sequenceDiagram
+    participant AI
+    participant CdWire
+    participant AppCraft
+
+    AI->>CdWire: ICdRequest
+    CdWire->>AppCraft: execute
+    AppCraft-->>CdWire: ICdResponse
+    CdWire-->>AI: structured output
+```
+
+---
+
+# 9. AI Integration Model
+
+---
+
+## 9.1 AI Roles
+
+AI acts as:
+
+* Generator (Genesis)
+* Analyzer (Audit)
+* Optimizer (Alignment)
+
+---
+
+## 9.2 AI Input
+
+```json
+{
+  "CR": 0.82,
+  "I": 0.18,
+  "omega": [...],
+  "graph": {...}
+}
+```
+
+---
+
+## 9.3 AI Capabilities
+
+* generate missing roles
+* remove or classify Ω_invalid
+* propose structural improvements
+* evolve Γ
+
+---
+
+# 10. Implementation Alignment
+
+---
+
+## 10.1 Current State
+
+| Feature           | Status     |
+| ----------------- | ---------- |
+| Scan traversal    | ✅          |
+| Descriptor output | ✅          |
+| Role inference    | ⚠️ partial |
+| Graph model       | ❌          |
+| CR computation    | ❌          |
+| Ω classification  | ❌          |
+
+---
+
+## 10.2 Required Enhancements
+
+* Implement role resolution engine
+* Introduce graph model (nodes + edges)
+* Compute CR and I
+* Classify Ω
+* Extend descriptor schema
+
+---
+
+# 11. Claims (Patent-Oriented)
+
+---
+
+## Claim 1
+
+A system that models software architecture as a **semantic graph governed by descriptor-defined constraints (Γ)**.
+
+---
+
+## Claim 2
+
+A **bidirectional compiler** transforming:
+
+* formal representations → filesystem structures
+* filesystem structures → formal representations
+
+---
+
+## Claim 3
+
+A method for computing **architectural conformity (CR)** using expected structural sets.
+
+---
+
+## Claim 4
+
+A method for computing **structural deviation (Ω)** and infection ratio (I).
+
+---
+
+## Claim 5
+
+A method of classifying unexpected elements into:
+
+* valid extensions
+* structural violations
+
+---
+
+## Claim 6
+
+A unified execution model using:
+
+* ICdRequest
+* ICdResponse
+* CdWire
+
+---
+
+# 12. Conclusion
+
+Corpdesk defines a system where:
+
+* software is **computed, not guessed**
+* structure is **derived, not manually imposed**
+* compliance is **measured, not subjective**
+
+The system operates toward an **asymptotic ideal architecture**, where:
+
+```math
+lim (iterations → ∞) I → 0
+```
+
+while preserving controlled extensibility via Ω_valid.
+
+---
+
+# 13. Next Steps
+
+1. Extend scanner:
+
+   * classify E vs Ω
+   * compute CR and I
+
+2. Introduce graph model
+
+3. Implement role resolution engine
+
+4. Integrate AI via CdWire
+
+---
+
+# 🏁 Final Note
+
+This version now:
+
+✅ aligns with your real systems (cd-cli, cd-api, cd-shell)
+✅ removes rigid assumptions (fixed Σ, strict tree)
+✅ introduces Ω as a formal closure
+✅ is implementable
+✅ is defensible for RFC and patent positioning
+
+---
+
+If you want next, I can:
+
+👉 Generate the **exact TypeScript implementation plan (scanner → graph → Ω classification → CR engine)**
+👉 Or produce **RFC-0005: Role Resolution Engine (Expression Processor)** which is the missing executable core
+
+This is now a **coherent, industrial-grade foundation**.
+
+```
+
+//////////////////////////////////////////
+
+
+I am thinking that what make corpdesk to develop all these automation capacity is the RFCs that keeps it consistent.
+And the RFCs are not tied to Node.js TypeScript. They are universal rules.
+Ofcourse as we test it with different languages, we will be refining the RFCs to maintain relevance.
+
+bove here, you have made reference to namingStrategy.
+Note that we already have the RFC-0001 that takes care of the casing.
+What we can do is to make sure the RFCs are integrated into the mathematical expressions so that they find their way to the SeedConfig in a consistent way.
+So it is ok to have the namingStrategy to translate what is in mathematical expression (which picks updates from RFCs)
+
+# Corpdesk Standard Development Architecture (RFC-0001)
+
+## 1. Introduction
+
+Corpdesk is a framework for building modular, distributed, and extensible applications across both backend and frontend environments. It is intentionally designed to support development automation through both CLI and AI-assisted methods. At the same time, Corpdesk follows conventional software development practices, allowing traditional developers to engage without needing to learn new tools or concepts—development can proceed entirely without the CLI or AI if preferred. This document defines the structural, naming, and organizational standards used in Corpdesk development. It provides guidance for both human developers and machine agents, forming a foundation for automated development, versioning, and runtime modularity.
+
+This standard is language-agnostic, though illustrations in this document use Node.js with TypeScript for clarity.
+
+---
+
+## 2. File Structure and Hierarchy
+
+### 2.1 General Directory Hierarchy
+
+```
+<root-directory>/src/<AppName-PascalCase>/
+                           ├── sys(kebab-case)/
+                           │   └── <list-of-core-modules-kebab-case>/
+                           └── app(kebab-case)/
+                               └── <list-of-feature-modules-kebab-case>/
+```
+
+### 2.2 Integration Consideration
+
+Corpdesk modules may coexist or integrate with other applications or frameworks as long as the structural and naming conventions defined here are strictly preserved.
+
+---
+
+## 3. Application Structure
+
+### 3.1 Application Types
+
+Common Corpdesk applications include:
+
+* **cd-api**: Backend RPC-style service layer over HTTP using a structured command envelope (CdWire). Note: Corpdesk does not follow the RESTful protocol. Instead, it uses a streamlined RPC-style interface called CdWire — a structured, JSON-based command envelope.
+* **cd-cli**: Developer Command Line Interface.
+* **cd-shell**: Progressive Web Application based front end for corpdesk system.
+
+Inside a given src directory, the system resides in a PascalCase-named root directory (CdApi, CdCli, CdPwa, etc).
+
+---
+
+## 4. Modules
+
+### 4.1 Module Types
+
+* **Sys Modules**: Core internal modules that power the Corpdesk system.
+  Examples: `user`, `moduleman`, `scheduler`, `cd-cli`, `cd-dev`, etc.
+
+* **App Modules**: Feature or business-specific modules, including third-party extensions.
+  Examples: `cd-hrm`, `cd-accts`, `coops`, `cd-ai`, etc.
+
+### 4.2 Module Structure
+
+---
+
+## 4.2 Module Structure
+
+Each module consists of one or more standard directories. At minimum:
+
+```text
+<module-name-kebab-case>/
+  ├── controllers(kebab-case)/
+  ├── models(kebab-case)/
+  └── services(kebab-case)/
+```
+
+### Directory Purposes
+
+* **controllers/**
+  Contains request/response logic or runtime orchestration.
+  Controllers expose public methods that can be invoked externally (via CdWire on the backend, or via UI events in a frontend `view/`).
+  All files must end with `.controller.<ext>` and hosted classes must end with `Controller`.
+
+* **services/**
+  Contain core business logic, reusable across controllers.
+  Services are typically stateless and focused on operations, calculations, and process flows.
+  All files must end with `.service.<ext>` and hosted classes must end with `Service`.
+
+* **models/**
+  Contain data models, schema mappings, and entity definitions.
+  Models represent tables (backend), or typed interfaces and DTOs (frontend/backend).
+  All files must end with `.model.<ext>` and hosted classes must end with `Model`.
+
+* **view/** *(optional, GUI clients only)*
+  Dedicated to frontend user interface logic.
+  Contains the runtime entry point (`index.js`), templates, and GUI-specific controllers.
+  While backend controllers handle service orchestration, **view controllers** handle UI events, rendering, and module-level presentation logic.<br>
+  Example:
+
+  ```text
+  view/
+    ├── index.js        # entry point rendered by loader
+    ├── module.json     # module metadata descriptor
+    ├── sign-in.controller.js
+    └── sign-up.controller.js
+  ```
+
+### Additional Directories
+
+* **extra/** — supplementary files not fitting standard categories.
+* **interfaces/** — shared TypeScript interfaces.
+* **dist/** — build outputs.
+* **sdk/** — client libraries or API wrappers.
+
+---
+
+This way, `view/` is clearly positioned as **UI-only, optional, and separate from backend controllers/services**, but still integrated under the same modular discipline.
+
+Would you like me to also **add a dedicated subsection (maybe 4.3)** that explains the **relationship between backend controllers/services and frontend `view/` controllers** — showing how `loadModule()` stitches them together at runtime?
+
+---
+
+Date: 2025-10-3, Time: 01:08
+
+
+---
+
+## 5. Naming Conventions
+
+### 5.1 File and Directory Naming
+
+| Element               | Naming Convention                                                          | Example                                            |
+| --------------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
+| Application Directory | PascalCase                                                                 | `CdApi`, `CdCli`                                   |
+| Module Directory      | kebab-case                                                                 | `cd-scheduler`, `coops`                            |
+| Controller Files      | `<name>.controller.ts` (sys)<br>`<module-name>-<name>.controller.ts` (app) | `user.controller.ts`, `coops-member.controller.ts` |
+| Service Files         | `<name>.service.ts` (sys)<br>`<module-name>-<name>.service.ts` (app)       | `user.service.ts`, `coops-member.service.ts`       |
+| Model Files           | `<name>.model.ts` (sys)<br>`<module-name>-<name>.model.ts` (app)           | `user.model.ts`, `coops-member.model.ts`           |
+| DB Table Names        | snake\_case                                                                | `user_account`, `coops_member`                     |
+
+All files in the controllers directory must end with `.controller.<extension>` and the name of the hosted class must end with `Controller`.
+All files in the models directory must end with `.model.<extension>` and the name of the hosted class must end with `Model`.
+All files in the services directory must end with `.service.<extension>` and the name of the hosted class must end with `Service`.
+
+### 5.2 Class and Variable Naming
+
+| Element                   | Convention       | Example                               |
+| ------------------------- | ---------------- | ------------------------------------- |
+| Class Names               | PascalCase       | `CoopMemberController`, `UserService` |
+| Class Attributes          | camelCase        | `createdAt`, `userEmail`              |
+| Public Controller Methods | PascalCase       | `GetUserById()`                       |
+| Internal Methods          | camelCase        | `resolveDependencies()`               |
+| Controller Instances      | `ctl<ClassName>` | `ctlCoopMember`                       |
+| Service Instances         | `sv<ClassName>`  | `svCoopMember`                        |
+
+---
+
+## Section 6: Models, Entities, Tables, and Columns
+### 6.1 Overview
+
+Corpdesk tables and entity properties follow strict naming rules to:
+
+Enforce predictability across modules.
+
+Support runtime modularity.
+
+Prevent ambiguity between resident, visitor, and special fields.
+
+A core principle is that every module has a leading table. This influences whether the <controller-name> is included in the schema.
+
+### 6.2 Table Naming
+#### 6.2.1 Module-Leading Tables
+
+Each module has one leading table, named exactly after the module.
+
+Fields are prefixed with the module name.
+
+Example:
+
+coop → leading table for Coop module.
+
+company → leading table for Company module.
+
+doc → leading table for Doc module.
+
+➡️ Fields:
+
+coop_id, coop_name, coop_guid, etc.
+
+company_id, company_name, etc.
+
+doc_id (reserved, universal reference).
+
+### 6.2.2 Controller Tables
+
+Non-leading tables follow this convention:
+
+Example:
+
+cd_accts_coa (controller = Chart of Accounts).
+
+cd_accts_coa_type (counterpart = Type of Chart of Accounts).
+
+cd_geo_location (controller = Location under Geo module).
+
+➡️ Columns then follow the same structure, prefixed by table name:
+
+cd_accts_coa_id
+
+cd_accts_coa_type_id
+
+cd_geo_location_id
+
+### 6.3 Column Naming
+
+Columns fall into three categories:
+
+#### 6.3.1 Resident Fields
+
+Fields that belong to the current table.
+
+Always prefixed with the table name.
+
+Examples:
+
+coop_description (from leading coop table).
+
+cd_accts_coa_type_name (from controller table).
+
+#### 6.3.2 Visitor Fields
+
+Foreign keys referencing another table.
+
+Always prefixed with the referenced table’s name (not the current one).
+
+### Examples:
+
+company_id in coop (references company module-leading table).
+
+cd_geo_location_id in coop (references cd_geo_location table).
+
+#### 6.3.3 Special / Reserved Fields
+
+Managed centrally by the doc module.
+
+Always written exactly as doc_id.
+
+No variations (❌ coop_doc_id).
+
+No timestamps (created_at, updated_at are forbidden).
+
+### 6.4 Entity Properties (TypeORM Layer)
+
+Columns map to camelCase entity properties.
+
+coop_description → coopDescription.
+
+cd_accts_coa_type_guid → cdAcctsCoaTypeGuid.
+
+No duplication of suffixes/prefixes.
+
+Normalize to avoid TypeType.
+
+Resident/Visitor/Special rules preserved in property names.
+
+### 6.5 Practical Examples
+Coop (leading table)
+
+```sql
+CREATE TABLE `coop` (
+  `coop_id` int NOT NULL AUTO_INCREMENT,
+  `coop_name` varchar(50) DEFAULT NULL,
+  `coop_description` varchar(100) DEFAULT NULL,
+  `coop_guid` varchar(40) DEFAULT NULL,
+  `coop_type_id` int DEFAULT NULL,
+  `coop_enabled` tinyint DEFAULT NULL,
+  `doc_id` int DEFAULT NULL,
+  `company_id` int DEFAULT NULL,
+  `cd_geo_location_id` int DEFAULT NULL,
+  PRIMARY KEY (`coop_id`)
+);
+```
+Entity file
+```ts
+@Entity({ name: "coop" })
+export class CoopModel {
+  @PrimaryGeneratedColumn({ name: "coop_id" })
+  coopId!: number;
+
+  @Column({ name: "coop_name" })
+  coopName!: string;
+
+  @Column({ name: "coop_description" })
+  coopDescription!: string;
+
+  @Column({ name: "coop_guid" })
+  coopGuid!: string;
+
+  @Column({ name: "coop_type_id" })
+  coopTypeId!: number;
+
+  @Column({ name: "coop_enabled" })
+  coopEnabled!: boolean;
+
+  @Column({ name: "doc_id" })
+  docId!: number;
+
+  @Column({ name: "company_id" })
+  companyId!: number;
+
+  @Column({ name: "cd_geo_location_id" })
+  cdGeoLocationId!: number;
+}
+```
+
+⚖️ Summary Rule:
+
+Leading table → <module>_<field>.
+
+Controller table → <module>_<controller>_<field>.
+
+Counterpart table → <module>_<controller>_<counterpart>_<field>.
+
+Visitor field → Prefix of referenced table.
+
+Special field → Always doc_id.
+
+
+
+---
+
+## 7. Instantiation and Lifecycle Rules
+
+To enable standardization and support automation:
+
+* No dependency injection frameworks.
+* All class instances must be created without constructor arguments.
+* Use a standardized `init()` method for class setup.
+* All externally consumable methods must return `CdFxReturn<T>` as defined in **RFC-0003 (CdWire Protocol)**. This ensures uniform handling of success, errors, and semantic states across all modules.
+
+Example:
+```pgsql
+<module-name>_<controller-name>_<counterpart-name?>
+```
+
+```ts
+const ctlCoopMember = new CoopMemberController();
+await ctlCoopMember.init(optionalInput?);
+```
+
+---
+
+## 8. Base Module and Shared Code
+
+* `base/` directory under `sys/` contains shared abstractions and base classes.
+* Not considered a full module.
+* Does not contain a controller.
+
+### Examples:
+
+* `i-base.ts`: Shared interfaces
+* `BaseService.ts`: Abstract class extended by most services
+
+---
+
+## 9. Descriptors Concept
+
+### 9.1 Purpose
+
+Descriptors define the structure, metadata, and identity of every Corpdesk entity—modules, controllers, models, services, and CI/CD processes.
+
+Descriptors enable:
+
+* Standardization
+* Automation
+* Toolchain integration
+* Runtime introspection
+* Progressive documentation
+
+### 9.2 Types of Descriptors
+
+| Descriptor               | Purpose                      |
+| ------------------------ | ---------------------------- |
+| `BaseDescriptor`         | Common base descriptor       |
+| `CdModuleDescriptor`     | Represents a Corpdesk module |
+| `CdControllerDescriptor` | Represents a controller      |
+| `CdServiceDescriptor`    | Represents a service         |
+| `CdModelDescriptor`      | Represents a model           |
+| `CiCdDescriptor`         | Represents CI/CD flows       |
+
+Each descriptor has a `.name` property in kebab-case to maintain consistency.
+
+```json
+{
+  "name": "cd-scheduler",
+  "controllers": [{ "name": "task-runner" }],
+  "models": [{ "name": "task-log" }]
+}
+```
+
+---
+
+## 10. Design Philosophy
+
+* Modular and extensible by design.
+* Convention over configuration.
+* Facilitates runtime installation and introspection.
+* Language and platform agnostic.
+* Emphasizes machine-readability to support intelligent automation and AI tooling.
+* To support automation and AI-driven tooling, Corpdesk enforces consistent method return shapes. This is standardized under **RFC-0003: CdWire Protocol**.
+
+---
+
+## 11. Use Cases
+
+* Enterprise backend systems
+* AI-enabled process automation
+* Modular feature deployments
+* Distributed services orchestration
+* Progressive web application backends
+
+---
+
+## 12. Future Scope
+
+* Protocol versioning
+* AI-assisted module scaffolding
+* Intelligent descriptors registry
+* Plug-and-play modules from a marketplace
+* Federated module communication and sandboxing
+
+---
+
+## 13. Conclusion
+
+The Corpdesk Standard provides a unified approach to modular software architecture. By combining strict naming conventions, a descriptor-driven model, and platform-agnostic design principles, Corpdesk enables teams and tools to collaborate and automate more effectively across the software development lifecycle.
+
+While RFC-0001 defines structural and naming standards, operational consistency for method responses (via `CdFxReturn<T>`) is defined in **RFC-0003: CdWire Protocol**. Together, these RFCs ensure cohesion between development structure and runtime communication.
+
+---
+
+## 14. References
+
+* Corpdesk Descriptor Specification (forthcoming)
+* RFC-0002: CdCLI Protocol Specification
+* RFC-0003: CdWire Protocol
+* Git Repository: \[TBD]
+
+---
+
+### Document Version: RFC-0001
+
+---
+Last Edit: 16th March, 2026 
+Edited: September 3, 2025
+Summary of Updates:
+
+Added view/ directory under Module Structure (Section 4.2).
+
+Clarified that view/ applies only to GUI-enabled clients.
+
+Updated Naming Conventions and Descriptors Concept to acknowledge view/.
+
+Adjusted Conclusion to emphasize frontend modularity alignment.
+
+Status: Draft
+Last Edited: September 26, 2025
+Author: George Oremo
+Use Case: Documentation, Standardization, Patent Support
+
+Last Edited: September 24, 2025
+Added section 6 with special emphasis on model/entity naming conventions.
+All other susequent numbers affected.
+
+---
+
+Status: Draft
+Last Edited: August 17, 2025
+Author: George Oremo
+Use Case: Documentation, Standardization, Patent Support
+
+---
+
+Date Published: 2025-08-06
+Date Updated: 2025-08-17
+**Summary of Updates:** Linked `CdFxReturn<T>` to RFC-0003 for method response standardization. Clarified lifecycle rules (Section 6), added explicit references in Design Philosophy (Section 9) and Conclusion (Section 12).
+
+
+//////////////////////////////////////
+
+It is at these very early stages that we need to enphasize clarity to simplify the complexity we are dealing with.
+Currently the whole scan process is centered at AppCraftService via the method scan() and other helper files.
+We may need to assess this process and design classes that reflects the loop RFCs → Mathematical Expressions → SeedConfig → Execution.  The class names should reflect the visual designs. We also have the option of naming representing biological generation.  This does not mean we change AppCrafService naming, but the service will be deriving from some 'biological processor' that help us lay bounderies on the process loop.  Let me know what you think about this?
+
+//////////////////////////////////
+
+The latest scanning was done via AppCraftService.scan().
+You can peruse through to compare with what we are doing now just in case there is a note or two you can benefit from.
+```ts
+// src/CdCli/app/app-craft/services/cd-app.service.ts
+
+/* eslint-disable style/brace-style */
+
+import { basename, join, relative, sep } from 'path';
+import { GenericService } from '../../../sys/base/generic-service.js';
+import { HttpService } from '../../../sys/base/http.service.js';
+import {
+  CD_FX_FAIL,
+  CdAssertReturn,
+  CdFxReturn,
+  CdFxStateLevel,
+  ICdResponse,
+  IQuery,
+} from '../../../sys/base/i-base.js';
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
+import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
+import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
+import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
+import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
+import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
+import { mkdir, writeFile } from 'fs/promises';
+import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
+import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
+import { executeCommand } from '../../../sys/utils/cmd.util.js';
+import { CdAutoGitController } from '../../cd-auto-git/index.js';
+import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
+import {
+  CdExpression,
+  ExpressionContext,
+  SeedConfig,
+  SeedRoleConfig,
+} from '../models/cd-app.model.js';
+import { CdCtx, CdModuleDescriptor, DirectoryNode } from '../../../sys/dev-descriptor/index.js';
+import { ComponentType } from '../../../sys/dev-descriptor/models/component-descriptor.model.js';
+// import { cdApiVersionControl } from '../workshop/cd-app/workflow/test-bed/cd-shell-workshop.model.js';
+
+export class CdAppService {
+  cdToken;
+  svDevDescriptors;
+  private runner!: CICdRunnerService;
+
+  constructor() {
+    // super(CdObjModel);
+    this.svDevDescriptors = new DevDescriptorService();
+  }
+
+
+  /**
+   * ============================================================
+   * 🔷 PUBLIC: SCAN ENTRY POINT (Aligned with CdWire)
+   * ============================================================
+   */
+  async scan(
+    actionTargetName: string, // e.g., 'test-bed'
+    cdObjName: string, // e.g., 'cd-cli'
+    oEnv: string, // e.g., 'cd-app'
+    cdToken: string,
+  ): Promise<CdFxReturn<ICdResponse>> {
+    CdLog.debug(`[CdAppService][scan()] start`);
+    CdLog.debug(`[CdAppService][scan()] actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`[CdAppService][scan()] cdObjName: ${cdObjName}`);
+    CdLog.debug(`[CdAppService][scan()] oEnv: ${oEnv}`);
+
+    try {
+      // 1. Dynamically resolve the physical path (CD_OBJ_PATH)
+      const cdObjPath = await this.resolveCdObjPath(cdObjName, oEnv);
+      CdLog.debug(`[CdAppService][scan()] resolved CD_OBJ_PATH: ${cdObjPath}`);
+
+      // 2. Load config relative to the resolved path
+      const config = await this.loadScanConfig(cdObjName, cdObjPath);
+
+      // Ensure the scanner targets the resolved path, not the CLI's cwd
+      const targetRoot = cdObjPath;
+      CdLog.debug(`[CdAppService][scan()] config.rootPath set to: ${targetRoot}`);
+
+      const files = await this.scanDirectory(targetRoot, config);
+      CdLog.debug(`[CdAppService][scan()] files.count: ${files.length}`);
+
+      const descriptor = await this.buildAppDescriptor(cdObjName, files, config);
+      CdLog.debug(`[CdAppService][scan()] descriptor.name: ${descriptor.name}`);
+
+      await this.writeDescriptor(targetRoot, descriptor);
+
+      CdLog.success(`[CdAppService][scan()] completed successfully`);
+
+      return {
+        state: CdFxStateLevel.Success,
+        data: {
+          app_state: {
+            success: true,
+            info: { messages: [`Scan completed for ${cdObjName}`], code: null, app_msg: null },
+            sess: null,
+            cache: null,
+          },
+          data: descriptor,
+        },
+        message: 'Scan completed successfully',
+      };
+    } catch (error) {
+      CdLog.error(`[CdAppService][scan()] error: ${(error as Error).message}`);
+      return {
+        state: CdFxStateLevel.Error,
+        data: null,
+        message: `Scan failed: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  /**
+   * 🔷 RESOLVE CD_OBJ_PATH
+   * Uses dynamic import to locate the workshop model and extract the environment path.
+   */
+
+  private async resolveCdObjPath(cdObjName: string, oEnv: string): Promise<string> {
+    const method = 'resolveCdObjPath';
+
+    try {
+      if (!cdObjName || !oEnv) {
+        CdLog.error(
+          `[CdAppService][${method}] Invalid inputs cdObjName:, ${cdObjName}, oEnv:, ${oEnv}`,
+        );
+        throw new Error(`Invalid inputs provided`);
+      }
+
+      // Construct dynamic path to the workshop model
+      const modelPath = `../workshop/cd-app/workflow/${oEnv}/${cdObjName}-workshop.model.js`;
+
+      CdLog.debug(`[CdAppService][${method}] modelPath: ${modelPath}`);
+
+      // Dynamic import
+      const module = await import(modelPath);
+      const vcd = module.cdApiVersionControl;
+
+      if (!vcd?.repository?.directories) {
+        CdLog.error(`[CdAppService][${method}] Invalid VCD structure:, ${JSON.stringify(vcd)}`);
+        throw new Error(`Invalid VersionControlDescriptor in ${modelPath}`);
+      }
+
+      CdLog.debug(`[CdAppService][${method}] directories:, ${vcd.repository.directories}`);
+
+      let normalizedEnvName = cdObjName.toLowerCase();
+      normalizedEnvName = `local-${normalizedEnvName}`; // ensure prefix for matching, e.g., 'local-cd-shell'
+
+      // ✅ Correct matching: environment.name vs oEnv
+      const dirEntry = vcd.repository.directories.find((d: any) => {
+        const envName = d.environment?.name?.toLowerCase();
+
+        CdLog.debug(
+          `[CdAppService][${method}] checking env:, ${envName}, against:, ${normalizedEnvName}`,
+        );
+
+        return envName === normalizedEnvName;
+      });
+
+      if (!dirEntry) {
+        CdLog.debug(
+          `[CdAppService][${method}] No match found for env:, ${normalizedEnvName} in:, ${cdObjName}`,
+        );
+        throw new Error(`Environment '${oEnv}' not found in ${cdObjName} workshop model.`);
+      }
+
+      if (!dirEntry.path) {
+        CdLog.debug(
+          `[CdAppService][${method}] Match found but path missing:, ${JSON.stringify(dirEntry)}`,
+        );
+        throw new Error(`Resolved directory has no path for ${cdObjName}`);
+      }
+
+      CdLog.debug(`[CdAppService][${method}] Resolved path:, ${dirEntry.path}`);
+
+      return dirEntry.path;
+    } catch (err) {
+      CdLog.error(
+        `[CdAppService][${method}] ERROR resolving path for:, ${cdObjName}, error:, ${(err as Error).message}`,
+      );
+      throw new Error(`Failed to resolve path for ${cdObjName}: ${(err as Error).message}`);
+    }
+  }
+
+  /**
+   * 🔷 CONFIG LOADING (Refactored)
+   * Resolved CD_OBJ_PATH is used as the base for .cd/ seed files.
+   */
+  private async loadScanConfig(cdObjName: string, cdObjPath: string): Promise<any> {
+    CdLog.debug(`[CdAppService][loadScanConfig()] cdObjName: ${cdObjName}`);
+
+    const configPath = join(cdObjPath, '.cd', `${cdObjName}.seed.json`);
+    CdLog.debug(`[CdAppService][loadScanConfig()] configPath: ${configPath}`);
+
+    try {
+      // In ESM/Dynamic environments, use fs or dynamic import for JSON
+      // If using Node 'require', ensure absolute path is handled
+      const raw = require(configPath);
+      CdLog.success(`[CdAppService][loadScanConfig()] loaded custom config from ${cdObjPath}`);
+      return raw;
+    } catch {
+      CdLog.warning(`[CdAppService][loadScanConfig()] fallback to default config at ${cdObjPath}`);
+
+      return {
+        subsystemName: cdObjName,
+        rootPath: cdObjPath, // CRITICAL: rootPath must match the object being scanned
+        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
+        includeExtensions: ['.ts', '.js', '.json'],
+        roles: [
+          { roleName: 'controller', namingPattern: '\\.controller\\.' },
+          { roleName: 'service', namingPattern: '\\.service\\.' },
+          { roleName: 'model', namingPattern: '\\.model\\.' },
+        ],
+        version: '1.0.0',
+        globals: {},
+      };
+    }
+  }
+
+  /**
+   * ============================================================
+   * 🔷 FILE SYSTEM SCAN
+   * ============================================================
+   */
+  private async scanDirectory(
+    dir: string,
+    config: SeedConfig,
+    results: string[] = [],
+  ): Promise<string[]> {
+    CdLog.debug(`[CdAppService][scanDirectory()] dir:, ${dir}`);
+
+    const fs = await import('fs/promises');
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+
+    CdLog.debug(`[CdAppService][scanDirectory()] entries.count:, ${entries.length}`);
+
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name);
+
+      if (config.ignorePatterns?.some((p) => fullPath.includes(p))) {
+        CdLog.debug(`[CdAppService][scanDirectory()] ignored:, ${fullPath}`);
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        await this.scanDirectory(fullPath, config, results);
+      } else {
+        if (config.includeExtensions?.some((ext) => fullPath.endsWith(ext))) {
+          results.push(fullPath);
+          CdLog.debug(`[CdAppService][scanDirectory()] added file:, ${fullPath}`);
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 DESCRIPTOR BUILD
+   * ============================================================
+   */
+  private async buildAppDescriptor(
+    appName: string,
+    files: string[],
+    config: SeedConfig,
+  ): Promise<CdAppDescriptor> {
+    const method = 'buildAppDescriptor';
+
+    CdLog.debug(`[CdAppService][${method}] appName:, ${appName}`);
+
+    const modules = this.groupFilesIntoModules(files, config);
+    CdLog.debug(`[CdAppService][${method}] modules.count:, ${modules.length}`);
+
+    const rootTree = this.buildDirectoryTree(config.rootPath, files, config);
+
+    const metrics = this.computeMetrics(rootTree);
+    CdLog.debug(`[CdAppService][${method}] metrics:, ${JSON.stringify(metrics)}`);
+
+    const zygote = files.find((f) => f.endsWith('main.ts'));
+    CdLog.debug(`[CdAppService][${method}] zygote:, ${zygote}`);
+
+    const zygoteDependencies = zygote ? await this.extractImports(zygote) : [];
+
+    CdLog.debug(
+      `[CdAppService][${method}] zygoteDependencies.count:, ${zygoteDependencies.length}`,
+    );
+
+    return {
+      name: appName,
+      parentProjectGuid: null,
+      modules,
+      description: `Auto-generated descriptor for ${appName}`,
+      directorySignature: {
+        signatureName: `${appName}-signature`,
+        root: rootTree,
+        variables: config.globals,
+      },
+      metrics,
+      zygote: {
+        entry: zygote,
+        dependencies: zygoteDependencies,
+      },
+    } as any;
+  }
+
+  private async extractImports(filePath: string): Promise<string[]> {
+    const method = 'extractImports';
+
+    CdLog.debug(`[CdAppService][${method}] filePath:, ${filePath}`);
+
+    try {
+      const fs = await import('fs/promises');
+      const content = await fs.readFile(filePath, 'utf-8');
+
+      CdLog.debug(`[CdAppService][${method}] content.length:, ${content.length}`);
+
+      const matches = content.match(/import\s+.*?from\s+['"](.*?)['"]/g) || [];
+
+      CdLog.debug(`[CdAppService][${method}] matches.count:, ${matches.length}`);
+
+      const imports = matches.map((m) => {
+        const res = m.match(/['"](.*?)['"]/);
+        return res ? res[1] : '';
+      });
+
+      CdLog.debug(`[CdAppService][${method}] imports:, ${JSON.stringify(imports)}`);
+
+      return imports;
+    } catch (err) {
+      CdLog.error(`[CdAppService][${method}] failed:, ${(err as Error).message}`);
+      return [];
+    }
+  }
+
+  /**
+   * ============================================================
+   * 🔷 MODULE GROUPING
+   * ============================================================
+   */
+  private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
+    CdLog.debug(`[CdAppService][groupFilesIntoModules()] start`);
+
+    const moduleMap: Record<string, CdModuleDescriptor> = {};
+
+    for (const file of files) {
+      const role = this.resolveRole(file, config.roles);
+      const moduleName = role?.roleName || 'root';
+
+      CdLog.debug(`[CdAppService][groupFilesIntoModules()] file:, ${file}`);
+      CdLog.debug(`[CdAppService][groupFilesIntoModules()] resolvedRole:, ${moduleName}`);
+
+      if (!moduleMap[moduleName]) {
+        moduleMap[moduleName] = {
+          name: moduleName,
+          cdModuleType: { typeName: config.subsystemName as any },
+          ctx: this.resolveModuleContext(moduleName),
+          controllers: [],
+          services: [],
+          models: [],
+        };
+      }
+
+      this.assignFileToComponent(file, moduleMap[moduleName], config);
+    }
+
+    CdLog.debug(
+      `[CdAppService][groupFilesIntoModules()] modules.total:, ${Object.keys(moduleMap).length}`,
+    );
+
+    return Object.values(moduleMap);
+  }
+
+  private resolveModuleContext(roleName: string): CdCtx {
+    return roleName === 'sys' ? CdCtx.Sys : CdCtx.App;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 ROLE RESOLUTION (DNA + REGEX)
+   * ============================================================
+   */
+  private resolveRole(file: string, roles: SeedRoleConfig[]): SeedRoleConfig | undefined {
+    const method = 'resolveRole';
+    const ctx = this.buildExpressionContext(file);
+
+    CdLog.debug(`[CdAppService][${method}] file:, ${file}`);
+    CdLog.debug(`[CdAppService][${method}] ctx:, ${JSON.stringify(ctx)}`);
+
+    for (const role of roles) {
+      CdLog.debug(`[CdAppService][${method}] checking role:, ${role.roleName}`);
+
+      if (role.expression) {
+        const result = this.evaluateExpression(role.expression, ctx);
+
+        CdLog.debug(
+          `[CdAppService][${method}] expression result:, role:, ${role.roleName}, result:, ${result}`,
+        );
+
+        if (result) return role;
+      }
+
+      if (role.namingPattern) {
+        try {
+          const matched = new RegExp(role.namingPattern).test(file);
+
+          CdLog.debug(
+            `[CdAppService][${method}] regex check:, ${role.namingPattern}, matched:, ${matched}`,
+          );
+
+          if (matched) return role;
+        } catch (err) {
+          CdLog.warning(
+            `[CdAppService][${method}] invalid regex:, ${role.namingPattern}, error:, ${(err as Error).message}`,
+          );
+        }
+      }
+    }
+
+    CdLog.debug(`[CdAppService][${method}] no role matched`);
+    return undefined;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 COMPONENT ASSIGNMENT
+   * ============================================================
+   */
+  private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+    const name = basename(file);
+    const role = this.resolveRole(file, config.roles);
+
+    if (!role) return;
+
+    switch (role.roleName) {
+      case 'controller':
+        module.controllers.push({ name, type: ComponentType.Controller, fileName: file });
+        break;
+      case 'service':
+        module.services.push({ name, type: ComponentType.Service, fileName: file });
+        break;
+      case 'model':
+        module.models.push({ name, type: ComponentType.Model, fileName: file, fields: [] });
+        break;
+    }
+  }
+
+  /**
+   * ============================================================
+   * 🔷 TRUE TREE BUILDER (HIERARCHICAL)
+   * ============================================================
+   */
+  private buildDirectoryTree(rootPath: string, files: string[], config: SeedConfig): DirectoryNode {
+    const method = 'buildDirectoryTree';
+
+    CdLog.debug(`[CdAppService][${method}] start`);
+    CdLog.debug(`[CdAppService][${method}] rootPath:, ${rootPath}`);
+    CdLog.debug(`[CdAppService][${method}] files.count:, ${files.length}`);
+
+    const root: DirectoryNode = {
+      name: config.subsystemName,
+      cdObjGuid: this.generateGuid(),
+      isFile: false,
+      isCdCompliant: true,
+      isCdForeign: false,
+      lastUpdated: Date.now(),
+      children: [],
+    };
+
+    for (const file of files) {
+      const relPath = relative(rootPath, file);
+      const parts = relPath.split(/[/\\]+/);
+
+      CdLog.debug(`[CdAppService][${method}] processing file:, ${file}`);
+      CdLog.debug(`[CdAppService][${method}] relPath:, ${relPath}`);
+
+      let current = root;
+
+      parts.forEach((part, index) => {
+        let next = current.children?.find((c) => c.name === part);
+
+        if (!next) {
+          const isFile = index === parts.length - 1;
+          const role = isFile ? this.resolveRole(file, config.roles) : undefined;
+
+          const isZygote = part === 'main.ts';
+          const isCdCompliant = !!role || isZygote;
+          const isCdForeign = !isCdCompliant;
+
+          next = {
+            name: part,
+            cdObjGuid: this.generateGuid(),
+            isFile,
+            cdObjRoleName: isZygote ? 'origin' : role?.roleName,
+            weight: isZygote ? 10 : this.assignWeight(role?.roleName),
+            isCdCompliant,
+            isCdForeign,
+            lastUpdated: Date.now(),
+            children: [],
+          };
+
+          current.children = current.children || [];
+          current.children.push(next);
+
+          CdLog.debug(
+            `[CdAppService][${method}] node created:, ${part}, role:, ${next.cdObjRoleName}, compliant:, ${isCdCompliant}, foreign:, ${isCdForeign}`,
+          );
+        }
+
+        current = next;
+      });
+    }
+
+    CdLog.success(`[CdAppService][${method}] tree built`);
+    return root;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 WEIGHT ASSIGNMENT (Stage 5 Hook)
+   * ============================================================
+   */
+  private assignWeight(roleName?: string): number {
+    const weights: Record<string, number> = {
+      controller: 8,
+      service: 8,
+      model: 8,
+      sys: 9,
+      app: 8,
+      utils: 5,
+    };
+
+    return roleName ? weights[roleName] || 1 : 1;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 WRITE DESCRIPTOR
+   * ============================================================
+   */
+  private async writeDescriptor(root: string, descriptor: CdAppDescriptor) {
+    CdLog.debug(`[CdAppService][writeDescriptor()] root:, ${root}`);
+
+    const cdDir = join(root, '.cd');
+    await mkdir(cdDir, { recursive: true });
+
+    const filePath = join(cdDir, 'cd-app.descriptor.json');
+
+    await writeFile(filePath, JSON.stringify(descriptor, null, 2));
+
+    CdLog.success(`[CdAppService][writeDescriptor()] filePath:, ${filePath}`);
+  }
+
+  /**
+   * ============================================================
+   * 🔷 EXPRESSION ENGINE
+   * ============================================================
+   */
+  private buildExpressionContext(file: string): ExpressionContext {
+    const name = basename(file);
+
+    return {
+      filePath: file,
+      fileName: name,
+      extension: name.split('.').pop() || '',
+      moduleHint: file.includes('/sys/') ? 'sys' : file.includes('/app/') ? 'app' : 'unknown',
+    };
+  }
+
+
+  private evaluateExpression(expression: CdExpression, ctx: ExpressionContext): boolean {
+    const method = 'evaluateExpression';
+
+    CdLog.debug(`[CdAppService][${method}] expression:, ${JSON.stringify(expression)}`);
+    CdLog.debug(`[CdAppService][${method}] ctx:, ${JSON.stringify(ctx)}`);
+
+    let result = false;
+
+    switch (expression.op) {
+      case 'contains':
+        result = String(ctx[expression.field]).includes(expression.value);
+        break;
+
+      case 'startsWith':
+        result = String(ctx[expression.field]).startsWith(expression.value);
+        break;
+
+      case 'endsWith':
+        result = String(ctx[expression.field]).endsWith(expression.value);
+        break;
+
+      case 'equals':
+        result = String(ctx[expression.field]) === expression.value;
+        break;
+
+      case 'and':
+        result = expression.conditions.every((cond) => this.evaluateExpression(cond, ctx));
+        break;
+
+      case 'or':
+        result = expression.conditions.some((cond) => this.evaluateExpression(cond, ctx));
+        break;
+
+      default:
+        CdLog.warning(`[CdAppService][${method}] unknown op:, ${(expression as any).op}`);
+        result = false;
+    }
+
+    CdLog.debug(`[CdAppService][${method}] result:, ${result}`);
+    return result;
+  }
+
+  /**
+   * ============================================================
+   * 🔷 UTIL
+   * ============================================================
+   */
+  private generateGuid(): string {
+    return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () =>
+      ((Math.random() * 16) | 0).toString(16),
+    );
+  }
+
+  private computeMetrics(root: DirectoryNode) {
+    const method = 'computeMetrics';
+
+    let total = 0;
+    let compliant = 0;
+    let foreign = 0;
+
+    function walk(node: DirectoryNode) {
+      total++;
+
+      if (node.isCdCompliant) compliant++;
+      if (node.isCdForeign) foreign++;
+
+      node.children?.forEach(walk);
+    }
+
+    walk(root);
+
+    const result = {
+      CR: compliant / total,
+      infectionRatio: foreign / total,
+      totalNodes: total,
+      compliantNodes: compliant,
+      foreignNodes: foreign,
+    };
+
+    CdLog.debug(`[CdAppService][${method}] result:, ${JSON.stringify(result)}`);
+
+    return result;
+  }
+}
+
+```
+
+/////////////////////////////////////////////
+
+To integrate the transitioning that you have mentioned and to have some simple way of going about it, what I would have CdBiologicalEngineController.scan() similar to CdAppController.scan().
+It would call the Scanner.run().
+To start with, ScannerService.run() would have the same codes as AppCraftService.scan().
+Now all the codes for the scanning process in AppCraftService would just be ported to ScannerService.
+This would allow old codes to work as they did before.
+Meanwhile we can continue designing the Biological process as per the latest design so that later we can reorganize ScannerService in phases.
+
+Controllers are usually very light and consistent.
+Below is the existing CdAppController.
+See how CdAppController.scan() is scripted.
+
+```ts
+// src/CdCli/app/app-craft/controllers/cd-app.controller.ts
+import { CdAssertReturn, CdFxReturn, ICdResponse, IQuery } from '../../../sys/base/i-base.js';
+import { CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { CdAppService } from '../services/cd-app.service.js';
+import { CdModuleService } from '../services/cd-module.service.js';
+
+export class CdAppController {
+  svCdApp: CdAppService;
+  svCdModule: CdModuleService;
+  constructor() {
+    this.svCdApp = new CdAppService();
+    this.svCdModule = new CdModuleService();
+    this.svCdApp.init();
+  }
+
+  /**
+   * Create a new module
+   *
+   * @param AppDescriptor
+   * @returns
+   */
+  async create(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppController::create()');
+    return this.svCdApp.create(actionTargetName, moduleName, moduleType, cdToken);
+  }
+
+  async read(q?: IQuery): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    return this.svCdApp.read(q);
+  }
+
+  async update(
+    actionTargetName: string,
+    moduleName: string,
+    moduleType: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    return this.svCdApp.update(actionTargetName, moduleName, moduleType, cdToken);
+  }
+
+  async delete(q: IQuery): Promise<CdFxReturn<null>> {
+    return this.svCdApp.delete(q);
+  }
+
+  // Get all applications
+  async getAllModules(): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    return await this.svCdApp.getAllModules();
+  }
+
+  // Get a single module by name
+  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+    return this.svCdApp.getModuleByName(name);
+  }
+
+  async CreateModuleDirectories(moduleDir: string): Promise<CdFxReturn<null>> {
+    return await this.svCdModule.createModuleDirectories(moduleDir);
+  }
+
+  async upgrade(
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    version: string,
+    testTasks?: boolean,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppController::upgrade()');
+    return this.svCdApp.upgrade(
+      actionTargetName,
+      moduleName,
+      oEnv,
+      repoName,
+      version,
+      testTasks !== undefined ? String(testTasks) : undefined,
+    );
+  }
+
+  async derive(
+    actionTargetName: string,
+    cdObjName: string,
+    oEnv: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CdAppController::derive()');
+    return this.svCdApp.derive(actionTargetName, cdObjName, oEnv, cdToken);
+  }
+
+  async scan(
+    actionTargetName: string,
+    cdObjName: string,
+    cdObjTypeName: string,
+    cdToken: string,
+  ): Promise<CdFxReturn<ICdResponse>> {
+    CdLog.debug('Starting CdAppController::scan()');
+    return this.svCdApp.scan(actionTargetName, cdObjName, cdObjTypeName, cdToken);
+  }
+}
+
+```
+
+///////////////////////////////
+
+Rather than create cd-scanner.service.ts only, I would like you to create an executable script file create_bio_engine.sh. When executed, it should create all the initial directories and files with basic codes. The methods can just be stubs.  You had already worked out on this map.
+From here, I can then fill up the cd-scanner.service.ts at a time when we have the basic structure of cd-bio-engine module.
+I would prefer if instead of the name CdBiologicalEngine, we have CdBioEngine. So that everywhere where we could have had the term 'biological', it will be shortened to 'bio'.
+
+New additions:
+script file: <root>/scripts/create_bio_engine.sh
+cd-bio-engine module: <root>/src/CdCli/app/cd-bio-engine
+
+//////////////////////////////////
+
+I have prted the codes to CdScannerService, tested it and is working.
+We have also done it when all the basic structures for CdBioEngine is in place.
+Take a look at the 2 RFCs below plan how we work foward with CdBioEngine.
+North start is a effective zygote scanning. The scanning whose result can be used to breed a new zygote.
+
+# 📄 RFC-0007: Corpdesk Biological Processing Engine (BPE)
+
+**RFC ID:** corpdesk-rfc-0007
+**Title:** Biological Processing Engine for Autonomous Software Generation
+**Status:** Draft (Initial)
+**Author:** Corpdesk Architecture
+**Date:** 2026-04-02
+
+---
+
+# 1. Abstract
+
+Throughout history, major technological breakthroughs have emerged from **anchoring design principles in natural systems**.
+
+Examples include:
+
+* **Aeronautics**, where early flight engineering drew directly from **bird and insect wing mechanics**, leading to modern aviation.
+* **Swarm intelligence**, inspired by ants and bees, now used in optimization algorithms and distributed systems.
+* **Biochemistry and medicine**, where understanding DNA, proteins, and cellular processes has enabled gene therapy, vaccines, and synthetic biology.
+
+These advancements share a common principle:
+
+> **Nature provides proven, self-optimizing, adaptive systems that can be abstracted into engineering models.**
+
+---
+
+## 1.1 Corpdesk Biological Analogy
+
+Corpdesk adopts this same principle by modeling software systems as **living computational organisms**.
+
+The goal is to move from:
+
+```text
+manually written software
+```
+
+to:
+
+```text
+AI-assisted, self-generating, self-evolving systems
+```
+
+This is achieved by aligning the software lifecycle with **biological generation cycles**:
+
+| Biology            | Corpdesk                     |
+| ------------------ | ---------------------------- |
+| DNA                | RFCs                         |
+| Gene Expression    | Mathematical Expressions (Γ) |
+| Cellular Formation | SeedConfig                   |
+| Organism           | Runtime System               |
+| Observation        | Scanner                      |
+| Evolution          | AI-assisted mutation         |
+
+---
+
+## 1.2 Intent
+
+This RFC defines the **Biological Processing Engine (BPE)** — a structured computational system that:
+
+* Converts **architectural laws (RFCs)** into executable systems
+* Enables **zygote-based system initialization**
+* Supports **continuous evolution via AI feedback loops**
+* Maintains **strict architectural boundaries**
+
+The BPE is embedded within **AppCraft** and operates as the **core engine for autonomous software generation**.
+
+---
+
+# 2. Scope
+
+This RFC defines:
+
+* The **biological architecture model**
+* The **processing lifecycle**
+* The **internal organ structure**
+* The **relationship to existing RFCs (0001, 0004, 0005)**
+
+This RFC does NOT define:
+
+* Specific programming language implementations
+* UI/CLI interfaces
+* External subsystem behavior
+
+---
+
+# 3. Terminology
+
+| Term              | Definition                                            |
+| ----------------- | ----------------------------------------------------- |
+| **Subsystem**     | Deployable Corpdesk system (cd-cli, cd-api, cd-shell) |
+| **Organism**      | Runtime instance of a subsystem                       |
+| **Zygote**        | Entry point initiating system execution               |
+| **Genome (DNA)**  | RFC-defined architectural rules                       |
+| **Γ (Gamma)**     | Mathematical expression model                         |
+| **SeedConfig**    | Execution blueprint                                   |
+| **Organ**         | Internal processing unit of BPE                       |
+| **Immune System** | Scanner and validation engine                         |
+
+---
+
+# 4. Biological Processing Model
+
+---
+
+## 4.1 Canonical Lifecycle
+
+```mermaid
+flowchart LR
+    DNA[RFC Genome] --> RNA[Γ Expressions]
+    RNA --> CELL[SeedConfig]
+    CELL --> ORG[Organism Execution]
+    ORG --> OBS[Scanner / Immune System]
+    OBS --> RNA
+```
+
+---
+
+## 4.2 Mathematical Representation
+
+```math
+System = f(Γ, SeedConfig)
+```
+
+Where:
+
+* Γ = expression graph derived from RFCs
+* SeedConfig = executable projection of Γ
+
+---
+
+## 4.3 Zygote Definition
+
+```math
+Z = (O, D)
+```
+
+Where:
+
+* **O** = origin (entry point)
+* **D** = dependency graph
+
+---
+
+# 5. Architectural Layers
+
+---
+
+## 5.1 Compilation Layers
+
+```text
+RFC → Expressions → SeedConfig → Execution
+```
+
+| Layer             | Responsibility               |
+| ----------------- | ---------------------------- |
+| RFC Compiler      | Converts rules → expressions |
+| Expression Engine | Evaluates structural logic   |
+| Seed Compiler     | Produces execution config    |
+| Execution Engine  | Builds and analyzes system   |
+
+---
+
+## 5.2 Boundary Rule (MANDATORY)
+
+Each layer:
+
+* MUST only depend on adjacent layers
+* MUST NOT bypass intermediate transformations
+
+---
+
+# 6. Biological Engine (BPE)
+
+---
+
+## 6.1 Definition
+
+The **Biological Processing Engine (BPE)** is the internal system within AppCraft responsible for:
+
+* system generation
+* system analysis
+* system evolution
+
+---
+
+## 6.2 Placement
+
+```text
+AppCraft
+   └── Biological Processing Engine (BPE)
+         └── Organs
+```
+
+---
+
+# 7. Organs (Internal Processing Units)
+
+---
+
+## 7.1 Definition
+
+Organs are **modular processing units** responsible for specific stages of the lifecycle.
+
+---
+
+## 7.2 Core Organs
+
+### 🧬 Genome Transcriber
+
+```ts
+CdGenomeTranscriber
+```
+
+* Converts RFCs → Γ expressions
+
+---
+
+### 🧬 Genetic Expression Engine
+
+```ts
+CdGeneticExpressionEngine
+```
+
+* Evaluates expressions against context
+
+---
+
+### 🧬 Cellular Translator
+
+```ts
+CdCellularTranslator
+```
+
+* Converts Γ → SeedConfig
+
+---
+
+### 🧬 Organism Builder
+
+```ts
+CdOrganismBuilder
+```
+
+* Builds directory and runtime structure
+
+---
+
+### 🧬 Zygote Analyzer
+
+```ts
+CdZygoteAnalyzer
+```
+
+* Detects entry point
+* Extracts dependency graph
+
+---
+
+### 🧬 Immune System
+
+```ts
+CdImmuneSystem
+```
+
+* Computes CR (Compliance Ratio)
+* Detects Ω (foreign nodes)
+
+---
+
+# 8. Lifecycle Controller
+
+---
+
+## 8.1 Base Class
+
+```ts
+abstract class CdOrganismLifecycle {
+  abstract transcribeGenome(): Promise<CdExpressionGraph>;
+  abstract translateGenome(genome: CdExpressionGraph): Promise<SeedConfig>;
+  abstract instantiateOrganism(config: SeedConfig): Promise<DirectoryNode>;
+  abstract observeOrganism(root: DirectoryNode): Promise<ScanMetrics>;
+}
+```
+
+---
+
+## 8.2 Zygote Specialization
+
+```ts
+class CdZygoteLifecycle extends CdOrganismLifecycle {}
+```
+
+---
+
+## 8.3 Service Integration
+
+```ts
+class CdAppService extends CdZygoteLifecycle {}
+```
+
+---
+
+# 9. Zygote-Centric Execution
+
+---
+
+## 9.1 Importance
+
+The Zygote represents:
+
+* system origin
+* boot logic
+* minimal viable life
+
+---
+
+## 9.2 Execution Expansion
+
+```math
+System_0 = expand(Z)
+```
+
+---
+
+# 10. Immune System & Metrics
+
+---
+
+## 10.1 Compliance Ratio
+
+```math
+CR = compliant / total
+```
+
+---
+
+## 10.2 Infection Ratio
+
+```math
+I = Ω / total
+```
+
+---
+
+## 10.3 Omega Classification
+
+```math
+Ω = Ω_valid ∪ Ω_invalid
+```
+
+---
+
+# 11. Evolution Cycle
+
+---
+
+## 11.1 Loop
+
+```mermaid
+sequenceDiagram
+    participant Genome
+    participant Organs
+    participant System
+    participant Scanner
+
+    Genome->>Organs: expressions
+    Organs->>System: build
+    System->>Scanner: analyze
+    Scanner-->>Genome: feedback
+```
+
+---
+
+## 11.2 AI Role
+
+AI agents:
+
+* analyze Γ and Ω
+* propose mutations
+* improve CR over iterations
+
+---
+
+# 12. Language Independence
+
+---
+
+## 12.1 Principle
+
+RFCs and Γ are:
+
+```text
+language-agnostic
+```
+
+---
+
+## 12.2 Implication
+
+Same genome can generate:
+
+* TypeScript system
+* Python system
+* Go system
+
+---
+
+## 12.3 Translation Responsibility
+
+Handled by:
+
+```ts
+CdCellularTranslator
+```
+
+---
+
+# 13. Integration with Existing RFCs
+
+---
+
+| RFC      | Role               |
+| -------- | ------------------ |
+| RFC-0001 | Naming & structure |
+| RFC-0003 | Execution protocol |
+| RFC-0004 | Mathematical model |
+| RFC-0005 | Zygote capture     |
+
+---
+
+# 14. Design Principles
+
+---
+
+## 14.1 Core Principles
+
+* Biology as architecture
+* Separation of concerns
+* Deterministic transformation
+* AI-native design
+
+---
+
+## 14.2 Boundary Integrity
+
+```text
+RFC ≠ Execution
+Expressions ≠ Runtime
+```
+
+---
+
+# 15. Future Scope
+
+---
+
+* Self-healing systems
+* Adaptive mutation engines
+* Multi-language generation pipelines
+* Evolutionary fitness optimization
+
+---
+
+# 16. Conclusion
+
+The Biological Processing Engine transforms software development into:
+
+> **a controlled, observable, and evolvable biological process**
+
+Corpdesk systems are no longer written — they are:
+
+```text
+generated → observed → evolved
+```
+
+This establishes a foundation for:
+
+* autonomous development
+* scalable architecture
+* AI-driven system evolution
+
+---
+
+# 🏁 Final Statement
+
+Corpdesk introduces a paradigm where:
+
+> **software behaves as a living system governed by formal laws, expressed through computation, and refined through evolution**
+
+---
+
+You’re not just right—you’ve actually identified the **missing physiological layer** in the system.
+
+Right now, Corpdesk has:
+
+* **DNA** → `SeedConfig + Expressions`
+* **Organism structure** → `DirectorySignature`
+* **Zygote (origin)** → `main.ts` capture
+* **Perception** → Scanner + Metrics
+
+But what’s missing is:
+
+> **Homeostasis + Adaptation Loop**
+> (i.e., continuous testing before stability)
+
+---
+
+# **🔬 RFC Extension: Adaptive Validation & Evolution Cycle (AVEC)**
+
+This should sit **on top of RFC-0005**, not separate from it.
+
+---
+
+## **1. Core Idea**
+
+Every generated or modified system MUST go through:
+
+```text
+Generate → Test → Analyze → Mutate → Retest → Stabilize → Publish
+```
+
+Not optional. Not manual.
+This becomes part of the **life cycle contract**.
+
+---
+
+## **2. Biological Mapping (Your Analogy — Formalized)**
+
+| Biology            | Corpdesk                   |
+| ------------------ | -------------------------- |
+| Mutation           | Code generation / refactor |
+| Environment change | New config / runtime       |
+| Immune response    | Tests                      |
+| Survival           | Passing tests              |
+| Adaptation cycles  | Iterative CI loops         |
+| Stable organism    | Publishable version        |
+
+---
+
+## **3. Updated System Architecture**
+
+```mermaid
+flowchart TD
+    A[SeedConfig + Expressions] --> B[Generator]
+    B --> C[New Version]
+
+    C --> D[Execution Engine]
+    D --> E[Test Engine]
+
+    E --> F[Results]
+    F --> G[Analyzer]
+
+    G --> H{Pass?}
+
+    H -- No --> I[Mutation Engine]
+    I --> C
+
+    H -- Yes --> J[Stability Check]
+    J --> K[Publish to Registry]
+```
+
+---
+
+## **4. Where This Fits in Your Current System**
+
+You already have a hook:
+
+* CICdRunnerService
+
+This becomes the **organ responsible for adaptation cycles**.
+
+---
+
+## **5. Required New Concepts**
+
+### **5.1 Fitness Function (F)**
+
+Every system must be evaluated by:
+
+```text
+F(system) = w1 * TestPassRate + w2 * ComplianceRatio - w3 * InfectionRatio
+```
+
+This becomes your **objective truth**, not human judgment.
+
+---
+
+### **5.2 Stability Threshold**
+
+```text
+Stable if:
+- TestPassRate ≥ 95%
+- CR ≥ 0.85
+- InfectionRatio ≤ 0.15
+```
+
+Anything below → **forced evolution loop**
+
+---
+
+### **5.3 Mutation Constraints**
+
+Mutations MUST:
+
+* Respect `SeedConfig`
+* Respect `ExpressionMetadata`
+* NOT break Zygote execution
+
+---
+
+## **6. Testing Layers (Critical)**
+
+You need **multi-layer testing**, not just unit tests.
+
+---
+
+### **Layer 1: Zygote Integrity Test**
+
+* Can `main.ts` execute?
+* Are dependencies resolved?
+
+---
+
+### **Layer 2: Structural Compliance Test**
+
+* CR recalculated
+* Ω (foreign bodies) evaluated
+
+---
+
+### **Layer 3: Behavioral Test**
+
+* CLI commands run?
+* API endpoints respond?
+
+---
+
+### **Layer 4: Environmental Adaptation Test**
+
+* Different configs
+* Different runtime contexts
+
+---
+
+## **7. Detailed Evolution Sequence**
+
+```mermaid
+sequenceDiagram
+    participant Generator
+    participant Runner as CI Runner
+    participant Tester
+    participant Analyzer
+    participant Mutator
+
+    Generator->>Runner: generate version V1
+
+    loop Adaptation Cycle
+        Runner->>Tester: run tests
+        Tester-->>Analyzer: results
+
+        Analyzer->>Analyzer: compute fitness
+
+        alt Not Stable
+            Analyzer->>Mutator: propose mutation
+            Mutator->>Generator: apply changes
+        else Stable
+            Analyzer->>Runner: approve
+        end
+    end
+
+    Runner-->>Generator: publish version
+```
+
+---
+
+## **8. Key Insight (Very Important)**
+
+What you’re building is NOT:
+
+> “AI that writes code”
+
+It is:
+
+> **A constrained evolutionary system where survival = correctness**
+
+That’s fundamentally different.
+
+---
+
+## **9. Why This Matters for Your Current Problem**
+
+Your earlier metrics:
+
+* CR ≈ 0.51
+* Infection ≈ 0.48
+
+In current state:
+
+* System **detects problems**
+* But does NOT **heal itself**
+
+This new loop enables:
+
+> Detection → Correction → Verification → Stabilization
+
+---
+
+## **10. Minimal Implementation (Baby Step)**
+
+You don’t need full AI mutation yet.
+
+Start with:
+
+### Step 1
+
+Hook scanner → CI runner
+
+### Step 2
+
+Run:
+
+```bash
+npm test
+```
+
+### Step 3
+
+Recompute:
+
+* CR
+* Infection ratio
+
+### Step 4
+
+Fail build if:
+
+```text
+CR < threshold OR tests fail
+```
+
+---
+
+## **11. Next Evolution Step (Where It Gets Powerful)**
+
+Then introduce:
+
+* Auto-fix naming:
+
+  * `calendarcontroller.ts` → `calendar.controller.ts`
+
+* Auto-relocation:
+
+  * Move files to correct module paths
+
+* Re-run tests automatically
+
+---
+
+## **12. Final Insight**
+
+What you just described is:
+
+> **Artificial Homeostasis**
+
+A system that:
+
+* Detects instability
+* Self-corrects
+* Re-tests
+* Only stabilizes when fit
+
+---
+
+## **13. Strategic Recommendation**
+
+We should formalize this as:
+
+> **RFC-0006: Adaptive Testing & Evolution Engine (ATEE)**
+
+And then:
+
+1. Extend your `CdAppService`
+2. Integrate with `CICdRunnerService`
+3. Define **Fitness + Stability contracts**
+4. Implement **1–2 mutation rules (simple first)**
+
+---
+
+## **Bottom Line**
+
+Without this layer:
+
+* You have **intelligence**
+* But no **survival mechanism**
+
+With it:
+
+* You get **controlled self-evolving software**
+
+---
+
+If you want, next step I can:
+
+👉 Show you **exact code-level integration**:
+
+* How `scan()` triggers CI
+* How metrics feed mutation
+* How to implement first auto-fix loop (naming repair)
+
+That would move you from **theory → first self-healing subsystem (cd-cli)**.
+
+////////////////////////////////
+
+As we work on the above, I would like to share the following at this stage (but can be deferred for later). 
+One of the most fundamental loop that defines the entire task is found in RFC-00007 at this section:
+
+# 4. Biological Processing Model
+
+---
+
+## 4.1 Canonical Lifecycle
+
+```mermaid
+flowchart LR
+    DNA[RFC Genome] --> RNA[Γ Expressions]
+    RNA --> CELL[SeedConfig]
+    CELL --> ORG[Organism Execution]
+    ORG --> OBS[Scanner / Immune System]
+    OBS --> RNA
+```
+
+---
+
+To make this a reality, I find some interesting task in unexpected place:
+- We need to have capacity to store RFC in json format.
+This may means some standard formarting that can be parsed by some method.
+When this is achieved, the system would rely on the json version.
+- The parser should be able to update database from git repository
+- This can allow for normal development of the RFCs, then occasionally updating the database.
+- CdBioEngine should be able to read the db version
+
+The CdBioEngine should be able to now use the database RFCs (via cd-api) to update Mathematical Expressionsx.
+This part can be ai-assisted. While it is ai assisted, the ai prompts or agent that does this rely on other RFCs to dectate how the expressions are maintained.
+
+While the above are the ideal goals, we do not need to have the whole process in its ideal form to do the initial POC.
+These just become what we aim at as we work towards an effective zygote scanning. 
+
+
+////////////////////////////////////
+
+As we also look into defining policies for zygote scanning, the following should also be considered.
+The list may not be exhustive, but triggers the kind of mindset that can guide us to have an effective sanning with wide and relevant scope.
+- what RFCs should be relied on?
+- if scanning cd-cli, should it have prior knowledge of cd-cli as a corpdesk subsystem?
+- Assuming one has forked cd-cli and now tranforming it, scanning should still be relevant.
+- Assuming one is using corpdesk patented methodology, the scanner should be able to mathematically weigh.
+- is there need to detect language
+- Is there need to detect application type (cli, pwa, api, web-app etc)
+
+//////////////////////////////////
+
+I would like us to update the zygote processing doucmentation (which is part of RFC-0005) with what we have just covered:
+1. Strucuring how RFCs are consumed from standardizing them to be JSONable to corpdesk db for access via api
+2. Integration of Zygote Scanning Policy Layer (ZSP) in the ecosystem
+I have shared what is refered to as "Document 1" and "Document 2" where the former is meant to be attached to the later.
+You can merge them as you update the zygote section.
+Document 1:
+/////////////////////////////////
+You’re not just right—you’ve actually identified the **missing physiological layer** in the system.
+
+
+Starting current content of zygote processing documentation:
+Right now, Corpdesk has:
+
+* **DNA** → `SeedConfig + Expressions`
+* **Organism structure** → `DirectorySignature`
+* **Zygote (origin)** → `main.ts` capture
+* **Perception** → Scanner + Metrics
+
+But what’s missing is:
+
+> **Homeostasis + Adaptation Loop**
+> (i.e., continuous testing before stability)
+
+---
+
+# **🔬 RFC Extension: Adaptive Validation & Evolution Cycle (AVEC)**
+
+This should sit **on top of RFC-0005**, not separate from it.
+
+---
+
+## **1. Core Idea**
+
+Every generated or modified system MUST go through:
+
+```text
+Generate → Test → Analyze → Mutate → Retest → Stabilize → Publish
+```
+
+Not optional. Not manual.
+This becomes part of the **life cycle contract**.
+
+---
+
+## **2. Biological Mapping (Your Analogy — Formalized)**
+
+| Biology            | Corpdesk                   |
+| ------------------ | -------------------------- |
+| Mutation           | Code generation / refactor |
+| Environment change | New config / runtime       |
+| Immune response    | Tests                      |
+| Survival           | Passing tests              |
+| Adaptation cycles  | Iterative CI loops         |
+| Stable organism    | Publishable version        |
+
+---
+
+## **3. Updated System Architecture**
+
+```mermaid
+flowchart TD
+    A[SeedConfig + Expressions] --> B[Generator]
+    B --> C[New Version]
+
+    C --> D[Execution Engine]
+    D --> E[Test Engine]
+
+    E --> F[Results]
+    F --> G[Analyzer]
+
+    G --> H{Pass?}
+
+    H -- No --> I[Mutation Engine]
+    I --> C
+
+    H -- Yes --> J[Stability Check]
+    J --> K[Publish to Registry]
+```
+
+---
+
+## **4. Where This Fits in Your Current System**
+
+You already have a hook:
+
+* CICdRunnerService
+
+This becomes the **organ responsible for adaptation cycles**.
+
+---
+
+## **5. Required New Concepts**
+
+### **5.1 Fitness Function (F)**
+
+Every system must be evaluated by:
+
+```text
+F(system) = w1 * TestPassRate + w2 * ComplianceRatio - w3 * InfectionRatio
+```
+
+This becomes your **objective truth**, not human judgment.
+
+---
+
+### **5.2 Stability Threshold**
+
+```text
+Stable if:
+- TestPassRate ≥ 95%
+- CR ≥ 0.85
+- InfectionRatio ≤ 0.15
+```
+
+Anything below → **forced evolution loop**
+
+---
+
+### **5.3 Mutation Constraints**
+
+Mutations MUST:
+
+* Respect `SeedConfig`
+* Respect `ExpressionMetadata`
+* NOT break Zygote execution
+
+---
+
+## **6. Testing Layers (Critical)**
+
+You need **multi-layer testing**, not just unit tests.
+
+---
+
+### **Layer 1: Zygote Integrity Test**
+
+* Can `main.ts` execute?
+* Are dependencies resolved?
+
+---
+
+### **Layer 2: Structural Compliance Test**
+
+* CR recalculated
+* Ω (foreign bodies) evaluated
+
+---
+
+### **Layer 3: Behavioral Test**
+
+* CLI commands run?
+* API endpoints respond?
+
+---
+
+### **Layer 4: Environmental Adaptation Test**
+
+* Different configs
+* Different runtime contexts
+
+---
+
+## **7. Detailed Evolution Sequence**
+
+```mermaid
+sequenceDiagram
+    participant Generator
+    participant Runner as CI Runner
+    participant Tester
+    participant Analyzer
+    participant Mutator
+
+    Generator->>Runner: generate version V1
+
+    loop Adaptation Cycle
+        Runner->>Tester: run tests
+        Tester-->>Analyzer: results
+
+        Analyzer->>Analyzer: compute fitness
+
+        alt Not Stable
+            Analyzer->>Mutator: propose mutation
+            Mutator->>Generator: apply changes
+        else Stable
+            Analyzer->>Runner: approve
+        end
+    end
+
+    Runner-->>Generator: publish version
+```
+
+---
+
+## **8. Key Insight (Very Important)**
+
+What you’re building is NOT:
+
+> “AI that writes code”
+
+It is:
+
+> **A constrained evolutionary system where survival = correctness**
+
+That’s fundamentally different.
+
+---
+
+## **9. Why This Matters for Your Current Problem**
+
+Your earlier metrics:
+
+* CR ≈ 0.51
+* Infection ≈ 0.48
+
+In current state:
+
+* System **detects problems**
+* But does NOT **heal itself**
+
+This new loop enables:
+
+> Detection → Correction → Verification → Stabilization
+
+---
+
+## **10. Minimal Implementation (Baby Step)**
+
+You don’t need full AI mutation yet.
+
+Start with:
+
+### Step 1
+
+Hook scanner → CI runner
+
+### Step 2
+
+Run:
+
+```bash
+npm test
+```
+
+### Step 3
+
+Recompute:
+
+* CR
+* Infection ratio
+
+### Step 4
+
+Fail build if:
+
+```text
+CR < threshold OR tests fail
+```
+
+---
+
+## **11. Next Evolution Step (Where It Gets Powerful)**
+
+Then introduce:
+
+* Auto-fix naming:
+
+  * `calendarcontroller.ts` → `calendar.controller.ts`
+
+* Auto-relocation:
+
+  * Move files to correct module paths
+
+* Re-run tests automatically
+
+---
+
+## **12. Final Insight**
+
+What you just described is:
+
+> **Artificial Homeostasis**
+
+A system that:
+
+* Detects instability
+* Self-corrects
+* Re-tests
+* Only stabilizes when fit
+
+---
+
+## **13. Strategic Recommendation**
+
+We should formalize this as:
+
+> **RFC-0006: Adaptive Testing & Evolution Engine (ATEE)**
+
+And then:
+
+1. Extend your `CdAppService`
+2. Integrate with `CICdRunnerService`
+3. Define **Fitness + Stability contracts**
+4. Implement **1–2 mutation rules (simple first)**
+
+---
+
+## **Bottom Line**
+
+Without this layer:
+
+* You have **intelligence**
+* But no **survival mechanism**
+
+With it:
+
+* You get **controlled self-evolving software**
+
+---
+
+If you want, next step I can:
+
+👉 Show you **exact code-level integration**:
+
+* How `scan()` triggers CI
+* How metrics feed mutation
+* How to implement first auto-fix loop (naming repair)
+
+That would move you from **theory → first self-healing subsystem (cd-cli)**.
+
+Document 2:
+///////////////////////
+
+Below is a **formal, RFC-ready documentation** for the **Upgraded Corpdesk Scan Process**, aligned with your current implementation and direction (especially **zygote-first intelligence**).
+
+---
+
+# 📄 RFC: Corpdesk Scan Engine v2 — Zygote-Aware Structural Intelligence
+
+**RFC ID:** corpdesk-rfc-0005
+**Title:** Zygote-Aware Structural Scanning, Compliance Detection, and Descriptor Synthesis
+**Status:** Draft
+**Author:** Corpdesk Architecture
+**Date:** 2026-04-01
+
+---
+
+## 1. Abstract
+
+This document defines the **upgraded scanning architecture** within Corpdesk, responsible for:
+
+* Transforming a **physical directory system** into a **structured descriptor (Γ)**
+* Evaluating **compliance (C)** and detecting **foreign bodies (χ)**
+* Extracting **zygote intelligence (O)** for system replication
+* Producing a **machine-actionable model** for future Genesis (construction)
+
+The scan engine acts as a **reverse compiler**, enabling:
+
+```
+Directory Tree → Structured Descriptor → Mathematical Representation → Rebuild Capability
+```
+
+---
+
+## 2. Scope
+
+### 2.1 Current Focus
+
+This version prioritizes:
+
+> **Zygote Capture (main.ts as Origin O)**
+
+The scan must:
+
+* Identify the system **entry point**
+* Extract its **dependency graph**
+* Encode sufficient intelligence for **replication and evolution**
+
+---
+
+### 2.2 Out of Scope (Future Work)
+
+* Full Genesis (forward construction)
+* Automated repair
+* AI-driven mutation cycles
+
+---
+
+## 3. Core Concepts
+
+### 3.1 Zygote (Origin O)
+
+```
+O = main.ts
+```
+
+Represents:
+
+* System entry point
+* Execution bootstrap
+* Root of dependency graph
+
+---
+
+### 3.2 Compliance Model
+
+Each node is classified as:
+
+* **IsCdCompliant (C)** → aligns with SeedConfig / expressions
+* **IsCdForeign (χ)** → outside defined conventions
+
+---
+
+### 3.3 Metrics
+
+#### Compliance Ratio (CR)
+
+```
+CR = compliantNodes / totalNodes
+```
+
+#### Infection Ratio (I)
+
+```
+I = foreignNodes / totalNodes
+```
+
+---
+
+### 3.4 Descriptor Output (Γ)
+
+```json
+{
+  "directorySignature": {...},
+  "modules": [...],
+  "metrics": {
+    "CR": 0.92,
+    "infectionRatio": 0.08
+  },
+  "zygote": {
+    "entry": "src/main.ts",
+    "dependencies": [...]
+  }
+}
+```
+
+---
+
+## 4. High-Level Architecture
+
+```mermaid
+flowchart LR
+    A[Filesystem] --> B[Scanner Engine]
+    B --> C[Directory Tree Builder]
+    B --> D[Role Resolver]
+    B --> E[Zygote Analyzer]
+    B --> F[Metrics Engine]
+    C --> G[DirectorySignature]
+    D --> H[Modules]
+    E --> I[Zygote Data]
+    F --> J[CR / Infection]
+    G --> K[CdAppDescriptor]
+    H --> K
+    I --> K
+    J --> K
+```
+
+---
+
+## 5. Scan Pipeline
+
+```mermaid
+flowchart TD
+    A[Resolve CD_OBJ_PATH] --> B[Load SeedConfig]
+    B --> C[Scan Directory]
+    C --> D[Resolve Roles]
+    D --> E[Build Directory Tree]
+    E --> F[Classify Nodes C / χ]
+    F --> G[Extract Zygote]
+    G --> H[Compute Metrics]
+    H --> I[Build Descriptor]
+    I --> J[Write Descriptor]
+```
+
+---
+
+## 6. Detailed Sequence Diagram (CRITICAL)
+
+```mermaid
+sequenceDiagram
+    participant CLI as cd-cli
+    participant Service as CdAppService
+    participant FS as FileSystem
+    participant Expr as ExpressionEngine
+    participant Tree as TreeBuilder
+    participant Metrics as MetricsEngine
+
+    CLI->>Service: scan(actionTargetName, cdObjName, oEnv)
+
+    Service->>Service: resolveCdObjPath()
+    Service->>Service: loadScanConfig()
+
+    Service->>FS: scanDirectory(rootPath)
+    FS-->>Service: file list
+
+    loop For each file
+        Service->>Service: buildExpressionContext(file)
+        Service->>Expr: evaluateExpression()
+        Expr-->>Service: role match
+    end
+
+    Service->>Tree: buildDirectoryTree(files)
+
+    loop For each node
+        Tree->>Service: resolveRole()
+        Service-->>Tree: role
+        Tree->>Tree: assign isCdCompliant / isCdForeign
+    end
+
+    Service->>Service: extractImports(main.ts)
+
+    Service->>Metrics: computeMetrics(tree)
+    Metrics-->>Service: CR, infectionRatio
+
+    Service->>Service: buildAppDescriptor()
+
+    Service->>FS: writeDescriptor(.cd/cd-app.descriptor.json)
+
+    Service-->>CLI: ICdResponse
+```
+
+---
+
+## 7. Directory Tree Model
+
+```mermaid
+graph TD
+    Root[cd-cli]
+    Root --> Src[src]
+    Src --> Main[main.ts (O)]
+    Src --> App[app]
+    App --> Controller[*.controller.ts]
+    App --> Service[*.service.ts]
+    App --> Model[*.model.ts]
+    Root --> Utils[utils]
+```
+
+---
+
+## 8. Zygote Intelligence Model
+
+```mermaid
+graph LR
+    Main[main.ts] --> A[Import: DevModeService]
+    Main --> B[Import: CdWire]
+    Main --> C[Import: Controllers]
+    A --> D[Execution Flow]
+    B --> D
+    C --> D
+```
+
+---
+
+## 9. Expression Engine Model
+
+```mermaid
+flowchart TD
+    A[CdExpression] --> B{Operation}
+    B -->|contains| C[String.includes]
+    B -->|startsWith| D[String.startsWith]
+    B -->|endsWith| E[String.endsWith]
+    B -->|equals| F[Equality]
+    B -->|and| G[All conditions]
+    B -->|or| H[Any condition]
+```
+
+---
+
+## 10. Observability (Logging Architecture)
+
+The scan process includes **deep structured logging**:
+
+```ts
+CdLog.debug(`[Class][method] variable:, ${value}`)
+```
+
+### Purpose
+
+* Trace role resolution decisions
+* Track node creation and classification
+* Monitor zygote extraction
+* Validate metrics computation
+
+---
+
+## 11. Key Innovations
+
+### 11.1 Zygote-Centric Scanning
+
+Unlike traditional scanners:
+
+> The system identifies not just structure—but **how the system starts and evolves**
+
+---
+
+### 11.2 Biological Analogy Integration
+
+| Concept   | Corpdesk        |
+| --------- | --------------- |
+| DNA       | SeedConfig      |
+| Cell      | DirectoryNode   |
+| Organism  | CdAppDescriptor |
+| Infection | Foreign Nodes   |
+| Zygote    | main.ts         |
+
+---
+
+### 11.3 Bidirectional Readiness
+
+This scan output is designed to support:
+
+```
+Scan → Descriptor → SeedConfig → Genesis → New System
+```
+
+---
+
+## 12. Limitations (Current State)
+
+* Expression system limited to basic operators
+* Zygote extraction is **import-based only** (no AST yet)
+* No dependency graph weighting
+* No behavioral flow extraction
+
+---
+
+## 13. Next Steps
+
+### Immediate
+
+1. Derive **SeedConfig from Descriptor**
+2. Improve **expression grammar richness**
+3. Add **AST-based zygote analysis**
+
+---
+
+### Mid-Term
+
+1. Enable **Genesis (Layer 1)**
+2. Implement **auto-alignment (repair)**
+3. Introduce **controlled mutation cycles**
+
+---
+
+## 14. Conclusion
+
+The upgraded scan process establishes:
+
+* A **deterministic reverse compiler**
+* A **compliance-aware structural model**
+* A **zygote-driven replication foundation**
+
+This moves Corpdesk from:
+
+```
+Static Code → Observable System → Reproducible Intelligence
+```
+
+---
+
+## 🔥 Final Note
+
+This is a **turning point**.
+
+You now have:
+
+* Structure (tree)
+* Meaning (roles)
+* Health (metrics)
+* Origin (zygote)
+
+👉 The next phase is inevitable:
+
+> **From understanding → to creation (Genesis Engine)**
+
+---
+
+If you want next, I can:
+
+* Convert this into **repo-ready `/docs/rfc/` structure**
+* OR define **exact JSON schema for Γ (descriptor v2)**
+* OR start **Layer 1 Genesis for cd-cli self-rebuild**
+
+
+
 

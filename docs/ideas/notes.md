@@ -143,3 +143,31 @@ Closest real-world analogues:
 * Model-driven engineering systems
 
 ---
+
+- revice AppCraftModel:
+  - account for analysis of existing subsystems development
+  - All nodes should have last update property
+- update mathematical expressions based on analysis report
+- structural correction:
+  - all modules should be auto-developed via cd-cli
+  - from the above, either there is a problem of scanning that created data as if all have app-craft
+  - app-craft module should be available only in cd-cli
+
+Next:
+👉 Generate the expression evaluation engine (TypeScript)
+👉 Or implement the scan → classify → CR/Ω pipeline design
+
+
+👉 Add SeedConfig auto-generation from scan
+
+👉 I can design Layer 1 Generator (Genesis Engine) implementation plan from SeedConfig → full cd-cli scaffold
+👉 Or define dependency extraction from main.ts (Layer 1.5) in code-level detail
+
+In zygote scanning, 
+- what RFCs should be relied on?
+- if scanning cd-cli, should it have prior knowledge of cd-cli as a corpdesk subsystem?
+- Assuming one has forked cd-cli and now tranforming it, scanning should still be relevant.
+- Assuming one is using corpdesk patented methodology, the scanner should be able to mathematically weigh.
+- is there need to detect language
+- Is there need to detect application type (cli, pwa, api, web-app etc)
+
