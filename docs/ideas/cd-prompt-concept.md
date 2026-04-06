@@ -6053,25 +6053,26 @@ Roles from the database table cd_obj_role
 //////////////////////////////
 You can transpose the codes you have create to align with the code below.
 Notice there is:
+
 - src/CdCli/app/app-craft/controllers/cd-app.controller.ts
 - src/CdCli/app/app-craft/services/cd-app.service.ts
-Use the example of model file to create any reference model that you may deem necessary.
-The modle file will eventually be:
+  Use the example of model file to create any reference model that you may deem necessary.
+  The modle file will eventually be:
 - src/CdCli/app/app-craft/models/cd-app.model.ts
-Notice also that I have drafted the methods:
-- CdAppController.appScan() and 
+  Notice also that I have drafted the methods:
+- CdAppController.appScan() and
 - CdAppService.appScan()
-You may need to create some helper methods as necessary
+  You may need to create some helper methods as necessary
 
 The input in appScan() are:
 actionTargetName: string,
-    cdObjName: string,
-    cdObjTypeName: string,
-    cdToken: string,
+cdObjName: string,
+cdObjTypeName: string,
+cdToken: string,
 You can assume the following:
 actionTargetName = 'scan' // it is a pattern that allows more action to work in the same work-flow
 cdObjName = 'cd-cli' // can be any corpdesk sub application eg cd-api, cd-shell
-cdObjTypeName = 'application' // as opposed to a module, controller, service etc. 
+cdObjTypeName = 'application' // as opposed to a module, controller, service etc.
 cdToken = '' //reserved for corpesk session tocken. At the moment this has not been activated
 
 ```ts
@@ -6210,29 +6211,35 @@ export class CdAppController {
 
 /* eslint-disable style/brace-style */
 
-import { basename, join } from 'path';
-import { GenericService } from '../../../sys/base/generic-service.js';
-import { HttpService } from '../../../sys/base/http.service.js';
+import { basename, join } from "path";
+import { GenericService } from "../../../sys/base/generic-service.js";
+import { HttpService } from "../../../sys/base/http.service.js";
 import {
   CD_FX_FAIL,
   CdAssertReturn,
   CdFxReturn,
   CdFxStateLevel,
   IQuery,
-} from '../../../sys/base/i-base.js';
-import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
-import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
-import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
-import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
-import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
-import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
-import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
-import { mkdir, writeFile } from 'fs/promises';
-import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
-import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
-import { executeCommand } from '../../../sys/utils/cmd.util.js';
-import { CdAutoGitController } from '../../cd-auto-git/index.js';
-import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
+} from "../../../sys/base/i-base.js";
+import CdLog from "../../../sys/cd-comm/controllers/cd-logger.controller.js";
+import {
+  AppType,
+  CdAppDescriptor,
+} from "../../../sys/dev-descriptor/models/cd-app.model.js";
+import { CdDescriptor } from "../../../sys/dev-descriptor/models/dev-descriptor.model.js";
+import { CICdRunnerService } from "../../../sys/dev-descriptor/services/cd-ci-runner.service.js";
+import { DevDescriptorService } from "../../../sys/dev-descriptor/services/dev-descriptor.service.js";
+import {
+  DevModeAction,
+  DevModeModel,
+} from "../../../sys/dev-mode/models/dev-mode.model.js";
+import { CdObjModel } from "../../../sys/moduleman/models/cd-obj.model.js";
+import { mkdir, writeFile } from "fs/promises";
+import { cdFx } from "../../../sys/base/cd-fx-return.util.js";
+import { inferCdObjType } from "../../../sys/utils/cd-naming.util.js";
+import { executeCommand } from "../../../sys/utils/cmd.util.js";
+import { CdAutoGitController } from "../../cd-auto-git/index.js";
+import { VersionService } from "../../../sys/dev-descriptor/services/version.service.js";
 
 export class CdAppService {
   cdToken;
@@ -6255,25 +6262,26 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::create()');
-    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug("Starting CdAppService::create()");
+    CdLog.debug("Starting CdAppService::create()");
     CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.CREATE,
-      cdObjType,
-      moduleName,
-      moduleType,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: cdToken, // Pass the cdToken if needed
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.CREATE,
+        cdObjType,
+        moduleName,
+        moduleType,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: cdToken, // Pass the cdToken if needed
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -6357,7 +6365,7 @@ export class CdAppService {
        * If null it is substituted by { where: {} }
        * Which would then fetch all the data
        */
-      const payload = this.svDevDescriptors.setEnvelope('Read', {
+      const payload = this.svDevDescriptors.setEnvelope("Read", {
         query: q ?? { where: {} },
       });
       return CD_FX_FAIL; // placeholder until this method is properly implemented
@@ -6376,26 +6384,27 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::update()');
-    CdLog.debug('Starting CdAppService::create()');
-    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug("Starting CdAppService::update()");
+    CdLog.debug("Starting CdAppService::create()");
+    CdLog.debug("Starting CdAppService::create()");
     CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.CREATE,
-      cdObjType,
-      moduleName,
-      moduleType,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: cdToken, // Pass the cdToken if needed
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.CREATE,
+        cdObjType,
+        moduleName,
+        moduleType,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: cdToken, // Pass the cdToken if needed
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -6437,20 +6446,22 @@ export class CdAppService {
   }
 
   // Get a single app by name
-  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+  async getModuleByName(
+    name: string,
+  ): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
     try {
       // Validate input
       if (!name.trim()) {
         return {
           data: null,
           state: false,
-          message: 'Application name is required.',
+          message: "Application name is required.",
         };
       }
 
       // Define the query
       const q: IQuery = {
-        select: ['cdObjId', 'cdObjName', 'cdObjGuid', 'jDetails'], // Fields to select
+        select: ["cdObjId", "cdObjName", "cdObjGuid", "jDetails"], // Fields to select
         where: { cdObjName: name }, // Fetch apps by name
       };
 
@@ -6470,24 +6481,25 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::derive()');
+    CdLog.debug("Starting CdAppService::derive()");
     CdLog.debug(`CdAppService::derive()/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`CdAppService::derive()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::derive()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::derive()/cdToken: ${cdToken}`);
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.DERIVE,
-      cdObjType,
-      moduleName,
-      moduleType,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: cdToken, // Pass the cdToken if needed
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.DERIVE,
+        cdObjType,
+        moduleName,
+        moduleType,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: cdToken, // Pass the cdToken if needed
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -6499,7 +6511,6 @@ export class CdAppService {
     return await this.runner.run(descriptor, workflowModel);
   }
 
-  
   async upgrade(
     actionTargetName: string,
     moduleName: string,
@@ -6508,8 +6519,10 @@ export class CdAppService {
     version?: string,
     testTasks?: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::upgrade()');
-    CdLog.debug(`CdAppService::upgrade()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug("Starting CdAppService::upgrade()");
+    CdLog.debug(
+      `CdAppService::upgrade()/actionTargetName: ${actionTargetName}`,
+    );
     CdLog.debug(`CdAppService::upgrade()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::upgrade()/oEnv: ${oEnv}`);
     CdLog.debug(`CdAppService::upgrade()/repoName: ${repoName}`);
@@ -6517,9 +6530,15 @@ export class CdAppService {
     CdLog.debug(`CdAppService::upgrade()/testTasks: ${testTasks}`);
 
     // 🔁 Convert version string to SemanticVersionObject
-    const semanticResult = VersionService.toSemanticObject(version ?? '');
-    if (semanticResult.state !== CdFxStateLevel.Success || !semanticResult.data) {
-      return cdFx(CdFxStateLevel.LogicalFailure, `❌ Invalid version format: "${version}"`);
+    const semanticResult = VersionService.toSemanticObject(version ?? "");
+    if (
+      semanticResult.state !== CdFxStateLevel.Success ||
+      !semanticResult.data
+    ) {
+      return cdFx(
+        CdFxStateLevel.LogicalFailure,
+        `❌ Invalid version format: "${version}"`,
+      );
     }
 
     const versionObj = semanticResult.data;
@@ -6527,22 +6546,23 @@ export class CdAppService {
 
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.UPGRADE,
-      cdObjType,
-      moduleName,
-      oEnv,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: '', // Pass the cdToken if needed
-        repoName: repoName,
-        appType: AppType.CdApi,
-        version: versionObj, // 👈 Pass object instead of string
-        testTasks: testTasks !== undefined ? String(testTasks) : undefined, // 👈 Convert to string if needed
-        oEnv: oEnv,
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.UPGRADE,
+        cdObjType,
+        moduleName,
+        oEnv,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: "", // Pass the cdToken if needed
+          repoName: repoName,
+          appType: AppType.CdApi,
+          version: versionObj, // 👈 Pass object instead of string
+          testTasks: testTasks !== undefined ? String(testTasks) : undefined, // 👈 Convert to string if needed
+          oEnv: oEnv,
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -6560,12 +6580,14 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::appScan()');
-    CdLog.debug(`CdAppService::appScan()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug("Starting CdAppService::appScan()");
+    CdLog.debug(
+      `CdAppService::appScan()/actionTargetName: ${actionTargetName}`,
+    );
     CdLog.debug(`CdAppService::appScan()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::appScan()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::appScan()/cdToken: ${cdToken}`);
-    
+
     /**
      * Detail implementation using helper methods
      */
@@ -6581,17 +6603,22 @@ export class CdAppService {
   }
 }
 ```
+
 // typical model. We need a new equivalent file cd-app.model.ts to serve the cd-app.service.ts
+
 ```ts
 // src/CdCli/app/app-craft/models/app-craft.model.ts
-import { dirname, join, resolve } from 'node:path';
-import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
-import { AppCraftController } from '../controllers/app-craft.controller.js';
+import { dirname, join, resolve } from "node:path";
+import CdLog from "../../../sys/cd-comm/controllers/cd-logger.controller.js";
+import { AppCraftController } from "../controllers/app-craft.controller.js";
 import { fileURLToPath } from "url";
-import { HOME } from '../../../sys/utils/fs.util.js';
-import { AppType } from '../../../sys/dev-descriptor/index.js';
-import { CdFxStateLevel, ICdRequest, ICdResponse } from './../../../sys/base/i-base.js';
-
+import { HOME } from "../../../sys/utils/fs.util.js";
+import { AppType } from "../../../sys/dev-descriptor/index.js";
+import {
+  CdFxStateLevel,
+  ICdRequest,
+  ICdResponse,
+} from "./../../../sys/base/i-base.js";
 
 // Simulate __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -6599,7 +6626,7 @@ const __dirname = dirname(__filename);
 
 export interface ITestLog {
   timestamp: string;
-  category: 'request' | 'response' | 'error' | 'system' | 'info' | 'debug';
+  category: "request" | "response" | "error" | "system" | "info" | "debug";
   action: string;
   controller: string;
   request?: ICdRequest;
@@ -6608,36 +6635,35 @@ export interface ITestLog {
   state?: CdFxStateLevel;
 
   /** 🔥 For display convenience */
-  label?: string;   // e.g., "Create User", "Step 1", or test-defined string
-  type?: 'request' | 'response' | 'error'; // alias for category in the CRUD context
-  payload?: any;    // flatten request/response/message into a single payload
+  label?: string; // e.g., "Create User", "Step 1", or test-defined string
+  type?: "request" | "response" | "error"; // alias for category in the CRUD context
+  payload?: any; // flatten request/response/message into a single payload
 }
-
 
 export const InitModuleFromRepoPromptData: any = [
   {
-    type: 'input',
-    name: 'remoteServer',
-    message: 'Enter development server address:',
-    default: '192.168.1.70',
+    type: "input",
+    name: "remoteServer",
+    message: "Enter development server address:",
+    default: "192.168.1.70",
   },
   {
-    type: 'input',
-    name: 'remoteUser',
-    message: 'Enter remote SSH user (default: devops):',
-    default: 'devops',
+    type: "input",
+    name: "remoteUser",
+    message: "Enter remote SSH user (default: devops):",
+    default: "devops",
   },
   {
-    type: 'input',
-    name: 'sshKey',
-    message: 'Enter path to your SSH key:',
-    default: '~/path/to/sshKey',
+    type: "input",
+    name: "sshKey",
+    message: "Enter path to your SSH key:",
+    default: "~/path/to/sshKey",
   },
   {
-    type: 'input',
-    name: 'cdApiDir',
-    message: 'Enter directory on the server (e.g., ~/cd-api):',
-    default: '~/cd-api',
+    type: "input",
+    name: "cdApiDir",
+    message: "Enter directory on the server (e.g., ~/cd-api):",
+    default: "~/cd-api",
   },
 ];
 
@@ -6649,7 +6675,7 @@ export interface PromptMeta {
 }
 
 export const DEFAULT_PROMPT_DATA = {
-  cdCliProfileName: '',
+  cdCliProfileName: "",
   cdCliProfileData: null,
   cdCliProfileTypeId: -1,
   userId: -1,
@@ -6657,28 +6683,28 @@ export const DEFAULT_PROMPT_DATA = {
 
 export const SSH_TO_DEV_PROMPT_DATA: any = [
   {
-    type: 'input',
-    name: 'remoteServer',
-    message: 'Enter development server address:',
-    default: '192.168.1.70',
+    type: "input",
+    name: "remoteServer",
+    message: "Enter development server address:",
+    default: "192.168.1.70",
   },
   {
-    type: 'input',
-    name: 'remoteUser',
-    message: 'Enter remote SSH user (default: devops):',
-    default: 'devops',
+    type: "input",
+    name: "remoteUser",
+    message: "Enter remote SSH user (default: devops):",
+    default: "devops",
   },
   {
-    type: 'input',
-    name: 'sshKey',
-    message: 'Enter path to your SSH key:',
-    default: '~/path/to/sshKey',
+    type: "input",
+    name: "sshKey",
+    message: "Enter path to your SSH key:",
+    default: "~/path/to/sshKey",
   },
   {
-    type: 'input',
-    name: 'cdApiDir',
-    message: 'Enter directory on the server (e.g., ~/cd-api):',
-    default: '~/cd-api',
+    type: "input",
+    name: "cdApiDir",
+    message: "Enter directory on the server (e.g., ~/cd-api):",
+    default: "~/cd-api",
   },
 ];
 
@@ -6712,30 +6738,30 @@ export const MODULE_CMD = {
    * --dev-srv: Specifies the development server to SSH into, which can be overridden by a profile.
    * --profile: The name of the profile for SSH configuration, which is optional.
    */
-  name: 'module',
-  description: 'Manage modules.',
+  name: "module",
+  description: "Manage modules.",
   subcommands: [
     {
-      name: 'init',
-      description: 'Initialize a new module from a repository.',
+      name: "init",
+      description: "Initialize a new module from a repository.",
       options: [
         {
-          flags: '--type <templateType>',
+          flags: "--type <templateType>",
           description:
-            'Type of the module template (e.g. as per CdModuleTypeDescriptor: examples cd-api, module-frontend, cd-cli)',
+            "Type of the module template (e.g. as per CdModuleTypeDescriptor: examples cd-api, module-frontend, cd-cli)",
         },
         {
-          flags: '--repo <gitRepo>',
-          description: 'Git repository URL of the module',
+          flags: "--repo <gitRepo>",
+          description: "Git repository URL of the module",
         },
         {
-          flags: '--dev-srv <devServer>',
+          flags: "--dev-srv <devServer>",
           description:
-            'Development server to SSH into (can be overridden by profile)',
+            "Development server to SSH into (can be overridden by profile)",
         },
         {
-          flags: '--profile <profileName>',
-          description: 'Profile name for SSH configuration (optional)',
+          flags: "--profile <profileName>",
+          description: "Profile name for SSH configuration (optional)",
         },
       ],
       action: {
@@ -6760,27 +6786,27 @@ export const TEMPLATE_CMD = {
    * cd-cli template init --type=cd-api --url=https://github.com/corpdesk/abcd.git --debug 4
    *
    * */
-  name: 'template',
-  description: 'Manage module templates.',
+  name: "template",
+  description: "Manage module templates.",
   subcommands: [
     {
-      name: 'init',
-      description: 'Initialize a new module from a template.',
+      name: "init",
+      description: "Initialize a new module from a template.",
       options: [
         {
-          flags: '--type <templateType>',
+          flags: "--type <templateType>",
           description:
-            'Type of the module template (e.g., cd-api, module-frontend)',
+            "Type of the module template (e.g., cd-api, module-frontend)",
         },
         {
-          flags: '--url <gitRepo>',
-          description: 'Git repository URL of the template',
+          flags: "--url <gitRepo>",
+          description: "Git repository URL of the template",
         },
       ],
       action: {
         execute: async (options: any) => {
           if (!options._optionValues.type || !options._optionValues.url) {
-            throw new Error('Both --type and --url options are required.');
+            throw new Error("Both --type and --url options are required.");
           }
           const modCraftController = new AppCraftController();
           await modCraftController.initTemplate(
@@ -6795,10 +6821,9 @@ export const TEMPLATE_CMD = {
 
 export const MOD_CRAFT_WORKSHOP_DIR = resolve(
   HOME,
-  'cd-cli',
-  "dist/CdCli/app/app-craft/workshop"
+  "cd-cli",
+  "dist/CdCli/app/app-craft/workshop",
 );
-
 
 // `${MOD_CRAFT_WORKSHOP_DIR}/${this.appType}/output`
 export function getModCraftOutputDir(appType: AppType): string {
@@ -6838,7 +6863,7 @@ export function workshopConfig(
   moduleName: string | null,
   moduleType: string | null,
 ): WorkshopConfig {
-  CdLog.debug('Starting function workshopConfig()');
+  CdLog.debug("Starting function workshopConfig()");
   const basePath = `./src/CdCli/app/app-craft/workshop/${moduleType}`;
   return {
     moduleTemplateRepo: `https://github.com/corpdesk/abcd.git`,
@@ -6865,6 +6890,7 @@ export function workshopConfig(
 
 The roles in returns have an issue:
 Property 'allowedTypes' is missing in type '{ roleName: string; namingPattern: string; }' but required in type 'SeedRoleConfig'.
+
 ```ts
 private loadScanConfig(moduleType: string): SeedConfig {
     const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
@@ -6955,29 +6981,31 @@ export type CdObjType =
   | "plugin"
   | "code"
   | "unknown";
-  
 ```
 
 ////////////////////////////
 In the method: groupFilesIntoModules() there is an issue:
 No overload matches this call.
-  Overload 1 of 3, '(pattern: string | RegExp, flags?: string | undefined): RegExp', gave the following error.
-    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
-      Type 'undefined' is not assignable to type 'string | RegExp'.
-  Overload 2 of 3, '(pattern: string | RegExp): RegExp', gave the following error.
-    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
-      Type 'undefined' is not assignable to type 'string | RegExp'.
-  Overload 3 of 3, '(pattern: string, flags?: string | undefined): RegExp', gave the following error.
-    Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
-      Type 'undefined' is not assignable to type 'string'.
+Overload 1 of 3, '(pattern: string | RegExp, flags?: string | undefined): RegExp', gave the following error.
+Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+Type 'undefined' is not assignable to type 'string | RegExp'.
+Overload 2 of 3, '(pattern: string | RegExp): RegExp', gave the following error.
+Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+Type 'undefined' is not assignable to type 'string | RegExp'.
+Overload 3 of 3, '(pattern: string, flags?: string | undefined): RegExp', gave the following error.
+Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+Type 'undefined' is not assignable to type 'string'.
 
 Affected line:
+
 ```ts
 let matchedModule =
-        config.roles.find((r) => file.match(new RegExp(r.namingPattern)))?.roleName || 'root';
+  config.roles.find((r) => file.match(new RegExp(r.namingPattern)))?.roleName ||
+  "root";
 ```
 
 This is the existing state. You can give me the full corrected version
+
 ```ts
 private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
     const moduleMap: Record<string, CdModuleDescriptor> = {};
@@ -7012,15 +7040,15 @@ You can give me the full refactored methods.
 
 Issue:
 No overload matches this call.
-  Overload 1 of 3, '(pattern: string | RegExp, flags?: string | undefined): RegExp', gave the following error.
-    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
-      Type 'undefined' is not assignable to type 'string | RegExp'.
-  Overload 2 of 3, '(pattern: string | RegExp): RegExp', gave the following error.
-    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
-      Type 'undefined' is not assignable to type 'string | RegExp'.
-  Overload 3 of 3, '(pattern: string, flags?: string | undefined): RegExp', gave the following error.
-    Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
-      Type 'undefined' is not assignable to type 'string'.
+Overload 1 of 3, '(pattern: string | RegExp, flags?: string | undefined): RegExp', gave the following error.
+Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+Type 'undefined' is not assignable to type 'string | RegExp'.
+Overload 2 of 3, '(pattern: string | RegExp): RegExp', gave the following error.
+Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+Type 'undefined' is not assignable to type 'string | RegExp'.
+Overload 3 of 3, '(pattern: string, flags?: string | undefined): RegExp', gave the following error.
+Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+Type 'undefined' is not assignable to type 'string'.
 
 ```ts
 private buildDirectoryTree(files: string[], config: SeedConfig): DirectoryNode {
@@ -7040,15 +7068,15 @@ private buildDirectoryTree(files: string[], config: SeedConfig): DirectoryNode {
 
 Issue:
 No overload matches this call.
-  Overload 1 of 3, '(pattern: string | RegExp, flags?: string | undefined): RegExp', gave the following error.
-    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
-      Type 'undefined' is not assignable to type 'string | RegExp'.
-  Overload 2 of 3, '(pattern: string | RegExp): RegExp', gave the following error.
-    Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
-      Type 'undefined' is not assignable to type 'string | RegExp'.
-  Overload 3 of 3, '(pattern: string, flags?: string | undefined): RegExp', gave the following error.
-    Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
-      Type 'undefined' is not assignable to type 'string'.
+Overload 1 of 3, '(pattern: string | RegExp, flags?: string | undefined): RegExp', gave the following error.
+Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+Type 'undefined' is not assignable to type 'string | RegExp'.
+Overload 2 of 3, '(pattern: string | RegExp): RegExp', gave the following error.
+Argument of type 'string | undefined' is not assignable to parameter of type 'string | RegExp'.
+Type 'undefined' is not assignable to type 'string | RegExp'.
+Overload 3 of 3, '(pattern: string, flags?: string | undefined): RegExp', gave the following error.
+Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+Type 'undefined' is not assignable to type 'string'.
 
 ```ts
 private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
@@ -7078,14 +7106,15 @@ private assignFileToComponent(file: string, module: CdModuleDescriptor, config: 
 ////////////////////////////
 Below are the corrected version of the methods.
 What I need us to add is:
+
 1. Very clear comment as method header that can allow anyone to follow what the method short description.
-This can be done with some achorage to known conventions.
+   This can be done with some achorage to known conventions.
 2. Process tracking/diagnosis logging points
-We use CdLog static methods: info, success, warning, error, debug
-Because it is large system, we need to always tell which class and method is being captured.
-The rest can be any text to signify which part of the method is being processed (but optional)
-We dont do any explanation except key words like 'starting...', 'ending...' but these are also optional.
-Then we use the exact variable name if we intend to show its value.
+   We use CdLog static methods: info, success, warning, error, debug
+   Because it is large system, we need to always tell which class and method is being captured.
+   The rest can be any text to signify which part of the method is being processed (but optional)
+   We dont do any explanation except key words like 'starting...', 'ending...' but these are also optional.
+   Then we use the exact variable name if we intend to show its value.
 
 Example:
 CdLog.debug(`[CdAppService][upgrade()]/actionTargetName: ${actionTargetName}`);
@@ -7346,11 +7375,11 @@ async appScan(
   }
 ```
 
-
 ///////////////////////////////////////////////////
 
 I am not able to get the cd-cli dev to start.
 Below are the relevant codes.
+
 ```log
 emp-12@emp-12 ~/cd-cli (main)> cd-cli dev --debug 4
 file:///home/emp-12/cd-cli/dist/CdCli/sys/cd-comm/controllers/cd-logger.controller.js:6
@@ -7364,7 +7393,7 @@ SyntaxError: The requested module '../../../app/cd-ai/services/cd-ai-log-router.
     at async handleMainPromise (node:internal/modules/run_main:106:12)
 
 Node.js v18.20.1
-emp-12@emp-12 ~/cd-cli (main) [1]> 
+emp-12@emp-12 ~/cd-cli (main) [1]>
 ```
 
 The main module that runs cd-cli is cd-cli module.
@@ -7455,22 +7484,24 @@ emp-12@emp-12 ~/cd-cli (main)>
 /* eslint-disable node/prefer-global/process */
 /* eslint-disable unused-imports/no-unused-vars */
 /* eslint-disable node/prefer-global/process */
-import repl from 'node:repl';
+import repl from "node:repl";
 /* eslint-disable style/brace-style */
-import chalk from 'chalk';
-import { createCommand } from 'commander';
-import nodeCleanup from 'node-cleanup';
-import updateNotifier from 'update-notifier';
+import chalk from "chalk";
+import { createCommand } from "commander";
+import nodeCleanup from "node-cleanup";
+import updateNotifier from "update-notifier";
 // import pkg from '../package.json' with { type: 'json' };
-import { readFile } from 'fs/promises';
-import { CdCli } from './CdCli/sys/cd-cli/models/cd-cli.model.js';
-import CdLog from './CdCli/sys/cd-comm/controllers/cd-logger.controller.js';
-import { setLogLevel } from './CdCli/sys/cd-comm/controllers/cd-winston.js';
-import config from './config.js';
-import 'zx/globals';
-import { ProfileStoreService } from './CdCli/sys/cd-cli/services/profile-store.service.js';
+import { readFile } from "fs/promises";
+import { CdCli } from "./CdCli/sys/cd-cli/models/cd-cli.model.js";
+import CdLog from "./CdCli/sys/cd-comm/controllers/cd-logger.controller.js";
+import { setLogLevel } from "./CdCli/sys/cd-comm/controllers/cd-winston.js";
+import config from "./config.js";
+import "zx/globals";
+import { ProfileStoreService } from "./CdCli/sys/cd-cli/services/profile-store.service.js";
 
-const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf-8'));
+const pkg = JSON.parse(
+  await readFile(new URL("../package.json", import.meta.url), "utf-8"),
+);
 
 export class Main {
   async run() {
@@ -7480,14 +7511,16 @@ export class Main {
     // ✅ Load profiles once at app startup
     const profileInitResult = await ProfileStoreService.init();
     if (!profileInitResult.state) {
-      console.error(`App.run()/Failed to load profiles: ${profileInitResult.message}`);
+      console.error(
+        `App.run()/Failed to load profiles: ${profileInitResult.message}`,
+      );
       return; // 🚨 stop bootstrapping if profiles aren’t available
     }
 
     // Cleanup handler
     nodeCleanup((exitCode) => {
       const message = exitCode
-        ? `${chalk.red.bold('error')} Command failed with exit code ${exitCode}.`
+        ? `${chalk.red.bold("error")} Command failed with exit code ${exitCode}.`
         : `✨ Done in ${((Date.now() - startAt) / 1000).toFixed(2)}s.`;
       console.log(message);
     });
@@ -7496,22 +7529,22 @@ export class Main {
     program
       .version(config.meta.version)
       .description(config.meta.description)
-      .showHelpAfterError('(add --help for additional information)');
+      .showHelpAfterError("(add --help for additional information)");
 
     // Global --debug flag
     program.option(
-      '--debug <level>',
-      'Set the debug level dynamically during production',
+      "--debug <level>",
+      "Set the debug level dynamically during production",
       (level) => {
         setLogLevel(level);
         CdLog.setDebugLevel(Number(level));
         return level;
       },
-      'info',
+      "info",
     );
 
     // Pre-action hook for update notifier
-    program.hook('preAction', () => {
+    program.hook("preAction", () => {
       updateNotifier({ pkg: { name, version } }).notify({ isGlobal: true });
     });
 
@@ -7520,29 +7553,39 @@ export class Main {
         .command(command.name)
         .description(command.description)
         .action(async (...args) => {
-          if (command.name === 'dev' && args.length === 1) {
+          if (command.name === "dev" && args.length === 1) {
             // Only 'dev' was provided, no additional arguments or subcommands
-            console.log(chalk.green('Entering REPL mode (no extra arguments detected)...'));
+            console.log(
+              chalk.green(
+                "Entering REPL mode (no extra arguments detected)...",
+              ),
+            );
             const replServer = repl.start({
-              prompt: chalk.blueBright('cd-dev> '),
+              prompt: chalk.blueBright("cd-dev> "),
               eval: async (input, context, filename, callback) => {
                 try {
                   const [command, ...rest] = input.trim().split(/\s+/);
 
-                  if (command === 'exit') {
-                    console.log(chalk.yellow('Exiting development mode...'));
+                  if (command === "exit") {
+                    console.log(chalk.yellow("Exiting development mode..."));
                     process.exit(0);
                   } else {
-                    callback(new Error(`Unknown command: ${command}`), undefined);
+                    callback(
+                      new Error(`Unknown command: ${command}`),
+                      undefined,
+                    );
                   }
                 } catch (error) {
-                  callback(error instanceof Error ? error : new Error(String(error)), undefined);
+                  callback(
+                    error instanceof Error ? error : new Error(String(error)),
+                    undefined,
+                  );
                 }
               },
             });
 
-            replServer.on('exit', () => {
-              console.log(chalk.yellow('Exited development mode.'));
+            replServer.on("exit", () => {
+              console.log(chalk.yellow("Exited development mode."));
               process.exit(0);
             });
 
@@ -7554,7 +7597,7 @@ export class Main {
               const options = args.pop(); // Extract options passed to the command
               await command.action.execute(options);
             } catch (error) {
-              console.error(chalk.red('Error executing command:'), error);
+              console.error(chalk.red("Error executing command:"), error);
             }
           }
         });
@@ -7576,7 +7619,10 @@ export class Main {
                   const options = args.pop();
                   await subcommand.action.execute(options);
                 } catch (error) {
-                  console.error(chalk.red('Error executing subcommand:'), error);
+                  console.error(
+                    chalk.red("Error executing subcommand:"),
+                    error,
+                  );
                 }
               }
             });
@@ -7594,47 +7640,46 @@ export class Main {
     await program.parse();
   }
 }
-
 ```
 
 ```ts
 // src/CdCli/sys/dev-mode/dev-mode-commands/index.ts
 
-import { getSubcommand } from './utils/command-utils.js';
-import repl from 'node:repl';
-import chalk from 'chalk';
-import minimist from 'minimist';
-import CdLog from '../../cd-comm/controllers/cd-logger.controller.js';
-import { CdAiController } from '../../../app/cd-ai/index.js';
+import { getSubcommand } from "./utils/command-utils.js";
+import repl from "node:repl";
+import chalk from "chalk";
+import minimist from "minimist";
+import CdLog from "../../cd-comm/controllers/cd-logger.controller.js";
+import { CdAiController } from "../../../app/cd-ai/index.js";
 
 // Branding utility for reusable prompt designs
 export const Branding = {
-  getPrompt: (mode: 'default' | 'py' | 'js' = 'default') => {
+  getPrompt: (mode: "default" | "py" | "js" = "default") => {
     const branding = {
-      cd: chalk.bgHex('#FF6A00').white.bold('cd'),
-      separator: chalk.white(''),
+      cd: chalk.bgHex("#FF6A00").white.bold("cd"),
+      separator: chalk.white(""),
     };
 
     const modes = {
-      default: chalk.bgGray.black.bold(' dev '),
-      py: chalk.bgBlue.white.bold(' py '),
-      js: chalk.bgYellow.black.bold(' js '),
+      default: chalk.bgGray.black.bold(" dev "),
+      py: chalk.bgBlue.white.bold(" py "),
+      js: chalk.bgYellow.black.bold(" js "),
     };
 
     const modeLabel = modes[mode] || modes.default;
-    return `${branding.cd}${branding.separator}${modeLabel} ${chalk.greenBright('>')} `;
+    return `${branding.cd}${branding.separator}${modeLabel} ${chalk.greenBright(">")} `;
   },
 };
 
-let inputBuffer: string = '';
+let inputBuffer: string = "";
 let isCommandIncomplete = false;
 
 export const DEV_MODE_COMMANDS = {
-  name: 'dev',
-  description: 'Enter development mode to manage applications.',
+  name: "dev",
+  description: "Enter development mode to manage applications.",
   action: {
     execute: async () => {
-      console.log(chalk.green('[dev-mode] Entering development mode...'));
+      console.log(chalk.green("[dev-mode] Entering development mode..."));
 
       // 👇 Initialize AI services with timeout and safe fallback
       try {
@@ -7644,17 +7689,19 @@ export const DEV_MODE_COMMANDS = {
         await Promise.race([
           initAi,
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('AI init timeout')), aiTimeout),
+            setTimeout(() => reject(new Error("AI init timeout")), aiTimeout),
           ),
         ]);
 
-        console.log(chalk.cyan('[dev-mode] AI services initialized.'));
+        console.log(chalk.cyan("[dev-mode] AI services initialized."));
       } catch (e) {
-        CdLog.warning(`⚠ Failed to initialize AI services: ${(e as Error).message}`);
-        console.log(chalk.yellow('⚠ Proceeding without AI enhancements.'));
+        CdLog.warning(
+          `⚠ Failed to initialize AI services: ${(e as Error).message}`,
+        );
+        console.log(chalk.yellow("⚠ Proceeding without AI enhancements."));
       }
 
-      let currentMode: 'default' | 'py' | 'js' = 'default';
+      let currentMode: "default" | "py" | "js" = "default";
 
       const replServer = repl.start({
         prompt: Branding.getPrompt(currentMode),
@@ -7664,18 +7711,18 @@ export const DEV_MODE_COMMANDS = {
             input = input.trim();
             inputBuffer += input;
 
-            const hasDelimiterAtEnd = inputBuffer.endsWith(';');
-            const lastPart = inputBuffer.split(';').pop();
+            const hasDelimiterAtEnd = inputBuffer.endsWith(";");
+            const lastPart = inputBuffer.split(";").pop();
             const hasTextAfterLastDelimiter =
               lastPart && lastPart.trim().length > 0;
 
             if (!hasDelimiterAtEnd || hasTextAfterLastDelimiter) {
-              callback(null, '...');
+              callback(null, "...");
               return;
             }
 
-            const commands = inputBuffer.split(';').filter((cmd) => cmd.trim());
-            inputBuffer = '';
+            const commands = inputBuffer.split(";").filter((cmd) => cmd.trim());
+            inputBuffer = "";
 
             const executionResults = await Promise.all(
               commands.map((cmd) => handleInput(`${cmd.trim()};`)),
@@ -7684,69 +7731,74 @@ export const DEV_MODE_COMMANDS = {
             callback(null, `✅ Executed ${commands.length} command(s).`);
             replServer.displayPrompt();
           } catch (err) {
-            callback(err instanceof Error ? err : new Error(String(err)), undefined);
+            callback(
+              err instanceof Error ? err : new Error(String(err)),
+              undefined,
+            );
             replServer.displayPrompt();
           }
         },
       });
 
-      replServer.defineCommand('mode', {
-        help: 'Switch between modes (default, py, js).',
+      replServer.defineCommand("mode", {
+        help: "Switch between modes (default, py, js).",
         action(newMode: string) {
-          if (['default', 'py', 'js'].includes(newMode)) {
-            currentMode = newMode as 'default' | 'py' | 'js';
+          if (["default", "py", "js"].includes(newMode)) {
+            currentMode = newMode as "default" | "py" | "js";
             replServer.setPrompt(Branding.getPrompt(currentMode));
             replServer.displayPrompt();
             this.write(`Switched to ${newMode} mode.\n`);
           } else {
-            this.write(`❌ Unknown mode: ${newMode}. Available modes: default, py, js.\n`);
+            this.write(
+              `❌ Unknown mode: ${newMode}. Available modes: default, py, js.\n`,
+            );
           }
         },
       });
 
-      replServer.on('exit', () => {
-        console.log(chalk.yellow('[dev-mode] Exited development mode.'));
+      replServer.on("exit", () => {
+        console.log(chalk.yellow("[dev-mode] Exited development mode."));
         process.exit(0);
       });
     },
   },
 
   subcommands: [
-    getSubcommand('show'),
-    getSubcommand('sync'),
-    getSubcommand('exit'),
-    getSubcommand('create'),
-    getSubcommand('read'),
-    getSubcommand('update'),
-    getSubcommand('delete'),
-    getSubcommand('test'),
-    getSubcommand('upgrade'),
-    getSubcommand('migrate'),
-    getSubcommand('derive'),
-    getSubcommand('derive'),
-    getSubcommand('scan'),
+    getSubcommand("show"),
+    getSubcommand("sync"),
+    getSubcommand("exit"),
+    getSubcommand("create"),
+    getSubcommand("read"),
+    getSubcommand("update"),
+    getSubcommand("delete"),
+    getSubcommand("test"),
+    getSubcommand("upgrade"),
+    getSubcommand("migrate"),
+    getSubcommand("derive"),
+    getSubcommand("derive"),
+    getSubcommand("scan"),
   ],
 };
 
 export async function handleInput(input: string) {
   CdLog.debug(`DevModeModel::handleInput()/input:${input}`);
 
-  if (input.endsWith(';')) {
-    const commands = input.split(';').filter((cmd) => cmd.trim());
+  if (input.endsWith(";")) {
+    const commands = input.split(";").filter((cmd) => cmd.trim());
     for (const command of commands) {
       await executeCommand(command.trim());
     }
-    inputBuffer = '';
+    inputBuffer = "";
   } else {
     inputBuffer += input;
-    console.log('...');
+    console.log("...");
     isCommandIncomplete = true;
   }
 }
 
 export async function executeCommand(command: string) {
   CdLog.debug(`DevModeModel::executeCommand()/command:${command}`);
-  command = command.replace(/;$/, '');
+  command = command.replace(/;$/, "");
   const [cmdName, ...args] = command.split(/\s+/);
 
   const subcommand = DEV_MODE_COMMANDS.subcommands.find(
@@ -7759,7 +7811,9 @@ export async function executeCommand(command: string) {
   }
 
   const options = minimist(args);
-  CdLog.debug(`DevModeModel::executeCommand()/options:${JSON.stringify(options)}`);
+  CdLog.debug(
+    `DevModeModel::executeCommand()/options:${JSON.stringify(options)}`,
+  );
 
   try {
     if (subcommand.action?.execute) {
@@ -7780,16 +7834,16 @@ export async function executeCommand(command: string) {
 ```ts
 // src/CdCli/sys/cd-cli/models/cd-cli.model.ts
 
-import { CD_AUTO_GIT_CMD } from '../../../app/cd-auto-git/models/cd-auto-git.model.js';
-import { LOGIN_CMD, LOGOUT_CMD } from '../../user/models/user.model.js';
-import { PROFILE_CMD } from './cd-cli-profile.model.js';
-import { DEV_MODE_COMMANDS } from '../../dev-mode/dev-mode-commands/index.js';
+import { CD_AUTO_GIT_CMD } from "../../../app/cd-auto-git/models/cd-auto-git.model.js";
+import { LOGIN_CMD, LOGOUT_CMD } from "../../user/models/user.model.js";
+import { PROFILE_CMD } from "./cd-cli-profile.model.js";
+import { DEV_MODE_COMMANDS } from "../../dev-mode/dev-mode-commands/index.js";
 // import { CD_AI_LOGS_CMD, CD_OPEN_AI_CMD } from '../../../app/cd-ai-pwa/index.js';
 import {
   MODULE_CMD,
   TEMPLATE_CMD,
-} from '../../../app/app-craft/models/app-craft.model.js';
-import { CD_AI_LOGS_CMD, CD_OPEN_AI_CMD } from '../../../app/cd-ai/index.js';
+} from "../../../app/app-craft/models/app-craft.model.js";
+import { CD_AI_LOGS_CMD, CD_OPEN_AI_CMD } from "../../../app/cd-ai/index.js";
 
 export const CdCli = {
   commands: [
@@ -7804,7 +7858,6 @@ export const CdCli = {
     CD_AI_LOGS_CMD,
   ] as any,
 };
-
 ```
 
 //////////////////////////////////////
@@ -7851,14 +7904,14 @@ export class CdAiLogRouterService {
     this.logs = [];
   }
 }
-
 ```
 
 //////////////////////////////////////
 
 Below is a cat for dist/CdCli/app/cd-ai/services/cd-ai-log-router.service.js
+
 ```sh
-emp-12@emp-12 ~/cd-cli (main)> cat dist/CdCli/app/cd-ai/services/cd-ai-log-router.service.js 
+emp-12@emp-12 ~/cd-cli (main)> cat dist/CdCli/app/cd-ai/services/cd-ai-log-router.service.js
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CdAiLogRouterService = void 0;
@@ -7896,19 +7949,20 @@ class CdAiLogRouterService {
     }
 }
 exports.CdAiLogRouterService = CdAiLogRouterService;
-emp-12@emp-12 ~/cd-cli (main)> 
+emp-12@emp-12 ~/cd-cli (main)>
 ```
 
 ///////////////////////////////
 Here is the current setting for tsconfig.json
 This has been working well until now.
+
 ```json
 {
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
-    "target": "ES2022",  
+    "target": "ES2022",
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -7926,18 +7980,14 @@ This has been working well until now.
       "@app/*": ["./CdCli/app/*"]
     }
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
 }
 ```
 
 /////////////////////////////
 Here is the package.json configuration
+
 ```json
 {
   "name": "@corpdesk/cd-cli",
@@ -8049,13 +8099,18 @@ When working with cd-cli, the following codes is what will invoke request to lan
 scan --cd-app --name cd-cli --o-env test-bed --repo cd-cli;
 In the upcoming posts, I will be taking you though how that is processed.
 We will need to document that before proceeding with development and testing.
+
 ```ts
 // src/CdCli/app/app-craft/controllers/cd-app.controller.ts
-import { CdAssertReturn, CdFxReturn, IQuery } from '../../../sys/base/i-base.js';
-import { CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
-import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
-import { CdAppService } from '../services/cd-app.service.js';
-import { CdModuleService } from '../services/cd-module.service.js';
+import {
+  CdAssertReturn,
+  CdFxReturn,
+  IQuery,
+} from "../../../sys/base/i-base.js";
+import { CdAppDescriptor } from "../../../sys/dev-descriptor/models/cd-app.model.js";
+import CdLog from "../../../sys/cd-comm/controllers/cd-logger.controller.js";
+import { CdAppService } from "../services/cd-app.service.js";
+import { CdModuleService } from "../services/cd-module.service.js";
 
 export class CdAppController {
   svCdApp: CdAppService;
@@ -8078,8 +8133,13 @@ export class CdAppController {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppController::create()');
-    return this.svCdApp.create(actionTargetName, moduleName, moduleType, cdToken);
+    CdLog.debug("Starting CdAppController::create()");
+    return this.svCdApp.create(
+      actionTargetName,
+      moduleName,
+      moduleType,
+      cdToken,
+    );
   }
 
   async read(q?: IQuery): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
@@ -8092,7 +8152,12 @@ export class CdAppController {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    return this.svCdApp.update(actionTargetName, moduleName, moduleType, cdToken);
+    return this.svCdApp.update(
+      actionTargetName,
+      moduleName,
+      moduleType,
+      cdToken,
+    );
   }
 
   async delete(q: IQuery): Promise<CdFxReturn<null>> {
@@ -8105,7 +8170,9 @@ export class CdAppController {
   }
 
   // Get a single module by name
-  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+  async getModuleByName(
+    name: string,
+  ): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
     return this.svCdApp.getModuleByName(name);
   }
 
@@ -8121,7 +8188,7 @@ export class CdAppController {
     version: string,
     testTasks?: boolean,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppController::upgrade()');
+    CdLog.debug("Starting CdAppController::upgrade()");
     return this.svCdApp.upgrade(
       actionTargetName,
       moduleName,
@@ -8138,8 +8205,13 @@ export class CdAppController {
     cdObjTypeName: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppController::derive()');
-    return this.svCdApp.derive(actionTargetName, cdObjName, cdObjTypeName, cdToken);
+    CdLog.debug("Starting CdAppController::derive()");
+    return this.svCdApp.derive(
+      actionTargetName,
+      cdObjName,
+      cdObjTypeName,
+      cdToken,
+    );
   }
 
   async scan(
@@ -8148,11 +8220,15 @@ export class CdAppController {
     cdObjTypeName: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppController::scan()');
-    return this.svCdApp.scan(actionTargetName, cdObjName, cdObjTypeName, cdToken);
+    CdLog.debug("Starting CdAppController::scan()");
+    return this.svCdApp.scan(
+      actionTargetName,
+      cdObjName,
+      cdObjTypeName,
+      cdToken,
+    );
   }
 }
-
 ```
 
 ```ts
@@ -8160,32 +8236,46 @@ export class CdAppController {
 
 /* eslint-disable style/brace-style */
 
-import { basename, join } from 'path';
-import { GenericService } from '../../../sys/base/generic-service.js';
-import { HttpService } from '../../../sys/base/http.service.js';
+import { basename, join } from "path";
+import { GenericService } from "../../../sys/base/generic-service.js";
+import { HttpService } from "../../../sys/base/http.service.js";
 import {
   CD_FX_FAIL,
   CdAssertReturn,
   CdFxReturn,
   CdFxStateLevel,
   IQuery,
-} from '../../../sys/base/i-base.js';
-import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
-import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
-import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
-import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
-import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
-import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
-import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
-import { mkdir, writeFile } from 'fs/promises';
-import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
-import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
-import { executeCommand } from '../../../sys/utils/cmd.util.js';
-import { CdAutoGitController } from '../../cd-auto-git/index.js';
-import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
-import { ExpressionContext, SeedConfig, SeedRoleConfig } from '../models/cd-app.model.js';
-import { CdCtx, CdModuleDescriptor, DirectoryNode } from '../../../sys/dev-descriptor/index.js';
-import { ComponentType } from '../../../sys/dev-descriptor/models/component-descriptor.model.js';
+} from "../../../sys/base/i-base.js";
+import CdLog from "../../../sys/cd-comm/controllers/cd-logger.controller.js";
+import {
+  AppType,
+  CdAppDescriptor,
+} from "../../../sys/dev-descriptor/models/cd-app.model.js";
+import { CdDescriptor } from "../../../sys/dev-descriptor/models/dev-descriptor.model.js";
+import { CICdRunnerService } from "../../../sys/dev-descriptor/services/cd-ci-runner.service.js";
+import { DevDescriptorService } from "../../../sys/dev-descriptor/services/dev-descriptor.service.js";
+import {
+  DevModeAction,
+  DevModeModel,
+} from "../../../sys/dev-mode/models/dev-mode.model.js";
+import { CdObjModel } from "../../../sys/moduleman/models/cd-obj.model.js";
+import { mkdir, writeFile } from "fs/promises";
+import { cdFx } from "../../../sys/base/cd-fx-return.util.js";
+import { inferCdObjType } from "../../../sys/utils/cd-naming.util.js";
+import { executeCommand } from "../../../sys/utils/cmd.util.js";
+import { CdAutoGitController } from "../../cd-auto-git/index.js";
+import { VersionService } from "../../../sys/dev-descriptor/services/version.service.js";
+import {
+  ExpressionContext,
+  SeedConfig,
+  SeedRoleConfig,
+} from "../models/cd-app.model.js";
+import {
+  CdCtx,
+  CdModuleDescriptor,
+  DirectoryNode,
+} from "../../../sys/dev-descriptor/index.js";
+import { ComponentType } from "../../../sys/dev-descriptor/models/component-descriptor.model.js";
 
 export class CdAppService {
   cdToken;
@@ -8208,25 +8298,26 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::create()');
-    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug("Starting CdAppService::create()");
+    CdLog.debug("Starting CdAppService::create()");
     CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.CREATE,
-      cdObjType,
-      moduleName,
-      moduleType,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: cdToken, // Pass the cdToken if needed
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.CREATE,
+        cdObjType,
+        moduleName,
+        moduleType,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: cdToken, // Pass the cdToken if needed
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -8310,7 +8401,7 @@ export class CdAppService {
        * If null it is substituted by { where: {} }
        * Which would then fetch all the data
        */
-      const payload = this.svDevDescriptors.setEnvelope('Read', {
+      const payload = this.svDevDescriptors.setEnvelope("Read", {
         query: q ?? { where: {} },
       });
       return CD_FX_FAIL; // placeholder until this method is properly implemented
@@ -8329,26 +8420,27 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::update()');
-    CdLog.debug('Starting CdAppService::create()');
-    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug("Starting CdAppService::update()");
+    CdLog.debug("Starting CdAppService::create()");
+    CdLog.debug("Starting CdAppService::create()");
     CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.CREATE,
-      cdObjType,
-      moduleName,
-      moduleType,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: cdToken, // Pass the cdToken if needed
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.CREATE,
+        cdObjType,
+        moduleName,
+        moduleType,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: cdToken, // Pass the cdToken if needed
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -8390,20 +8482,22 @@ export class CdAppService {
   }
 
   // Get a single app by name
-  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+  async getModuleByName(
+    name: string,
+  ): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
     try {
       // Validate input
       if (!name.trim()) {
         return {
           data: null,
           state: false,
-          message: 'Application name is required.',
+          message: "Application name is required.",
         };
       }
 
       // Define the query
       const q: IQuery = {
-        select: ['cdObjId', 'cdObjName', 'cdObjGuid', 'jDetails'], // Fields to select
+        select: ["cdObjId", "cdObjName", "cdObjGuid", "jDetails"], // Fields to select
         where: { cdObjName: name }, // Fetch apps by name
       };
 
@@ -8423,24 +8517,25 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::derive()');
+    CdLog.debug("Starting CdAppService::derive()");
     CdLog.debug(`CdAppService::derive()/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`CdAppService::derive()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::derive()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::derive()/cdToken: ${cdToken}`);
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.DERIVE,
-      cdObjType,
-      moduleName,
-      moduleType,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: cdToken, // Pass the cdToken if needed
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.DERIVE,
+        cdObjType,
+        moduleName,
+        moduleType,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: cdToken, // Pass the cdToken if needed
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -8460,8 +8555,10 @@ export class CdAppService {
     version?: string,
     testTasks?: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::upgrade()');
-    CdLog.debug(`CdAppService::upgrade()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug("Starting CdAppService::upgrade()");
+    CdLog.debug(
+      `CdAppService::upgrade()/actionTargetName: ${actionTargetName}`,
+    );
     CdLog.debug(`CdAppService::upgrade()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::upgrade()/oEnv: ${oEnv}`);
     CdLog.debug(`CdAppService::upgrade()/repoName: ${repoName}`);
@@ -8469,9 +8566,15 @@ export class CdAppService {
     CdLog.debug(`CdAppService::upgrade()/testTasks: ${testTasks}`);
 
     // 🔁 Convert version string to SemanticVersionObject
-    const semanticResult = VersionService.toSemanticObject(version ?? '');
-    if (semanticResult.state !== CdFxStateLevel.Success || !semanticResult.data) {
-      return cdFx(CdFxStateLevel.LogicalFailure, `❌ Invalid version format: "${version}"`);
+    const semanticResult = VersionService.toSemanticObject(version ?? "");
+    if (
+      semanticResult.state !== CdFxStateLevel.Success ||
+      !semanticResult.data
+    ) {
+      return cdFx(
+        CdFxStateLevel.LogicalFailure,
+        `❌ Invalid version format: "${version}"`,
+      );
     }
 
     const versionObj = semanticResult.data;
@@ -8479,22 +8582,23 @@ export class CdAppService {
 
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.UPGRADE,
-      cdObjType,
-      moduleName,
-      oEnv,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: '', // Pass the cdToken if needed
-        repoName: repoName,
-        appType: AppType.CdApi,
-        version: versionObj, // 👈 Pass object instead of string
-        testTasks: testTasks !== undefined ? String(testTasks) : undefined, // 👈 Convert to string if needed
-        oEnv: oEnv,
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.UPGRADE,
+        cdObjType,
+        moduleName,
+        oEnv,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: "", // Pass the cdToken if needed
+          repoName: repoName,
+          appType: AppType.CdApi,
+          version: versionObj, // 👈 Pass object instead of string
+          testTasks: testTasks !== undefined ? String(testTasks) : undefined, // 👈 Convert to string if needed
+          oEnv: oEnv,
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -8505,7 +8609,6 @@ export class CdAppService {
     }
     return await this.runner.run(descriptor, workflowModel);
   }
-
 
   /**
    * [CdAppService][scan()]
@@ -8518,7 +8621,7 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('[CdAppService][scan()]/starting...');
+    CdLog.debug("[CdAppService][scan()]/starting...");
     CdLog.debug(`[CdAppService][scan()]/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`[CdAppService][scan()]/moduleName: ${moduleName}`);
     CdLog.debug(`[CdAppService][scan()]/moduleType: ${moduleType}`);
@@ -8529,11 +8632,15 @@ export class CdAppService {
       const files = await this.scanDirectory(config.rootPath, config);
       CdLog.debug(`[CdAppService][scan()]/files.length: ${files.length}`);
 
-      const descriptor = await this.buildAppDescriptor(moduleName, files, config);
+      const descriptor = await this.buildAppDescriptor(
+        moduleName,
+        files,
+        config,
+      );
 
       await this.writeDescriptor(config.rootPath, descriptor);
 
-      CdLog.success('[CdAppService][scan()]/completed');
+      CdLog.success("[CdAppService][scan()]/completed");
 
       return {
         state: true,
@@ -8557,14 +8664,14 @@ export class CdAppService {
    * Falls back to default config if not found.
    */
   private loadScanConfig(moduleType: string): SeedConfig {
-    CdLog.debug('[CdAppService][loadScanConfig()]/starting...');
+    CdLog.debug("[CdAppService][loadScanConfig()]/starting...");
     CdLog.debug(`[CdAppService][loadScanConfig()]/moduleType: ${moduleType}`);
 
-    const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
+    const configPath = join(process.cwd(), ".cd", `${moduleType}.seed.json`);
 
     try {
       const raw = require(configPath);
-      CdLog.success('[CdAppService][loadScanConfig()]/loaded');
+      CdLog.success("[CdAppService][loadScanConfig()]/loaded");
       return raw as SeedConfig;
     } catch {
       CdLog.warning(`[CdAppService][loadScanConfig()]/fallback: ${moduleType}`);
@@ -8572,14 +8679,14 @@ export class CdAppService {
       return {
         subsystemName: moduleType,
         rootPath: process.cwd(),
-        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
-        includeExtensions: ['.ts', '.js', '.json'],
+        ignorePatterns: ["node_modules", "dist", ".git", ".cd"],
+        includeExtensions: [".ts", ".js", ".json"],
         roles: [
-          { roleName: 'controller', namingPattern: '\\.controller\\.' },
-          { roleName: 'service', namingPattern: '\\.service\\.' },
-          { roleName: 'model', namingPattern: '\\.model\\.' },
+          { roleName: "controller", namingPattern: "\\.controller\\." },
+          { roleName: "service", namingPattern: "\\.service\\." },
+          { roleName: "model", namingPattern: "\\.model\\." },
         ],
-        version: '1.0.0',
+        version: "1.0.0",
         globals: {},
       };
     }
@@ -8596,7 +8703,7 @@ export class CdAppService {
   ): Promise<string[]> {
     CdLog.debug(`[CdAppService][scanDirectory()]/dir: ${dir}`);
 
-    const entries = await import('fs/promises').then((fs) =>
+    const entries = await import("fs/promises").then((fs) =>
       fs.readdir(dir, { withFileTypes: true }),
     );
 
@@ -8629,7 +8736,7 @@ export class CdAppService {
     files: string[],
     config: SeedConfig,
   ): Promise<CdAppDescriptor> {
-    CdLog.debug('[CdAppService][buildAppDescriptor()]/starting...');
+    CdLog.debug("[CdAppService][buildAppDescriptor()]/starting...");
     CdLog.debug(`[CdAppService][buildAppDescriptor()]/appName: ${appName}`);
 
     const modules = this.groupFilesIntoModules(files, config);
@@ -8646,7 +8753,7 @@ export class CdAppService {
       },
     };
 
-    CdLog.success('[CdAppService][buildAppDescriptor()]/built');
+    CdLog.success("[CdAppService][buildAppDescriptor()]/built");
 
     return descriptor;
   }
@@ -8655,14 +8762,17 @@ export class CdAppService {
    * [CdAppService][groupFilesIntoModules()]
    * Groups files into logical modules based on role resolution.
    */
-  private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
-    CdLog.debug('[CdAppService][groupFilesIntoModules()]/starting...');
+  private groupFilesIntoModules(
+    files: string[],
+    config: SeedConfig,
+  ): CdModuleDescriptor[] {
+    CdLog.debug("[CdAppService][groupFilesIntoModules()]/starting...");
 
     const moduleMap: Record<string, CdModuleDescriptor> = {};
 
     for (const file of files) {
       const matchedRole = this.resolveRole(file, config.roles);
-      const moduleName = matchedRole?.roleName || 'root';
+      const moduleName = matchedRole?.roleName || "root";
 
       if (!moduleMap[moduleName]) {
         moduleMap[moduleName] = {
@@ -8699,11 +8809,13 @@ export class CdAppService {
           return role.roleName;
         }
       } catch {
-        CdLog.warning(`[CdAppService][matchRole()]/invalidPattern: ${role.namingPattern}`);
+        CdLog.warning(
+          `[CdAppService][matchRole()]/invalidPattern: ${role.namingPattern}`,
+        );
       }
     }
 
-    return 'root';
+    return "root";
   }
 
   /**
@@ -8711,7 +8823,7 @@ export class CdAppService {
    * Determines module context (sys/app) based on role.
    */
   private resolveModuleContext(roleName: string): CdCtx {
-    if (roleName === 'sys') return CdCtx.Sys;
+    if (roleName === "sys") return CdCtx.Sys;
     return CdCtx.App;
   }
 
@@ -8719,7 +8831,10 @@ export class CdAppService {
    * [CdAppService][resolveRole()]
    * Resolves role using namingPattern rules.
    */
-  private resolveRole(file: string, roles: SeedRoleConfig[]): SeedRoleConfig | undefined {
+  private resolveRole(
+    file: string,
+    roles: SeedRoleConfig[],
+  ): SeedRoleConfig | undefined {
     for (const role of roles) {
       if (!role.namingPattern) continue;
 
@@ -8729,7 +8844,9 @@ export class CdAppService {
           return role;
         }
       } catch {
-        CdLog.warning(`[CdAppService][resolveRole()]/invalidPattern: ${role.namingPattern}`);
+        CdLog.warning(
+          `[CdAppService][resolveRole()]/invalidPattern: ${role.namingPattern}`,
+        );
       }
     }
 
@@ -8740,14 +8857,18 @@ export class CdAppService {
    * [CdAppService][assignFileToComponent()]
    * Assigns scanned file to correct module component (controller/service/model).
    */
-  private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+  private assignFileToComponent(
+    file: string,
+    module: CdModuleDescriptor,
+    config: SeedConfig,
+  ) {
     const name = basename(file);
 
     const role = this.resolveRole(file, config.roles);
     if (!role) return;
 
     switch (role.roleName) {
-      case 'controller':
+      case "controller":
         module.controllers.push({
           name,
           type: ComponentType.Controller,
@@ -8755,7 +8876,7 @@ export class CdAppService {
         });
         break;
 
-      case 'service':
+      case "service":
         module.services.push({
           name,
           type: ComponentType.Service,
@@ -8763,7 +8884,7 @@ export class CdAppService {
         });
         break;
 
-      case 'model':
+      case "model":
         module.models.push({
           name,
           type: ComponentType.Model,
@@ -8778,8 +8899,11 @@ export class CdAppService {
    * [CdAppService][buildDirectoryTree()]
    * Builds DirectoryNode structure for descriptor signature.
    */
-  private buildDirectoryTree(files: string[], config: SeedConfig): DirectoryNode {
-    CdLog.debug('[CdAppService][buildDirectoryTree()]/starting...');
+  private buildDirectoryTree(
+    files: string[],
+    config: SeedConfig,
+  ): DirectoryNode {
+    CdLog.debug("[CdAppService][buildDirectoryTree()]/starting...");
 
     return {
       name: config.subsystemName,
@@ -8802,13 +8926,13 @@ export class CdAppService {
    * Persists generated descriptor to .cd directory.
    */
   private async writeDescriptor(root: string, descriptor: CdAppDescriptor) {
-    CdLog.debug('[CdAppService][writeDescriptor()]/starting...');
+    CdLog.debug("[CdAppService][writeDescriptor()]/starting...");
     CdLog.debug(`[CdAppService][writeDescriptor()]/root: ${root}`);
 
-    const cdDir = join(root, '.cd');
+    const cdDir = join(root, ".cd");
     await mkdir(cdDir, { recursive: true });
 
-    const filePath = join(cdDir, 'cd-app.descriptor.json');
+    const filePath = join(cdDir, "cd-app.descriptor.json");
     await writeFile(filePath, JSON.stringify(descriptor, null, 2));
 
     CdLog.success(`[CdAppService][writeDescriptor()]/filePath: ${filePath}`);
@@ -8819,7 +8943,7 @@ export class CdAppService {
    * Generates pseudo GUID for descriptor nodes.
    */
   private generateGuid(): string {
-    return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () =>
+    return "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".replace(/[x]/g, () =>
       ((Math.random() * 16) | 0).toString(16),
     );
   }
@@ -8829,7 +8953,7 @@ export class CdAppService {
    * Builds evaluation context (cell) for DNA execution from file path.
    */
   private buildExpressionContext(file: string): ExpressionContext {
-    CdLog.debug('[CdAppService][buildExpressionContext()]/starting...');
+    CdLog.debug("[CdAppService][buildExpressionContext()]/starting...");
     CdLog.debug(`[CdAppService][buildExpressionContext()]/file: ${file}`);
 
     const name = basename(file);
@@ -8837,13 +8961,23 @@ export class CdAppService {
     const ctx: ExpressionContext = {
       filePath: file,
       fileName: name,
-      extension: name.split('.').pop() || '',
-      moduleHint: file.includes('/sys/') ? 'sys' : file.includes('/app/') ? 'app' : 'unknown',
+      extension: name.split(".").pop() || "",
+      moduleHint: file.includes("/sys/")
+        ? "sys"
+        : file.includes("/app/")
+          ? "app"
+          : "unknown",
     };
 
-    CdLog.debug(`[CdAppService][buildExpressionContext()]/fileName: ${ctx.fileName}`);
-    CdLog.debug(`[CdAppService][buildExpressionContext()]/extension: ${ctx.extension}`);
-    CdLog.debug(`[CdAppService][buildExpressionContext()]/moduleHint: ${ctx.moduleHint}`);
+    CdLog.debug(
+      `[CdAppService][buildExpressionContext()]/fileName: ${ctx.fileName}`,
+    );
+    CdLog.debug(
+      `[CdAppService][buildExpressionContext()]/extension: ${ctx.extension}`,
+    );
+    CdLog.debug(
+      `[CdAppService][buildExpressionContext()]/moduleHint: ${ctx.moduleHint}`,
+    );
 
     return ctx;
   }
@@ -8853,9 +8987,14 @@ export class CdAppService {
    * Executes DNA expression against ExpressionContext.
    * Converts expression → JS-compatible → evaluates result.
    */
-  private evaluateExpression(expression: string, ctx: ExpressionContext): boolean {
-    CdLog.debug('[CdAppService][evaluateExpression()]/starting...');
-    CdLog.debug(`[CdAppService][evaluateExpression()]/expression: ${expression}`);
+  private evaluateExpression(
+    expression: string,
+    ctx: ExpressionContext,
+  ): boolean {
+    CdLog.debug("[CdAppService][evaluateExpression()]/starting...");
+    CdLog.debug(
+      `[CdAppService][evaluateExpression()]/expression: ${expression}`,
+    );
 
     try {
       let exp = expression;
@@ -8866,18 +9005,22 @@ export class CdAppService {
       exp = exp.replace(/file\.path/g, `"${ctx.filePath}"`);
       exp = exp.replace(/ctx/g, `"${ctx.moduleHint}"`);
 
-      CdLog.debug(`[CdAppService][evaluateExpression()]/afterVariables: ${exp}`);
+      CdLog.debug(
+        `[CdAppService][evaluateExpression()]/afterVariables: ${exp}`,
+      );
 
       // 🔷 Operator transformation
       exp = exp
-        .replace(/CONTAINS/g, '.includes')
-        .replace(/STARTS_WITH/g, '.startsWith')
-        .replace(/ENDS_WITH/g, '.endsWith')
-        .replace(/EQUALS/g, '===')
-        .replace(/AND/g, '&&')
-        .replace(/OR/g, '||');
+        .replace(/CONTAINS/g, ".includes")
+        .replace(/STARTS_WITH/g, ".startsWith")
+        .replace(/ENDS_WITH/g, ".endsWith")
+        .replace(/EQUALS/g, "===")
+        .replace(/AND/g, "&&")
+        .replace(/OR/g, "||");
 
-      CdLog.debug(`[CdAppService][evaluateExpression()]/afterOperators: ${exp}`);
+      CdLog.debug(
+        `[CdAppService][evaluateExpression()]/afterOperators: ${exp}`,
+      );
 
       // 🔷 Execution
       // eslint-disable-next-line no-eval
@@ -8887,12 +9030,13 @@ export class CdAppService {
 
       return result;
     } catch (e) {
-      CdLog.error(`[CdAppService][evaluateExpression()]/error: ${(e as Error).message}`);
+      CdLog.error(
+        `[CdAppService][evaluateExpression()]/error: ${(e as Error).message}`,
+      );
       return false;
     }
   }
 }
-
 ```
 
 //////////////////////////////////////////
@@ -9258,7 +9402,6 @@ handleCommandResponse()/end
 '✅ Executed 1 command(s).'
 ```
 
-
 ////////////////////////////////////////
 
 That was to save those ideas as is.
@@ -9266,14 +9409,16 @@ We will come back to them for further development based on practical experience.
 
 Remember the result of the first test on AppCraft.scan(): Now knowing all that you know about what needs to be done do a short term plan on how we move foward towards a working POC of
 Below are a few examples I have in mind:
+
 1. Working on the ICdResponse return payload.
+
 - Note that the interface for the return tree had already been worked out to be: DirectorySignatureDescriptor (see references below)
-- tree was designed to be save in the root directory of the scanned directory in a folder called .cd.  The file name is cd-app.descriptor.json
-The json type is CdAppDescriptor.
-Note that the content of return need to be attached to the file as per the CdAppDescriptor structure where directorySignature?: DirectorySignatureDescriptor; is integrated.
+- tree was designed to be save in the root directory of the scanned directory in a folder called .cd. The file name is cd-app.descriptor.json
+  The json type is CdAppDescriptor.
+  Note that the content of return need to be attached to the file as per the CdAppDescriptor structure where directorySignature?: DirectorySignatureDescriptor; is integrated.
 
 2. We have worked on the 'scan'. The next capacity building is 'creating' a subsystem directory. More like the reverse of the scan.
-There are important references shared from the file: src/CdCli/app/app-craft/models/cd-app.model.ts
+   There are important references shared from the file: src/CdCli/app/app-craft/models/cd-app.model.ts
 
 ```ts
 export interface CdAppDescriptor extends BaseDescriptor {
@@ -9349,7 +9494,7 @@ export interface EnvelopFValItem {
 }
 
 /** Fields managed by backend that must not be supplied by client */
-export const MANAGED_FIELDS = ['Guid', 'docId', 'Enabled'];
+export const MANAGED_FIELDS = ["Guid", "docId", "Enabled"];
 
 export interface ICdResponse {
   app_state: IAppState;
@@ -9593,43 +9738,56 @@ export interface ExpressionContext {
   moduleHint?: string;
   depth?: number;
 }
-
-
 ```
 
 ///////////////////////////////////////////
 With all the above references, we can now refine CdAppService to return data the fits the picture.
+
 ```ts
 // src/CdCli/app/app-craft/services/cd-app.service.ts
 
 /* eslint-disable style/brace-style */
 
-import { basename, join } from 'path';
-import { GenericService } from '../../../sys/base/generic-service.js';
-import { HttpService } from '../../../sys/base/http.service.js';
+import { basename, join } from "path";
+import { GenericService } from "../../../sys/base/generic-service.js";
+import { HttpService } from "../../../sys/base/http.service.js";
 import {
   CD_FX_FAIL,
   CdAssertReturn,
   CdFxReturn,
   CdFxStateLevel,
   IQuery,
-} from '../../../sys/base/i-base.js';
-import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
-import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
-import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
-import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
-import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
-import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
-import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
-import { mkdir, writeFile } from 'fs/promises';
-import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
-import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
-import { executeCommand } from '../../../sys/utils/cmd.util.js';
-import { CdAutoGitController } from '../../cd-auto-git/index.js';
-import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
-import { ExpressionContext, SeedConfig, SeedRoleConfig } from '../models/cd-app.model.js';
-import { CdCtx, CdModuleDescriptor, DirectoryNode } from '../../../sys/dev-descriptor/index.js';
-import { ComponentType } from '../../../sys/dev-descriptor/models/component-descriptor.model.js';
+} from "../../../sys/base/i-base.js";
+import CdLog from "../../../sys/cd-comm/controllers/cd-logger.controller.js";
+import {
+  AppType,
+  CdAppDescriptor,
+} from "../../../sys/dev-descriptor/models/cd-app.model.js";
+import { CdDescriptor } from "../../../sys/dev-descriptor/models/dev-descriptor.model.js";
+import { CICdRunnerService } from "../../../sys/dev-descriptor/services/cd-ci-runner.service.js";
+import { DevDescriptorService } from "../../../sys/dev-descriptor/services/dev-descriptor.service.js";
+import {
+  DevModeAction,
+  DevModeModel,
+} from "../../../sys/dev-mode/models/dev-mode.model.js";
+import { CdObjModel } from "../../../sys/moduleman/models/cd-obj.model.js";
+import { mkdir, writeFile } from "fs/promises";
+import { cdFx } from "../../../sys/base/cd-fx-return.util.js";
+import { inferCdObjType } from "../../../sys/utils/cd-naming.util.js";
+import { executeCommand } from "../../../sys/utils/cmd.util.js";
+import { CdAutoGitController } from "../../cd-auto-git/index.js";
+import { VersionService } from "../../../sys/dev-descriptor/services/version.service.js";
+import {
+  ExpressionContext,
+  SeedConfig,
+  SeedRoleConfig,
+} from "../models/cd-app.model.js";
+import {
+  CdCtx,
+  CdModuleDescriptor,
+  DirectoryNode,
+} from "../../../sys/dev-descriptor/index.js";
+import { ComponentType } from "../../../sys/dev-descriptor/models/component-descriptor.model.js";
 
 export class CdAppService {
   cdToken;
@@ -9652,25 +9810,26 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::create()');
-    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug("Starting CdAppService::create()");
+    CdLog.debug("Starting CdAppService::create()");
     CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.CREATE,
-      cdObjType,
-      moduleName,
-      moduleType,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: cdToken, // Pass the cdToken if needed
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.CREATE,
+        cdObjType,
+        moduleName,
+        moduleType,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: cdToken, // Pass the cdToken if needed
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -9754,7 +9913,7 @@ export class CdAppService {
        * If null it is substituted by { where: {} }
        * Which would then fetch all the data
        */
-      const payload = this.svDevDescriptors.setEnvelope('Read', {
+      const payload = this.svDevDescriptors.setEnvelope("Read", {
         query: q ?? { where: {} },
       });
       return CD_FX_FAIL; // placeholder until this method is properly implemented
@@ -9773,26 +9932,27 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::update()');
-    CdLog.debug('Starting CdAppService::create()');
-    CdLog.debug('Starting CdAppService::create()');
+    CdLog.debug("Starting CdAppService::update()");
+    CdLog.debug("Starting CdAppService::create()");
+    CdLog.debug("Starting CdAppService::create()");
     CdLog.debug(`CdAppService::create()/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`CdAppService::create()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::create()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::create()/cdToken: ${cdToken}`);
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.CREATE,
-      cdObjType,
-      moduleName,
-      moduleType,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: cdToken, // Pass the cdToken if needed
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.CREATE,
+        cdObjType,
+        moduleName,
+        moduleType,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: cdToken, // Pass the cdToken if needed
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -9834,20 +9994,22 @@ export class CdAppService {
   }
 
   // Get a single app by name
-  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+  async getModuleByName(
+    name: string,
+  ): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
     try {
       // Validate input
       if (!name.trim()) {
         return {
           data: null,
           state: false,
-          message: 'Application name is required.',
+          message: "Application name is required.",
         };
       }
 
       // Define the query
       const q: IQuery = {
-        select: ['cdObjId', 'cdObjName', 'cdObjGuid', 'jDetails'], // Fields to select
+        select: ["cdObjId", "cdObjName", "cdObjGuid", "jDetails"], // Fields to select
         where: { cdObjName: name }, // Fetch apps by name
       };
 
@@ -9867,24 +10029,25 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::derive()');
+    CdLog.debug("Starting CdAppService::derive()");
     CdLog.debug(`CdAppService::derive()/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`CdAppService::derive()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::derive()/moduleType: ${moduleType}`);
     CdLog.debug(`CdAppService::derive()/cdToken: ${cdToken}`);
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.DERIVE,
-      cdObjType,
-      moduleName,
-      moduleType,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: cdToken, // Pass the cdToken if needed
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.DERIVE,
+        cdObjType,
+        moduleName,
+        moduleType,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: cdToken, // Pass the cdToken if needed
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -9904,8 +10067,10 @@ export class CdAppService {
     version?: string,
     testTasks?: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppService::upgrade()');
-    CdLog.debug(`CdAppService::upgrade()/actionTargetName: ${actionTargetName}`);
+    CdLog.debug("Starting CdAppService::upgrade()");
+    CdLog.debug(
+      `CdAppService::upgrade()/actionTargetName: ${actionTargetName}`,
+    );
     CdLog.debug(`CdAppService::upgrade()/moduleName: ${moduleName}`);
     CdLog.debug(`CdAppService::upgrade()/oEnv: ${oEnv}`);
     CdLog.debug(`CdAppService::upgrade()/repoName: ${repoName}`);
@@ -9913,9 +10078,15 @@ export class CdAppService {
     CdLog.debug(`CdAppService::upgrade()/testTasks: ${testTasks}`);
 
     // 🔁 Convert version string to SemanticVersionObject
-    const semanticResult = VersionService.toSemanticObject(version ?? '');
-    if (semanticResult.state !== CdFxStateLevel.Success || !semanticResult.data) {
-      return cdFx(CdFxStateLevel.LogicalFailure, `❌ Invalid version format: "${version}"`);
+    const semanticResult = VersionService.toSemanticObject(version ?? "");
+    if (
+      semanticResult.state !== CdFxStateLevel.Success ||
+      !semanticResult.data
+    ) {
+      return cdFx(
+        CdFxStateLevel.LogicalFailure,
+        `❌ Invalid version format: "${version}"`,
+      );
     }
 
     const versionObj = semanticResult.data;
@@ -9923,22 +10094,23 @@ export class CdAppService {
 
     const cdObjType = inferCdObjType(this.constructor.name);
     const runner = new CICdRunnerService();
-    const { descriptor, workflowModel } = await runner.loadModuleDescriptorAndWorkflow(
-      DevModeAction.UPGRADE,
-      cdObjType,
-      moduleName,
-      oEnv,
-      {
-        actionTargetName: actionTargetName,
-        descriptor: 'CdAppDescriptor',
-        cdToken: '', // Pass the cdToken if needed
-        repoName: repoName,
-        appType: AppType.CdApi,
-        version: versionObj, // 👈 Pass object instead of string
-        testTasks: testTasks !== undefined ? String(testTasks) : undefined, // 👈 Convert to string if needed
-        oEnv: oEnv,
-      },
-    );
+    const { descriptor, workflowModel } =
+      await runner.loadModuleDescriptorAndWorkflow(
+        DevModeAction.UPGRADE,
+        cdObjType,
+        moduleName,
+        oEnv,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdAppDescriptor",
+          cdToken: "", // Pass the cdToken if needed
+          repoName: repoName,
+          appType: AppType.CdApi,
+          version: versionObj, // 👈 Pass object instead of string
+          testTasks: testTasks !== undefined ? String(testTasks) : undefined, // 👈 Convert to string if needed
+          oEnv: oEnv,
+        },
+      );
 
     if (!workflowModel) {
       return {
@@ -9949,7 +10121,6 @@ export class CdAppService {
     }
     return await this.runner.run(descriptor, workflowModel);
   }
-
 
   /**
    * [CdAppService][scan()]
@@ -9962,7 +10133,7 @@ export class CdAppService {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('[CdAppService][scan()]/starting...');
+    CdLog.debug("[CdAppService][scan()]/starting...");
     CdLog.debug(`[CdAppService][scan()]/actionTargetName: ${actionTargetName}`);
     CdLog.debug(`[CdAppService][scan()]/moduleName: ${moduleName}`);
     CdLog.debug(`[CdAppService][scan()]/moduleType: ${moduleType}`);
@@ -9973,11 +10144,15 @@ export class CdAppService {
       const files = await this.scanDirectory(config.rootPath, config);
       CdLog.debug(`[CdAppService][scan()]/files.length: ${files.length}`);
 
-      const descriptor = await this.buildAppDescriptor(moduleName, files, config);
+      const descriptor = await this.buildAppDescriptor(
+        moduleName,
+        files,
+        config,
+      );
 
       await this.writeDescriptor(config.rootPath, descriptor);
 
-      CdLog.success('[CdAppService][scan()]/completed');
+      CdLog.success("[CdAppService][scan()]/completed");
 
       return {
         state: true,
@@ -10001,14 +10176,14 @@ export class CdAppService {
    * Falls back to default config if not found.
    */
   private loadScanConfig(moduleType: string): SeedConfig {
-    CdLog.debug('[CdAppService][loadScanConfig()]/starting...');
+    CdLog.debug("[CdAppService][loadScanConfig()]/starting...");
     CdLog.debug(`[CdAppService][loadScanConfig()]/moduleType: ${moduleType}`);
 
-    const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
+    const configPath = join(process.cwd(), ".cd", `${moduleType}.seed.json`);
 
     try {
       const raw = require(configPath);
-      CdLog.success('[CdAppService][loadScanConfig()]/loaded');
+      CdLog.success("[CdAppService][loadScanConfig()]/loaded");
       return raw as SeedConfig;
     } catch {
       CdLog.warning(`[CdAppService][loadScanConfig()]/fallback: ${moduleType}`);
@@ -10016,14 +10191,14 @@ export class CdAppService {
       return {
         subsystemName: moduleType,
         rootPath: process.cwd(),
-        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
-        includeExtensions: ['.ts', '.js', '.json'],
+        ignorePatterns: ["node_modules", "dist", ".git", ".cd"],
+        includeExtensions: [".ts", ".js", ".json"],
         roles: [
-          { roleName: 'controller', namingPattern: '\\.controller\\.' },
-          { roleName: 'service', namingPattern: '\\.service\\.' },
-          { roleName: 'model', namingPattern: '\\.model\\.' },
+          { roleName: "controller", namingPattern: "\\.controller\\." },
+          { roleName: "service", namingPattern: "\\.service\\." },
+          { roleName: "model", namingPattern: "\\.model\\." },
         ],
-        version: '1.0.0',
+        version: "1.0.0",
         globals: {},
       };
     }
@@ -10040,7 +10215,7 @@ export class CdAppService {
   ): Promise<string[]> {
     CdLog.debug(`[CdAppService][scanDirectory()]/dir: ${dir}`);
 
-    const entries = await import('fs/promises').then((fs) =>
+    const entries = await import("fs/promises").then((fs) =>
       fs.readdir(dir, { withFileTypes: true }),
     );
 
@@ -10073,7 +10248,7 @@ export class CdAppService {
     files: string[],
     config: SeedConfig,
   ): Promise<CdAppDescriptor> {
-    CdLog.debug('[CdAppService][buildAppDescriptor()]/starting...');
+    CdLog.debug("[CdAppService][buildAppDescriptor()]/starting...");
     CdLog.debug(`[CdAppService][buildAppDescriptor()]/appName: ${appName}`);
 
     const modules = this.groupFilesIntoModules(files, config);
@@ -10090,7 +10265,7 @@ export class CdAppService {
       },
     };
 
-    CdLog.success('[CdAppService][buildAppDescriptor()]/built');
+    CdLog.success("[CdAppService][buildAppDescriptor()]/built");
 
     return descriptor;
   }
@@ -10099,14 +10274,17 @@ export class CdAppService {
    * [CdAppService][groupFilesIntoModules()]
    * Groups files into logical modules based on role resolution.
    */
-  private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
-    CdLog.debug('[CdAppService][groupFilesIntoModules()]/starting...');
+  private groupFilesIntoModules(
+    files: string[],
+    config: SeedConfig,
+  ): CdModuleDescriptor[] {
+    CdLog.debug("[CdAppService][groupFilesIntoModules()]/starting...");
 
     const moduleMap: Record<string, CdModuleDescriptor> = {};
 
     for (const file of files) {
       const matchedRole = this.resolveRole(file, config.roles);
-      const moduleName = matchedRole?.roleName || 'root';
+      const moduleName = matchedRole?.roleName || "root";
 
       if (!moduleMap[moduleName]) {
         moduleMap[moduleName] = {
@@ -10143,11 +10321,13 @@ export class CdAppService {
           return role.roleName;
         }
       } catch {
-        CdLog.warning(`[CdAppService][matchRole()]/invalidPattern: ${role.namingPattern}`);
+        CdLog.warning(
+          `[CdAppService][matchRole()]/invalidPattern: ${role.namingPattern}`,
+        );
       }
     }
 
-    return 'root';
+    return "root";
   }
 
   /**
@@ -10155,7 +10335,7 @@ export class CdAppService {
    * Determines module context (sys/app) based on role.
    */
   private resolveModuleContext(roleName: string): CdCtx {
-    if (roleName === 'sys') return CdCtx.Sys;
+    if (roleName === "sys") return CdCtx.Sys;
     return CdCtx.App;
   }
 
@@ -10163,7 +10343,10 @@ export class CdAppService {
    * [CdAppService][resolveRole()]
    * Resolves role using namingPattern rules.
    */
-  private resolveRole(file: string, roles: SeedRoleConfig[]): SeedRoleConfig | undefined {
+  private resolveRole(
+    file: string,
+    roles: SeedRoleConfig[],
+  ): SeedRoleConfig | undefined {
     for (const role of roles) {
       if (!role.namingPattern) continue;
 
@@ -10173,7 +10356,9 @@ export class CdAppService {
           return role;
         }
       } catch {
-        CdLog.warning(`[CdAppService][resolveRole()]/invalidPattern: ${role.namingPattern}`);
+        CdLog.warning(
+          `[CdAppService][resolveRole()]/invalidPattern: ${role.namingPattern}`,
+        );
       }
     }
 
@@ -10184,14 +10369,18 @@ export class CdAppService {
    * [CdAppService][assignFileToComponent()]
    * Assigns scanned file to correct module component (controller/service/model).
    */
-  private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+  private assignFileToComponent(
+    file: string,
+    module: CdModuleDescriptor,
+    config: SeedConfig,
+  ) {
     const name = basename(file);
 
     const role = this.resolveRole(file, config.roles);
     if (!role) return;
 
     switch (role.roleName) {
-      case 'controller':
+      case "controller":
         module.controllers.push({
           name,
           type: ComponentType.Controller,
@@ -10199,7 +10388,7 @@ export class CdAppService {
         });
         break;
 
-      case 'service':
+      case "service":
         module.services.push({
           name,
           type: ComponentType.Service,
@@ -10207,7 +10396,7 @@ export class CdAppService {
         });
         break;
 
-      case 'model':
+      case "model":
         module.models.push({
           name,
           type: ComponentType.Model,
@@ -10222,8 +10411,11 @@ export class CdAppService {
    * [CdAppService][buildDirectoryTree()]
    * Builds DirectoryNode structure for descriptor signature.
    */
-  private buildDirectoryTree(files: string[], config: SeedConfig): DirectoryNode {
-    CdLog.debug('[CdAppService][buildDirectoryTree()]/starting...');
+  private buildDirectoryTree(
+    files: string[],
+    config: SeedConfig,
+  ): DirectoryNode {
+    CdLog.debug("[CdAppService][buildDirectoryTree()]/starting...");
 
     return {
       name: config.subsystemName,
@@ -10246,13 +10438,13 @@ export class CdAppService {
    * Persists generated descriptor to .cd directory.
    */
   private async writeDescriptor(root: string, descriptor: CdAppDescriptor) {
-    CdLog.debug('[CdAppService][writeDescriptor()]/starting...');
+    CdLog.debug("[CdAppService][writeDescriptor()]/starting...");
     CdLog.debug(`[CdAppService][writeDescriptor()]/root: ${root}`);
 
-    const cdDir = join(root, '.cd');
+    const cdDir = join(root, ".cd");
     await mkdir(cdDir, { recursive: true });
 
-    const filePath = join(cdDir, 'cd-app.descriptor.json');
+    const filePath = join(cdDir, "cd-app.descriptor.json");
     await writeFile(filePath, JSON.stringify(descriptor, null, 2));
 
     CdLog.success(`[CdAppService][writeDescriptor()]/filePath: ${filePath}`);
@@ -10263,7 +10455,7 @@ export class CdAppService {
    * Generates pseudo GUID for descriptor nodes.
    */
   private generateGuid(): string {
-    return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () =>
+    return "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".replace(/[x]/g, () =>
       ((Math.random() * 16) | 0).toString(16),
     );
   }
@@ -10273,7 +10465,7 @@ export class CdAppService {
    * Builds evaluation context (cell) for DNA execution from file path.
    */
   private buildExpressionContext(file: string): ExpressionContext {
-    CdLog.debug('[CdAppService][buildExpressionContext()]/starting...');
+    CdLog.debug("[CdAppService][buildExpressionContext()]/starting...");
     CdLog.debug(`[CdAppService][buildExpressionContext()]/file: ${file}`);
 
     const name = basename(file);
@@ -10281,13 +10473,23 @@ export class CdAppService {
     const ctx: ExpressionContext = {
       filePath: file,
       fileName: name,
-      extension: name.split('.').pop() || '',
-      moduleHint: file.includes('/sys/') ? 'sys' : file.includes('/app/') ? 'app' : 'unknown',
+      extension: name.split(".").pop() || "",
+      moduleHint: file.includes("/sys/")
+        ? "sys"
+        : file.includes("/app/")
+          ? "app"
+          : "unknown",
     };
 
-    CdLog.debug(`[CdAppService][buildExpressionContext()]/fileName: ${ctx.fileName}`);
-    CdLog.debug(`[CdAppService][buildExpressionContext()]/extension: ${ctx.extension}`);
-    CdLog.debug(`[CdAppService][buildExpressionContext()]/moduleHint: ${ctx.moduleHint}`);
+    CdLog.debug(
+      `[CdAppService][buildExpressionContext()]/fileName: ${ctx.fileName}`,
+    );
+    CdLog.debug(
+      `[CdAppService][buildExpressionContext()]/extension: ${ctx.extension}`,
+    );
+    CdLog.debug(
+      `[CdAppService][buildExpressionContext()]/moduleHint: ${ctx.moduleHint}`,
+    );
 
     return ctx;
   }
@@ -10297,9 +10499,14 @@ export class CdAppService {
    * Executes DNA expression against ExpressionContext.
    * Converts expression → JS-compatible → evaluates result.
    */
-  private evaluateExpression(expression: string, ctx: ExpressionContext): boolean {
-    CdLog.debug('[CdAppService][evaluateExpression()]/starting...');
-    CdLog.debug(`[CdAppService][evaluateExpression()]/expression: ${expression}`);
+  private evaluateExpression(
+    expression: string,
+    ctx: ExpressionContext,
+  ): boolean {
+    CdLog.debug("[CdAppService][evaluateExpression()]/starting...");
+    CdLog.debug(
+      `[CdAppService][evaluateExpression()]/expression: ${expression}`,
+    );
 
     try {
       let exp = expression;
@@ -10310,18 +10517,22 @@ export class CdAppService {
       exp = exp.replace(/file\.path/g, `"${ctx.filePath}"`);
       exp = exp.replace(/ctx/g, `"${ctx.moduleHint}"`);
 
-      CdLog.debug(`[CdAppService][evaluateExpression()]/afterVariables: ${exp}`);
+      CdLog.debug(
+        `[CdAppService][evaluateExpression()]/afterVariables: ${exp}`,
+      );
 
       // 🔷 Operator transformation
       exp = exp
-        .replace(/CONTAINS/g, '.includes')
-        .replace(/STARTS_WITH/g, '.startsWith')
-        .replace(/ENDS_WITH/g, '.endsWith')
-        .replace(/EQUALS/g, '===')
-        .replace(/AND/g, '&&')
-        .replace(/OR/g, '||');
+        .replace(/CONTAINS/g, ".includes")
+        .replace(/STARTS_WITH/g, ".startsWith")
+        .replace(/ENDS_WITH/g, ".endsWith")
+        .replace(/EQUALS/g, "===")
+        .replace(/AND/g, "&&")
+        .replace(/OR/g, "||");
 
-      CdLog.debug(`[CdAppService][evaluateExpression()]/afterOperators: ${exp}`);
+      CdLog.debug(
+        `[CdAppService][evaluateExpression()]/afterOperators: ${exp}`,
+      );
 
       // 🔷 Execution
       // eslint-disable-next-line no-eval
@@ -10331,12 +10542,13 @@ export class CdAppService {
 
       return result;
     } catch (e) {
-      CdLog.error(`[CdAppService][evaluateExpression()]/error: ${(e as Error).message}`);
+      CdLog.error(
+        `[CdAppService][evaluateExpression()]/error: ${(e as Error).message}`,
+      );
       return false;
     }
   }
 }
-
 ```
 
 //////////////////////////////
@@ -10351,25 +10563,32 @@ So T can be ICdResponse.
 CdWire: https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/corpdesk-rfc-0003-cd-wire.md
 
 ```ts
-export class BaseService<T extends ObjectLiteral> extends AbstractBaseService<T> {
-async invokeCdRequest<T = any>(cdRequest?: ICdRequest): Promise<CdFxReturn<T>> {
-    
-    this.logger.logDebug('BaseService::invokeCdRequest() → Starting dispatch...');
+export class BaseService<
+  T extends ObjectLiteral,
+> extends AbstractBaseService<T> {
+  async invokeCdRequest<T = any>(
+    cdRequest?: ICdRequest,
+  ): Promise<CdFxReturn<T>> {
+    this.logger.logDebug(
+      "BaseService::invokeCdRequest() → Starting dispatch...",
+    );
 
     if (!cdRequest) {
-      return { state: false, message: 'cdRequest is undefined or null.' };
+      return { state: false, message: "cdRequest is undefined or null." };
     }
 
     const { ctx, m, c, a, args, dat } = cdRequest;
 
     try {
-      const contextRoot = ctx.toLowerCase() === 'sys' ? 'sys' : 'app';
+      const contextRoot = ctx.toLowerCase() === "sys" ? "sys" : "app";
       // const moduleName = `${m}`;
       const controllerName = `${c}Controller`;
       const controllerkebab = toKebabCase(c);
       const modulePath = `../../${contextRoot}/${m}/controllers/${controllerkebab}.controller.js`;
 
-      this.logger.logDebug(`BaseService::invokeCdRequest() → Importing: ${modulePath}`);
+      this.logger.logDebug(
+        `BaseService::invokeCdRequest() → Importing: ${modulePath}`,
+      );
 
       const importedModule = await import(modulePath);
       const ControllerClass = importedModule?.[controllerName];
@@ -10383,14 +10602,19 @@ async invokeCdRequest<T = any>(cdRequest?: ICdRequest): Promise<CdFxReturn<T>> {
 
       const controllerInstance = new ControllerClass();
 
-      if (typeof controllerInstance[a] !== 'function') {
+      if (typeof controllerInstance[a] !== "function") {
         return { state: false, message: `Action method not found: ${a}` };
       }
 
-      const result = await controllerInstance[a](...(args ? Object.values(args) : []), dat);
+      const result = await controllerInstance[a](
+        ...(args ? Object.values(args) : []),
+        dat,
+      );
 
       if (!result?.state) {
-        this.logger.logError(`BaseService::invokeCdRequest() → Task failed: ${result.message}`);
+        this.logger.logError(
+          `BaseService::invokeCdRequest() → Task failed: ${result.message}`,
+        );
         return result;
       }
 
@@ -10406,7 +10630,9 @@ async invokeCdRequest<T = any>(cdRequest?: ICdRequest): Promise<CdFxReturn<T>> {
   }
 }
 ```
+
 Extracts from CdWire.
+
 ```ts
 export interface CdFxReturn<T> {
   data?: T | null;
@@ -10437,7 +10663,7 @@ export enum CdFxStateLevel {
 ////////////////////////////////////////
 
 I am thinking what you are mentioning can only be confined to BaseService.invokeCdRequest().
-Corpdesk is a very large system and I am aware this is the only method so far where we have to look for an alignment solution between CdFxReturn and ICdRequest/ICdResponse. 
+Corpdesk is a very large system and I am aware this is the only method so far where we have to look for an alignment solution between CdFxReturn and ICdRequest/ICdResponse.
 In my opinion, whatever solution we workout now should not affect wider scope effect.
 Note that BaseService.invokeCdRequest() being at the base, and assuming it is returning CdFxReturn where the data property has ICdResponse, the calling module or controller the expects to return ICdResponse can be a liberty to implement a bridging method to peel out the CdFxReturn and manage its own preferred return.
 There may not be enough of this kind of process to justify realigning all methods of cd-cli (which is already hosting lots of sys and app module relying on earlier definitions.)
@@ -10451,18 +10677,21 @@ We have now run scan on the 3 corpdesk subsystems.
 cd-cli: A cli orchestrator for corpdesk development automation
 cd-api: corpdesk API engine
 cd-shell: modular PWA front end build with the concept of 'shell' where its modularity is such that user can:
+
 - configure ui-system to use. At POC level it can switch between Bootstrap and Material
-- configure themes. The themes can be built by 3rd party 
+- configure themes. The themes can be built by 3rd party
 - relies on corpdesk modules similar to the ones for cd-cli and cd-api to operate.
 
 I have attached the 3 files.
 All the files were originally named cd-app-descriptor.json. But I have renamed them to distinguish them.
 You will notice the similarity in directory structure.
 Analise the variation and and similarity between the 3 files with the view of developing context to define what corpdesk is based on the current development intensions involving:
+
 - Capacity to use mathematically oriented expressions to define corpesk and use the same to build, maintain and upgrade corpdesk components.
-- 
+-
 
 Some references:
+
 ```ts
 /**
  * Root SeedConfig for a specific Corpdesk subsystem
@@ -10675,34 +10904,36 @@ Another subtle issue:
 The signature for scan() was also mislieading.
 The correct one should be:
 async scan(
-    actionTargetName: string,
-    cdObjName: string,
-    cdObjTypeName: string,
-    cdToken: string,
-  ): Promise<CdFxReturn<ICdResponse>>
+actionTargetName: string,
+cdObjName: string,
+cdObjTypeName: string,
+cdToken: string,
+): Promise<CdFxReturn<ICdResponse>>
 
 Earlier the 2nd and 3rd argument read: moduleName and moduleTypeName respectively.
 
 Expected correction on loadScanConfig()
+
 ```ts
 // Old version
 // const configPath = join(process.cwd(), '.cd', `${moduleType}.seed.json`);
 
 // Corrected version
-    const configPath = join(CD_OBJ_PATH, '.cd', `${moduleType}.seed.json`);
+const configPath = join(CD_OBJ_PATH, ".cd", `${moduleType}.seed.json`);
 ```
 
 I have used CD_OBJ_PATH as place holder to represent the area that needs to be resolved based on given command.
 I need you to refactor loadScanConfig() to resolve CD_OBJ_PATH.
 Note that currently, the following is what is always logged.
 But the path should be variable based on the directory being scanned. Even though cd-cli is the orchestrator, this should not be locked to it.
+
 ```log
 [2026-03-29 19:37:11] 🛠️ [CdAppService][loadScanConfig()] configPath:, /home/emp-12/cd-cli/.cd/test-bed.seed.json
 ```
 
-
 loadScanConfig() is called here.
-We need to expand the arguments to include 
+We need to expand the arguments to include
+
 ```ts
 async scan(
     actionTargetName: string,
@@ -10792,54 +11023,69 @@ async scan(
     }
   }
 ```
+
 To work out the value of APP_PATH, we need to look at `${cdObjName}-workshop.model.ts`
 You can dynamically import { cdApiVersionControl } from '../workshop/cd-app/workflow/test-bed/${cdObjName}-workshop.model.js'; This can allow us to search and resolved the required values.
 To get this to work, loadScanConfig() will have to introduce an argument that resolve ${cdObjName}
 Below is example for cd-shell-workshop.model.ts
-Note that 
+Note that
+
 ```ts
 // src/CdCli/app/app-craft/workshop/cd-app/workflow/test-bed/cd-shell-workshop.model.ts
-import { DevModeAction, getCreateRegistry, getRegistry, IDevModeInstructionDescriptor } from "../../../../../../sys/dev-mode/index.js";
-import { AppType, envCdShell, envCdShellApp, envCdShellSys, envTestBed, envWorkshop, VersionControlDescriptor } from "../../../../../../sys/dev-descriptor/index.js";
+import {
+  DevModeAction,
+  getCreateRegistry,
+  getRegistry,
+  IDevModeInstructionDescriptor,
+} from "../../../../../../sys/dev-mode/index.js";
+import {
+  AppType,
+  envCdShell,
+  envCdShellApp,
+  envCdShellSys,
+  envTestBed,
+  envWorkshop,
+  VersionControlDescriptor,
+} from "../../../../../../sys/dev-descriptor/index.js";
 import { CdFxReturn } from "../../../../../../sys/base/i-base.js";
 
 export const cdApiVersionControl: VersionControlDescriptor = {
-  name: 'CdShell',
+  name: "CdShell",
   repository: {
-    name: 'cd-shell',
-    url: 'https://github.com/corpdesk/cd-shell.git',
-    type: 'git',
+    name: "cd-shell",
+    url: "https://github.com/corpdesk/cd-shell.git",
+    type: "git",
     enabled: true,
     isPrivate: false,
     credentials: {
-      repoHost: 'corpdesk', // Organization or user hosting the repository
+      repoHost: "corpdesk", // Organization or user hosting the repository
     },
     directories: [
       {
         environment: envWorkshop,
-        path: '/home/emp-12/cd-shell/dist/CdShell/app/app-craft/workshop/cd-shell/output/cd-shell',
-        purpose: 'Auto-generated source files',
+        path: "/home/emp-12/cd-shell/dist/CdShell/app/app-craft/workshop/cd-shell/output/cd-shell",
+        purpose: "Auto-generated source files",
         isDefault: true,
       },
       {
         environment: envTestBed,
-        path: '/home/emp-12/cd-shell/src/CdShell/app/cd-shell',
-        purpose: 'Integration and live testing',
+        path: "/home/emp-12/cd-shell/src/CdShell/app/cd-shell",
+        purpose: "Integration and live testing",
       },
       {
         environment: envCdShellApp,
-        path: '/home/emp-12/cd-shell/src/CdShell/app',
-        purpose: 'cd-shell apps directory',
+        path: "/home/emp-12/cd-shell/src/CdShell/app",
+        purpose: "cd-shell apps directory",
       },
       {
         environment: envCdShellSys,
-        path: '/home/emp-12/cd-shell/src/CdShell/sys',
-        purpose: 'cd-shell system directory',
+        path: "/home/emp-12/cd-shell/src/CdShell/sys",
+        purpose: "cd-shell system directory",
       },
       {
         environment: envCdShell,
-        path: '/home/emp-12/cd-shell',
-        purpose: 'cd-shell root directory',
+        path: "/home/emp-12/cd-shell",
+        purpose: "cd-shell root directory",
       },
     ],
   },
@@ -10856,26 +11102,27 @@ export function getItemRegistry(
 ```
 
 Note that the above file relies on the following
+
 ```ts
 // src/CdCli/sys/dev-descriptor/models/environment.model.ts
 export enum CdEnvName {
-  WORKSHOP = 'workshop',
-  TEST_BED = 'test-bed',
-  PRODUCTION = 'production',
-  CI_CD = 'ci-cd',
-  SANDBOX = 'sandbox',
-  CUSTOM = 'custom',
-  LOCAL_CD_API_APP = 'local-cd-api-app',
-  LOCAL_CD_API_SYS = 'local-cd-api-sys',
-  LOCAL_CD_API = 'local-cd-api',
-  LOCAL_CD_CLI = 'local-cd-cli',
-  LOCAL_CD_CLI_APP = 'local-cd-cli-app',
-  LOCAL_CD_CLI_SYS = 'local-cd-cli-sys',
-  LOCAL_CD_SHELL = 'local-cd-shell',
-  LOCAL_CD_SHELL_APP = 'local-cd-shell-app',
-  LOCAL_CD_SHELL_SYS = 'local-cd-shell-sys',
-  LOCAL_FRONTEND = 'local-frontend',
-  LOCAL_PWA = 'local-pwa',
+  WORKSHOP = "workshop",
+  TEST_BED = "test-bed",
+  PRODUCTION = "production",
+  CI_CD = "ci-cd",
+  SANDBOX = "sandbox",
+  CUSTOM = "custom",
+  LOCAL_CD_API_APP = "local-cd-api-app",
+  LOCAL_CD_API_SYS = "local-cd-api-sys",
+  LOCAL_CD_API = "local-cd-api",
+  LOCAL_CD_CLI = "local-cd-cli",
+  LOCAL_CD_CLI_APP = "local-cd-cli-app",
+  LOCAL_CD_CLI_SYS = "local-cd-cli-sys",
+  LOCAL_CD_SHELL = "local-cd-shell",
+  LOCAL_CD_SHELL_APP = "local-cd-shell-app",
+  LOCAL_CD_SHELL_SYS = "local-cd-shell-sys",
+  LOCAL_FRONTEND = "local-frontend",
+  LOCAL_PWA = "local-pwa",
 }
 
 export interface EnvironmentVariablesDescriptor extends BaseDescriptor {
@@ -10887,38 +11134,44 @@ export interface EnvironmentVariablesDescriptor extends BaseDescriptor {
 
 export const envWorkshop: EnvironmentDescriptor = {
   name: CdEnvName.WORKSHOP,
-  type: 'dev',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "dev",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envTestBed: EnvironmentDescriptor = {
   name: CdEnvName.TEST_BED,
-  type: 'testing',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "testing",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envCdApiApp: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_CD_API_APP,
-  type: 'local-cd-api-app',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-api-app",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envCdApiSys: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_CD_API_SYS,
-  type: 'local-cd-api-sys',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-api-sys",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envCdApi: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_CD_API,
-  type: 'local-cd-api',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-api",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envProduction: EnvironmentDescriptor = {
   name: CdEnvName.PRODUCTION,
-  type: 'deployment',
-  workstation: workstations.find((w) => w.name === 'emp-07') || defaultWorkstation,
+  type: "deployment",
+  workstation:
+    workstations.find((w) => w.name === "emp-07") || defaultWorkstation,
 };
 
 /**
@@ -10926,57 +11179,64 @@ export const envProduction: EnvironmentDescriptor = {
  */
 export const envCdCli: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_CD_CLI,
-  type: 'local-cd-cli',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-cli",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envCdCliApp: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_CD_CLI_APP,
-  type: 'local-cd-cli-app',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-cli-app",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envCdCliSys: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_CD_CLI_SYS,
-  type: 'local-cd-cli-sys',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-cli-sys",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 /**
- * This environment represents the local development environment for the CD SHELL tool. 
+ * This environment represents the local development environment for the CD SHELL tool.
  * It is used for developing and testing the CD SHELL application itself, including its commands, features, and integrations. The workstation is set to 'emp-12', which is the primary development machine for CD SHELL development. This environment can be used to run the CD SHELL in a local context, allowing developers to iterate quickly and validate changes before they are integrated into the main codebase or deployed to other environments.
  */
 
 export const envCdShell: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_CD_SHELL,
-  type: 'local-cd-shell',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-shell",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envCdShellApp: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_CD_SHELL_APP,
-  type: 'local-cd-shell-app',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-shell-app",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envCdShellSys: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_CD_CLI_SYS,
-  type: 'local-cd-cli-sys',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-cli-sys",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envFrontend: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_FRONTEND,
-  type: 'local-cd-cli',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-cli",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
 
 export const envPwa: EnvironmentDescriptor = {
   name: CdEnvName.LOCAL_PWA,
-  type: 'local-cd-cli',
-  workstation: workstations.find((w) => w.name === 'emp-12') || defaultWorkstation,
+  type: "local-cd-cli",
+  workstation:
+    workstations.find((w) => w.name === "emp-12") || defaultWorkstation,
 };
-
 ```
 
 //////////////////////////////
@@ -10987,9 +11247,9 @@ This can allow us to search and resolved the required values.
 
 /////////////////////////////////////
 
-
 Based on your analysis, you can review the following definitions (only where necessary)
 For example:
+
 - you can compare your updated recommendation for mathematical expression to be enforcable via interface definitions.
 - while I was with the scan output, I figure in an automated system, every node of records should have a property for last update. This also considers possibility of selecting nodes or branches to work on.
 
@@ -11194,10 +11454,7 @@ export interface ExpressionContext {
   moduleHint?: string;
   depth?: number;
 }
-
-
 ```
-
 
 ```ts
 // src/CdCli/sys/dev-descriptor/models/cd-app.model.ts
@@ -11216,27 +11473,27 @@ export interface CdAppDescriptor extends BaseDescriptor {
 }
 
 export enum AppType {
-  Frontend = 'frontend', // User-facing web or app interfaces
-  Api = 'api', // Backend APIs
-  CdApi = 'cd-api', // Corpdesk backend APIs
-  CdApiModule = 'cd-module',
-  PushServer = 'push-server', // Services for push notifications
-  Cli = 'cli', // Command-line interfaces
-  CdCli = 'cd-cli', // Corpdesk command-line interfaces
-  Pwa = 'pwa', // Progressive Web Apps
-  DesktopPwa = 'desktop-pwa', // PWAs optimized for desktop
-  Mobile = 'mobile', // General mobile apps
-  MobileHybrid = 'mobile-hybrid', // Hybrid apps using shared codebases
-  MobileNative = 'mobile-native', // Fully native mobile apps
-  Desktop = 'desktop', // Desktop applications
-  Iot = 'iot', // Internet of Things services/devices
-  Game = 'game', // Game applications
-  Embedded = 'embedded', // Embedded systems or firmware
-  Robotics = 'robotics', // Robotics and mechatronics
-  Plugin = 'plugin', // Plugins or extensions
-  Microservice = 'microservice', // Small, modular backend services
-  SDN = 'sdn', // Software-Defined Networking applications
-  CbO = 'cbo', // CloudBrix Orchestrator
+  Frontend = "frontend", // User-facing web or app interfaces
+  Api = "api", // Backend APIs
+  CdApi = "cd-api", // Corpdesk backend APIs
+  CdApiModule = "cd-module",
+  PushServer = "push-server", // Services for push notifications
+  Cli = "cli", // Command-line interfaces
+  CdCli = "cd-cli", // Corpdesk command-line interfaces
+  Pwa = "pwa", // Progressive Web Apps
+  DesktopPwa = "desktop-pwa", // PWAs optimized for desktop
+  Mobile = "mobile", // General mobile apps
+  MobileHybrid = "mobile-hybrid", // Hybrid apps using shared codebases
+  MobileNative = "mobile-native", // Fully native mobile apps
+  Desktop = "desktop", // Desktop applications
+  Iot = "iot", // Internet of Things services/devices
+  Game = "game", // Game applications
+  Embedded = "embedded", // Embedded systems or firmware
+  Robotics = "robotics", // Robotics and mechatronics
+  Plugin = "plugin", // Plugins or extensions
+  Microservice = "microservice", // Small, modular backend services
+  SDN = "sdn", // Software-Defined Networking applications
+  CbO = "cbo", // CloudBrix Orchestrator
 }
 
 export interface DirectorySignatureDescriptor extends BaseDescriptor {
@@ -11272,7 +11529,7 @@ export interface DirectoryNode extends BaseDescriptor {
 
 //////////////////////////////////////////////////
 
-Before getting lost in the details, I want us to home back to birds eye view on what we have achieved. 
+Before getting lost in the details, I want us to home back to birds eye view on what we have achieved.
 
 - conceptualize mathematical expressions as the definition for what corpdesk is and its conventions.
 - use some of the concepts to develop a scanner for corpdesk subsystems
@@ -11284,19 +11541,20 @@ Before getting lost in the details, I want us to home back to birds eye view on 
 
 What we are after:
 To define and implement a modern software which has the capacity develops and maintains itself in a recursive manner.
+
 - Rather than being fully under AI, it is constrained by conventions that are embeded in its DNA. So it can only work within the laid down rules.
 - Apart from the the mathematical jargons, the tangible process is tied to traditional development process where it is easy for humans to intervene or interact in a intuitive way.
 
 Suggested Direction of work:
+
 - Focus of ability to develop a POC with the end goal being:
-Instructions to develop a simple corpdesk module -> module is developed -> module is tested -> module is refined based on test result -> controlled cycles of tests and improvements -> final result is posted to cd-registry -> simulated android downloads and is installed and is working as designed.
+  Instructions to develop a simple corpdesk module -> module is developed -> module is tested -> module is refined based on test result -> controlled cycles of tests and improvements -> final result is posted to cd-registry -> simulated android downloads and is installed and is working as designed.
 
 - but the journey to above need to be broken down into several achievable pieces.
 
 Do an overview plan.
 
 We will keep interacting to break down that plan into small achievable goals like the achieved pieces we have above.
-
 
 ///////////////////////////////////////////////////////////
 
@@ -11307,14 +11565,15 @@ Apart from other expected data to produce, given the improved interfaces, the ou
 I have updated some new features but there could be some details still missing.
 Give it some refinement to conform.
 You can give me back all the methods in their improved state to meet the above requirement.
+
 ```ts
 // src/CdCli/app/app-craft/services/cd-app.service.ts
 
 /* eslint-disable style/brace-style */
 
-import { basename, join, relative, sep } from 'path';
-import { GenericService } from '../../../sys/base/generic-service.js';
-import { HttpService } from '../../../sys/base/http.service.js';
+import { basename, join, relative, sep } from "path";
+import { GenericService } from "../../../sys/base/generic-service.js";
+import { HttpService } from "../../../sys/base/http.service.js";
 import {
   CD_FX_FAIL,
   CdAssertReturn,
@@ -11322,28 +11581,38 @@ import {
   CdFxStateLevel,
   ICdResponse,
   IQuery,
-} from '../../../sys/base/i-base.js';
-import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
-import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
-import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
-import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
-import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
-import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
-import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
-import { mkdir, writeFile } from 'fs/promises';
-import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
-import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
-import { executeCommand } from '../../../sys/utils/cmd.util.js';
-import { CdAutoGitController } from '../../cd-auto-git/index.js';
-import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
+} from "../../../sys/base/i-base.js";
+import CdLog from "../../../sys/cd-comm/controllers/cd-logger.controller.js";
+import {
+  AppType,
+  CdAppDescriptor,
+} from "../../../sys/dev-descriptor/models/cd-app.model.js";
+import { CdDescriptor } from "../../../sys/dev-descriptor/models/dev-descriptor.model.js";
+import { CICdRunnerService } from "../../../sys/dev-descriptor/services/cd-ci-runner.service.js";
+import { DevDescriptorService } from "../../../sys/dev-descriptor/services/dev-descriptor.service.js";
+import {
+  DevModeAction,
+  DevModeModel,
+} from "../../../sys/dev-mode/models/dev-mode.model.js";
+import { CdObjModel } from "../../../sys/moduleman/models/cd-obj.model.js";
+import { mkdir, writeFile } from "fs/promises";
+import { cdFx } from "../../../sys/base/cd-fx-return.util.js";
+import { inferCdObjType } from "../../../sys/utils/cd-naming.util.js";
+import { executeCommand } from "../../../sys/utils/cmd.util.js";
+import { CdAutoGitController } from "../../cd-auto-git/index.js";
+import { VersionService } from "../../../sys/dev-descriptor/services/version.service.js";
 import {
   CdExpression,
   ExpressionContext,
   SeedConfig,
   SeedRoleConfig,
-} from '../models/cd-app.model.js';
-import { CdCtx, CdModuleDescriptor, DirectoryNode } from '../../../sys/dev-descriptor/index.js';
-import { ComponentType } from '../../../sys/dev-descriptor/models/component-descriptor.model.js';
+} from "../models/cd-app.model.js";
+import {
+  CdCtx,
+  CdModuleDescriptor,
+  DirectoryNode,
+} from "../../../sys/dev-descriptor/index.js";
+import { ComponentType } from "../../../sys/dev-descriptor/models/component-descriptor.model.js";
 // import { cdApiVersionControl } from '../workshop/cd-app/workflow/test-bed/cd-shell-workshop.model.js';
 
 export class CdAppService {
@@ -11382,12 +11651,18 @@ export class CdAppService {
 
       // Ensure the scanner targets the resolved path, not the CLI's cwd
       const targetRoot = cdObjPath;
-      CdLog.debug(`[CdAppService][scan()] config.rootPath set to: ${targetRoot}`);
+      CdLog.debug(
+        `[CdAppService][scan()] config.rootPath set to: ${targetRoot}`,
+      );
 
       const files = await this.scanDirectory(targetRoot, config);
       CdLog.debug(`[CdAppService][scan()] files.count: ${files.length}`);
 
-      const descriptor = await this.buildAppDescriptor(cdObjName, files, config);
+      const descriptor = await this.buildAppDescriptor(
+        cdObjName,
+        files,
+        config,
+      );
       CdLog.debug(`[CdAppService][scan()] descriptor.name: ${descriptor.name}`);
 
       await this.writeDescriptor(targetRoot, descriptor);
@@ -11399,13 +11674,17 @@ export class CdAppService {
         data: {
           app_state: {
             success: true,
-            info: { messages: [`Scan completed for ${cdObjName}`], code: null, app_msg: null },
+            info: {
+              messages: [`Scan completed for ${cdObjName}`],
+              code: null,
+              app_msg: null,
+            },
             sess: null,
             cache: null,
           },
           data: descriptor,
         },
-        message: 'Scan completed successfully',
+        message: "Scan completed successfully",
       };
     } catch (error) {
       CdLog.error(`[CdAppService][scan()] error: ${(error as Error).message}`);
@@ -11422,8 +11701,11 @@ export class CdAppService {
    * Uses dynamic import to locate the workshop model and extract the environment path.
    */
 
-  private async resolveCdObjPath(cdObjName: string, oEnv: string): Promise<string> {
-    const method = 'resolveCdObjPath';
+  private async resolveCdObjPath(
+    cdObjName: string,
+    oEnv: string,
+  ): Promise<string> {
+    const method = "resolveCdObjPath";
 
     try {
       if (!cdObjName || !oEnv) {
@@ -11443,11 +11725,15 @@ export class CdAppService {
       const vcd = module.cdApiVersionControl;
 
       if (!vcd?.repository?.directories) {
-        CdLog.error(`[CdAppService][${method}] Invalid VCD structure:, ${JSON.stringify(vcd)}`);
+        CdLog.error(
+          `[CdAppService][${method}] Invalid VCD structure:, ${JSON.stringify(vcd)}`,
+        );
         throw new Error(`Invalid VersionControlDescriptor in ${modelPath}`);
       }
 
-      CdLog.debug(`[CdAppService][${method}] directories:, ${vcd.repository.directories}`);
+      CdLog.debug(
+        `[CdAppService][${method}] directories:, ${vcd.repository.directories}`,
+      );
 
       let normalizedEnvName = cdObjName.toLowerCase();
       normalizedEnvName = `local-${normalizedEnvName}`; // ensure prefix for matching, e.g., 'local-cd-shell'
@@ -11467,7 +11753,9 @@ export class CdAppService {
         CdLog.debug(
           `[CdAppService][${method}] No match found for env:, ${normalizedEnvName} in:, ${cdObjName}`,
         );
-        throw new Error(`Environment '${oEnv}' not found in ${cdObjName} workshop model.`);
+        throw new Error(
+          `Environment '${oEnv}' not found in ${cdObjName} workshop model.`,
+        );
       }
 
       if (!dirEntry.path) {
@@ -11484,7 +11772,9 @@ export class CdAppService {
       CdLog.error(
         `[CdAppService][${method}] ERROR resolving path for:, ${cdObjName}, error:, ${(err as Error).message}`,
       );
-      throw new Error(`Failed to resolve path for ${cdObjName}: ${(err as Error).message}`);
+      throw new Error(
+        `Failed to resolve path for ${cdObjName}: ${(err as Error).message}`,
+      );
     }
   }
 
@@ -11492,32 +11782,39 @@ export class CdAppService {
    * 🔷 CONFIG LOADING (Refactored)
    * Resolved CD_OBJ_PATH is used as the base for .cd/ seed files.
    */
-  private async loadScanConfig(cdObjName: string, cdObjPath: string): Promise<any> {
+  private async loadScanConfig(
+    cdObjName: string,
+    cdObjPath: string,
+  ): Promise<any> {
     CdLog.debug(`[CdAppService][loadScanConfig()] cdObjName: ${cdObjName}`);
 
-    const configPath = join(cdObjPath, '.cd', `${cdObjName}.seed.json`);
+    const configPath = join(cdObjPath, ".cd", `${cdObjName}.seed.json`);
     CdLog.debug(`[CdAppService][loadScanConfig()] configPath: ${configPath}`);
 
     try {
       // In ESM/Dynamic environments, use fs or dynamic import for JSON
       // If using Node 'require', ensure absolute path is handled
       const raw = require(configPath);
-      CdLog.success(`[CdAppService][loadScanConfig()] loaded custom config from ${cdObjPath}`);
+      CdLog.success(
+        `[CdAppService][loadScanConfig()] loaded custom config from ${cdObjPath}`,
+      );
       return raw;
     } catch {
-      CdLog.warning(`[CdAppService][loadScanConfig()] fallback to default config at ${cdObjPath}`);
+      CdLog.warning(
+        `[CdAppService][loadScanConfig()] fallback to default config at ${cdObjPath}`,
+      );
 
       return {
         subsystemName: cdObjName,
         rootPath: cdObjPath, // CRITICAL: rootPath must match the object being scanned
-        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
-        includeExtensions: ['.ts', '.js', '.json'],
+        ignorePatterns: ["node_modules", "dist", ".git", ".cd"],
+        includeExtensions: [".ts", ".js", ".json"],
         roles: [
-          { roleName: 'controller', namingPattern: '\\.controller\\.' },
-          { roleName: 'service', namingPattern: '\\.service\\.' },
-          { roleName: 'model', namingPattern: '\\.model\\.' },
+          { roleName: "controller", namingPattern: "\\.controller\\." },
+          { roleName: "service", namingPattern: "\\.service\\." },
+          { roleName: "model", namingPattern: "\\.model\\." },
         ],
-        version: '1.0.0',
+        version: "1.0.0",
         globals: {},
       };
     }
@@ -11535,10 +11832,12 @@ export class CdAppService {
   ): Promise<string[]> {
     CdLog.debug(`[CdAppService][scanDirectory()] dir:, ${dir}`);
 
-    const fs = await import('fs/promises');
+    const fs = await import("fs/promises");
     const entries = await fs.readdir(dir, { withFileTypes: true });
 
-    CdLog.debug(`[CdAppService][scanDirectory()] entries.count:, ${entries.length}`);
+    CdLog.debug(
+      `[CdAppService][scanDirectory()] entries.count:, ${entries.length}`,
+    );
 
     for (const entry of entries) {
       const fullPath = join(dir, entry.name);
@@ -11553,7 +11852,9 @@ export class CdAppService {
       } else {
         if (config.includeExtensions?.some((ext) => fullPath.endsWith(ext))) {
           results.push(fullPath);
-          CdLog.debug(`[CdAppService][scanDirectory()] added file:, ${fullPath}`);
+          CdLog.debug(
+            `[CdAppService][scanDirectory()] added file:, ${fullPath}`,
+          );
         }
       }
     }
@@ -11572,10 +11873,14 @@ export class CdAppService {
     config: SeedConfig,
   ): Promise<CdAppDescriptor> {
     CdLog.debug(`[CdAppService][buildAppDescriptor()] appName:, ${appName}`);
-    CdLog.debug(`[CdAppService][buildAppDescriptor()] files.count:, ${files.length}`);
+    CdLog.debug(
+      `[CdAppService][buildAppDescriptor()] files.count:, ${files.length}`,
+    );
 
     const modules = this.groupFilesIntoModules(files, config);
-    CdLog.debug(`[CdAppService][buildAppDescriptor()] modules.count:, ${modules.length}`);
+    CdLog.debug(
+      `[CdAppService][buildAppDescriptor()] modules.count:, ${modules.length}`,
+    );
 
     const rootTree = this.buildDirectoryTree(config.rootPath, files, config);
 
@@ -11599,17 +11904,22 @@ export class CdAppService {
    * 🔷 MODULE GROUPING
    * ============================================================
    */
-  private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
+  private groupFilesIntoModules(
+    files: string[],
+    config: SeedConfig,
+  ): CdModuleDescriptor[] {
     CdLog.debug(`[CdAppService][groupFilesIntoModules()] start`);
 
     const moduleMap: Record<string, CdModuleDescriptor> = {};
 
     for (const file of files) {
       const role = this.resolveRole(file, config.roles);
-      const moduleName = role?.roleName || 'root';
+      const moduleName = role?.roleName || "root";
 
       CdLog.debug(`[CdAppService][groupFilesIntoModules()] file:, ${file}`);
-      CdLog.debug(`[CdAppService][groupFilesIntoModules()] resolvedRole:, ${moduleName}`);
+      CdLog.debug(
+        `[CdAppService][groupFilesIntoModules()] resolvedRole:, ${moduleName}`,
+      );
 
       if (!moduleMap[moduleName]) {
         moduleMap[moduleName] = {
@@ -11633,7 +11943,7 @@ export class CdAppService {
   }
 
   private resolveModuleContext(roleName: string): CdCtx {
-    return roleName === 'sys' ? CdCtx.Sys : CdCtx.App;
+    return roleName === "sys" ? CdCtx.Sys : CdCtx.App;
   }
 
   /**
@@ -11641,7 +11951,10 @@ export class CdAppService {
    * 🔷 ROLE RESOLUTION (DNA + REGEX)
    * ============================================================
    */
-  private resolveRole(file: string, roles: SeedRoleConfig[]): SeedRoleConfig | undefined {
+  private resolveRole(
+    file: string,
+    roles: SeedRoleConfig[],
+  ): SeedRoleConfig | undefined {
     const ctx = this.buildExpressionContext(file);
 
     for (const role of roles) {
@@ -11669,21 +11982,38 @@ export class CdAppService {
    * 🔷 COMPONENT ASSIGNMENT
    * ============================================================
    */
-  private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+  private assignFileToComponent(
+    file: string,
+    module: CdModuleDescriptor,
+    config: SeedConfig,
+  ) {
     const name = basename(file);
     const role = this.resolveRole(file, config.roles);
 
     if (!role) return;
 
     switch (role.roleName) {
-      case 'controller':
-        module.controllers.push({ name, type: ComponentType.Controller, fileName: file });
+      case "controller":
+        module.controllers.push({
+          name,
+          type: ComponentType.Controller,
+          fileName: file,
+        });
         break;
-      case 'service':
-        module.services.push({ name, type: ComponentType.Service, fileName: file });
+      case "service":
+        module.services.push({
+          name,
+          type: ComponentType.Service,
+          fileName: file,
+        });
         break;
-      case 'model':
-        module.models.push({ name, type: ComponentType.Model, fileName: file, fields: [] });
+      case "model":
+        module.models.push({
+          name,
+          type: ComponentType.Model,
+          fileName: file,
+          fields: [],
+        });
         break;
     }
   }
@@ -11693,7 +12023,11 @@ export class CdAppService {
    * 🔷 TRUE TREE BUILDER (HIERARCHICAL)
    * ============================================================
    */
-  private buildDirectoryTree(rootPath: string, files: string[], config: SeedConfig): DirectoryNode {
+  private buildDirectoryTree(
+    rootPath: string,
+    files: string[],
+    config: SeedConfig,
+  ): DirectoryNode {
     CdLog.debug(`[CdAppService][buildDirectoryTree()] start`);
 
     const root: DirectoryNode = {
@@ -11768,10 +12102,10 @@ export class CdAppService {
   private async writeDescriptor(root: string, descriptor: CdAppDescriptor) {
     CdLog.debug(`[CdAppService][writeDescriptor()] root:, ${root}`);
 
-    const cdDir = join(root, '.cd');
+    const cdDir = join(root, ".cd");
     await mkdir(cdDir, { recursive: true });
 
-    const filePath = join(cdDir, 'cd-app.descriptor.json');
+    const filePath = join(cdDir, "cd-app.descriptor.json");
 
     await writeFile(filePath, JSON.stringify(descriptor, null, 2));
 
@@ -11789,30 +12123,41 @@ export class CdAppService {
     return {
       filePath: file,
       fileName: name,
-      extension: name.split('.').pop() || '',
-      moduleHint: file.includes('/sys/') ? 'sys' : file.includes('/app/') ? 'app' : 'unknown',
+      extension: name.split(".").pop() || "",
+      moduleHint: file.includes("/sys/")
+        ? "sys"
+        : file.includes("/app/")
+          ? "app"
+          : "unknown",
     };
   }
 
-  private evaluateExpression(expression: CdExpression, ctx: ExpressionContext): boolean {
+  private evaluateExpression(
+    expression: CdExpression,
+    ctx: ExpressionContext,
+  ): boolean {
     switch (expression.op) {
-      case 'contains':
+      case "contains":
         return String(ctx[expression.field]).includes(expression.value);
 
-      case 'startsWith':
+      case "startsWith":
         return String(ctx[expression.field]).startsWith(expression.value);
 
-      case 'endsWith':
+      case "endsWith":
         return String(ctx[expression.field]).endsWith(expression.value);
 
-      case 'equals':
+      case "equals":
         return String(ctx[expression.field]) === expression.value;
 
-      case 'and':
-        return expression.conditions.every((cond) => this.evaluateExpression(cond, ctx));
+      case "and":
+        return expression.conditions.every((cond) =>
+          this.evaluateExpression(cond, ctx),
+        );
 
-      case 'or':
-        return expression.conditions.some((cond) => this.evaluateExpression(cond, ctx));
+      case "or":
+        return expression.conditions.some((cond) =>
+          this.evaluateExpression(cond, ctx),
+        );
 
       default:
         return false;
@@ -11825,7 +12170,7 @@ export class CdAppService {
    * ============================================================
    */
   private generateGuid(): string {
-    return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () =>
+    return "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".replace(/[x]/g, () =>
       ((Math.random() * 16) | 0).toString(16),
     );
   }
@@ -11855,7 +12200,6 @@ export class CdAppService {
     };
   }
 }
-
 ```
 
 /////////////////////////////////
@@ -11907,12 +12251,12 @@ private evaluateExpression(expression: CdExpression, ctx: ExpressionContext): bo
 ```ts
 export type CdExpression =
   | {
-      op: 'contains' | 'startsWith' | 'endsWith' | 'equals';
+      op: "contains" | "startsWith" | "endsWith" | "equals";
       field: keyof ExpressionContext;
       value: string;
     }
   | {
-      op: 'and' | 'or';
+      op: "and" | "or";
       conditions: CdExpression[];
     };
 ```
@@ -11925,21 +12269,21 @@ Below are some key interfaces:
 
 ```ts
 // src/CdCli/sys/dev-descriptor/models/cd-app.model.ts
-import type { CdRequest, ICdRequest } from '../../base/i-base.js';
-import type { BaseDescriptor } from './base-descriptor.model.js';
-import type { CdModuleDescriptor } from './cd-module-descriptor.model.js';
-import type { CiCdDescriptor } from './cicd-descriptor.model.js';
-import type { EnvironmentDescriptor } from './environment.model.js';
-import CdLog from '../../cd-comm/controllers/cd-logger.controller.js';
-import { LanguageDescriptor } from './language.model.js';
-import { LicenseDescriptor } from './license.model.js';
+import type { CdRequest, ICdRequest } from "../../base/i-base.js";
+import type { BaseDescriptor } from "./base-descriptor.model.js";
+import type { CdModuleDescriptor } from "./cd-module-descriptor.model.js";
+import type { CiCdDescriptor } from "./cicd-descriptor.model.js";
+import type { EnvironmentDescriptor } from "./environment.model.js";
+import CdLog from "../../cd-comm/controllers/cd-logger.controller.js";
+import { LanguageDescriptor } from "./language.model.js";
+import { LicenseDescriptor } from "./license.model.js";
 import {
   CdControllerDescriptor,
   CdModelDescriptor,
   CdServiceDescriptor,
   ContributorDescriptor,
   VersionControlDescriptor,
-} from '../index.js';
+} from "../index.js";
 
 export interface CdAppDescriptor extends BaseDescriptor {
   $schema?: string;
@@ -11956,27 +12300,27 @@ export interface CdAppDescriptor extends BaseDescriptor {
 }
 
 export enum AppType {
-  Frontend = 'frontend', // User-facing web or app interfaces
-  Api = 'api', // Backend APIs
-  CdApi = 'cd-api', // Corpdesk backend APIs
-  CdApiModule = 'cd-module',
-  PushServer = 'push-server', // Services for push notifications
-  Cli = 'cli', // Command-line interfaces
-  CdCli = 'cd-cli', // Corpdesk command-line interfaces
-  Pwa = 'pwa', // Progressive Web Apps
-  DesktopPwa = 'desktop-pwa', // PWAs optimized for desktop
-  Mobile = 'mobile', // General mobile apps
-  MobileHybrid = 'mobile-hybrid', // Hybrid apps using shared codebases
-  MobileNative = 'mobile-native', // Fully native mobile apps
-  Desktop = 'desktop', // Desktop applications
-  Iot = 'iot', // Internet of Things services/devices
-  Game = 'game', // Game applications
-  Embedded = 'embedded', // Embedded systems or firmware
-  Robotics = 'robotics', // Robotics and mechatronics
-  Plugin = 'plugin', // Plugins or extensions
-  Microservice = 'microservice', // Small, modular backend services
-  SDN = 'sdn', // Software-Defined Networking applications
-  CbO = 'cbo', // CloudBrix Orchestrator
+  Frontend = "frontend", // User-facing web or app interfaces
+  Api = "api", // Backend APIs
+  CdApi = "cd-api", // Corpdesk backend APIs
+  CdApiModule = "cd-module",
+  PushServer = "push-server", // Services for push notifications
+  Cli = "cli", // Command-line interfaces
+  CdCli = "cd-cli", // Corpdesk command-line interfaces
+  Pwa = "pwa", // Progressive Web Apps
+  DesktopPwa = "desktop-pwa", // PWAs optimized for desktop
+  Mobile = "mobile", // General mobile apps
+  MobileHybrid = "mobile-hybrid", // Hybrid apps using shared codebases
+  MobileNative = "mobile-native", // Fully native mobile apps
+  Desktop = "desktop", // Desktop applications
+  Iot = "iot", // Internet of Things services/devices
+  Game = "game", // Game applications
+  Embedded = "embedded", // Embedded systems or firmware
+  Robotics = "robotics", // Robotics and mechatronics
+  Plugin = "plugin", // Plugins or extensions
+  Microservice = "microservice", // Small, modular backend services
+  SDN = "sdn", // Software-Defined Networking applications
+  CbO = "cbo", // CloudBrix Orchestrator
 }
 
 export interface DirectorySignatureDescriptor extends BaseDescriptor {
@@ -12012,7 +12356,7 @@ export interface DirectoryNode extends BaseDescriptor {
   children?: DirectoryNode[];
 
   // 🔥 NEW — Audit Classification
-  classification?: 'expected' | 'omega-valid' | 'omega-invalid';
+  classification?: "expected" | "omega-valid" | "omega-invalid";
 
   classificationReason?: string;
 
@@ -12034,8 +12378,8 @@ export interface DirectoryNode extends BaseDescriptor {
   isCdForeign?: boolean;
 
   // 🔥 recommended (future-safe)
-  cdState?: 'compliant' | 'foreign' | 'unknown';
-  origin?: 'generated' | 'scanned' | 'external';
+  cdState?: "compliant" | "foreign" | "unknown";
+  origin?: "generated" | "scanned" | "external";
 }
 
 export interface ScanNode {
@@ -12054,7 +12398,7 @@ export interface ScanNode {
   // 🔥 NEW: compliance tracking
   isCdCompliant?: boolean;
   isCdForeign?: boolean;
-  cdState: 'compliant' | 'foreign' | 'unknown';
+  cdState: "compliant" | "foreign" | "unknown";
 }
 
 export interface ComplianceMetrics {
@@ -12075,11 +12419,9 @@ export interface ComplianceMetrics {
 export interface CdGraphEdge {
   from: string; // cdObjGuid
   to: string; // cdObjGuid
-  type: 'hierarchy' | 'dependency' | 'reference';
+  type: "hierarchy" | "dependency" | "reference";
 }
-
 ```
-
 
 /////////////////////////////////////
 One of the main focus of the upgrade of the AppCraftService.scan() was to test capacity for capturing zygote structure in terms of dependancy mapping and assesment of the code structure during the booding process. Was there significant capture in this regard.
@@ -12187,69 +12529,69 @@ export interface ExpressionMetadata {
  * cd_obj_type enumeration
  */
 export type CdObjType =
-  | 'app_file'
-  | 'app_directory'
-  | 'module'
-  | 'controller'
-  | 'model'
-  | 'service'
-  | 'utility'
-  | 'plugin'
-  | 'code'
-  | 'unknown';
+  | "app_file"
+  | "app_directory"
+  | "module"
+  | "controller"
+  | "model"
+  | "service"
+  | "utility"
+  | "plugin"
+  | "code"
+  | "unknown";
 
 /**
  * Example usage: SeedConfig for cd-cli
  */
 const cdCliSeed: SeedConfig = {
-  subsystemName: 'cd-cli',
-  rootPath: './cd-cli',
+  subsystemName: "cd-cli",
+  rootPath: "./cd-cli",
   roles: [
     {
-      roleName: 'bootstrap',
-      allowedTypes: ['app_file'],
-      namingPattern: '^main\\.ts$',
+      roleName: "bootstrap",
+      allowedTypes: ["app_file"],
+      namingPattern: "^main\\.ts$",
       weight: 100,
     },
     {
-      roleName: 'controller',
-      allowedTypes: ['controller'],
-      namingPattern: '.*Controller\\.ts$',
+      roleName: "controller",
+      allowedTypes: ["controller"],
+      namingPattern: ".*Controller\\.ts$",
     },
     {
-      roleName: 'service',
-      allowedTypes: ['service'],
-      namingPattern: '.*Service\\.ts$',
+      roleName: "service",
+      allowedTypes: ["service"],
+      namingPattern: ".*Service\\.ts$",
     },
     {
-      roleName: 'module',
-      allowedTypes: ['app_directory', 'module'],
+      roleName: "module",
+      allowedTypes: ["app_directory", "module"],
       children: [
         {
-          roleName: 'controller',
-          allowedTypes: ['controller'],
+          roleName: "controller",
+          allowedTypes: ["controller"],
         },
         {
-          roleName: 'service',
-          allowedTypes: ['service'],
+          roleName: "service",
+          allowedTypes: ["service"],
         },
       ],
     },
   ],
-  ignorePatterns: ['node_modules', '*.spec.ts'],
+  ignorePatterns: ["node_modules", "*.spec.ts"],
   templates: [
     {
-      name: 'default-controller',
-      path: './templates/controller.template.ts',
-      roles: ['controller'],
+      name: "default-controller",
+      path: "./templates/controller.template.ts",
+      roles: ["controller"],
     },
   ],
   expressionMetadata: {
-    grammarRules: ['role -> type', 'children recursion allowed'],
+    grammarRules: ["role -> type", "children recursion allowed"],
     scoringWeights: { purity: 0.7, pollution: 0.3 },
     promptFlags: { generateLLMPrompt: true },
   },
-  version: '1.0.0',
+  version: "1.0.0",
 };
 
 export interface SeedRoleConfig {
@@ -12311,12 +12653,12 @@ export interface ExpressionContext {
 
 export type CdExpression =
   | {
-      op: 'contains' | 'startsWith' | 'endsWith' | 'equals';
+      op: "contains" | "startsWith" | "endsWith" | "equals";
       field: keyof ExpressionContext;
       value: string;
     }
   | {
-      op: 'and' | 'or';
+      op: "and" | "or";
       conditions: CdExpression[];
     };
 
@@ -12330,29 +12672,28 @@ export interface CdAuditResult {
 
   omega: {
     nodeGuid: string;
-    classification: 'omega-valid' | 'omega-invalid';
+    classification: "omega-valid" | "omega-invalid";
     reason: string;
   }[];
 }
-
-
-
 ```
+
 //////////////////////////////
 I have to points that you can comment on:
-1. Mathematical expressions access:
-At the moment, you are refering to the mathematical expressions from your contxtualization.
-I had earlier made it available at https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/5.%20integration-of-mathematical-expression.md.
-We may need to work on how to formaliz its standard reference point.
-There can be optional sources with policy of prioritization.
-One of the optionas I also thought about was cd-api which is already in the corpdesk ecosystem.
-Its access can also be done in a way that it can be cached, selectively queried, etc.
-We dont have to work on the details now but I thought it is something that we must start strategizing on.
-2. Need for review of currently save version:
-What we have done so far may prompt us to consider reviewing the last saved state of the expressions model.
-See below for your consideration:
 
-```ts
+1. Mathematical expressions access:
+   At the moment, you are refering to the mathematical expressions from your contxtualization.
+   I had earlier made it available at https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/5.%20integration-of-mathematical-expression.md.
+   We may need to work on how to formaliz its standard reference point.
+   There can be optional sources with policy of prioritization.
+   One of the optionas I also thought about was cd-api which is already in the corpdesk ecosystem.
+   Its access can also be done in a way that it can be cached, selectively queried, etc.
+   We dont have to work on the details now but I thought it is something that we must start strategizing on.
+2. Need for review of currently save version:
+   What we have done so far may prompt us to consider reviewing the last saved state of the expressions model.
+   See below for your consideration:
+
+````ts
 Below is a **refined, RFC-grade + patent-ready document (v2)** that integrates:
 
 * Your original vision
@@ -12431,7 +12772,7 @@ Corpdesk defines a **bidirectional architecture compiler**:
 
 ```text
 Formal Model ⇄ Semantic Graph ⇄ Filesystem Structure ⇄ Execution Model
-```
+````
 
 ---
 
@@ -12439,19 +12780,18 @@ Formal Model ⇄ Semantic Graph ⇄ Filesystem Structure ⇄ Execution Model
 
 ### 3.1.1 Genesis Mode (Forward Construction)
 
-* Input: Formal model (Γ, Σ, partitions)
-* Output: Filesystem structure
+- Input: Formal model (Γ, Σ, partitions)
+- Output: Filesystem structure
 
 ---
 
 ### 3.1.2 Audit Mode (Reverse Analysis)
 
-* Input: Filesystem
-* Output:
-
-  * Semantic graph
-  * Formal reconstruction
-  * Compliance metrics (CR, I, Ω)
+- Input: Filesystem
+- Output:
+  - Semantic graph
+  - Formal reconstruction
+  - Compliance metrics (CR, I, Ω)
 
 ---
 
@@ -12469,8 +12809,8 @@ System = (N, E)
 
 Where:
 
-* **N** = set of nodes (files, directories, modules)
-* **E** = set of edges (hierarchy, dependency, reference)
+- **N** = set of nodes (files, directories, modules)
+- **E** = set of edges (hierarchy, dependency, reference)
 
 ---
 
@@ -12483,8 +12823,8 @@ E_expected = f(Γ)
 
 Where:
 
-* **E_expected** = nodes satisfying descriptor Γ
-* **Ω** = nodes outside defined structure
+- **E_expected** = nodes satisfying descriptor Γ
+- **Ω** = nodes outside defined structure
 
 ---
 
@@ -12504,9 +12844,9 @@ System = E_expected ∪ Ω
 
 Examples:
 
-* cd-cli → {controller, service}
-* cd-api → {controller, service, model}
-* cd-shell → {ui-adaptor, render-engine, service}
+- cd-cli → {controller, service}
+- cd-api → {controller, service, model}
+- cd-shell → {ui-adaptor, render-engine, service}
 
 ---
 
@@ -12537,8 +12877,8 @@ Role(node) = f(Expression, Context)
 
 Where:
 
-* Expression from Γ (e.g., naming rules)
-* Context = filePath, fileName, extension
+- Expression from Γ (e.g., naming rules)
+- Context = filePath, fileName, extension
 
 ---
 
@@ -12576,8 +12916,8 @@ I = |Ω| / |N|
 
 Where:
 
-* **Ω_valid** → extensions (plugins, experiments)
-* **Ω_invalid** → violations
+- **Ω_valid** → extensions (plugins, experiments)
+- **Ω_invalid** → violations
 
 ---
 
@@ -12629,14 +12969,14 @@ Defines Γ.
 
 ## 7.1 Responsibilities
 
-* Traverse filesystem
-* Build semantic graph
-* Resolve roles via expressions
-* Classify nodes into:
+- Traverse filesystem
+- Build semantic graph
+- Resolve roles via expressions
+- Classify nodes into:
+  - E_expected
+  - Ω
 
-  * E_expected
-  * Ω
-* Compute CR and I
+- Compute CR and I
 
 ---
 
@@ -12677,9 +13017,9 @@ Defines Γ.
 
 All operations MUST pass through:
 
-* ICdRequest
-* ICdResponse
-* CdWire
+- ICdRequest
+- ICdResponse
+- CdWire
 
 ---
 
@@ -12727,9 +13067,9 @@ sequenceDiagram
 
 AI acts as:
 
-* Generator (Genesis)
-* Analyzer (Audit)
-* Optimizer (Alignment)
+- Generator (Genesis)
+- Analyzer (Audit)
+- Optimizer (Alignment)
 
 ---
 
@@ -12748,10 +13088,10 @@ AI acts as:
 
 ## 9.3 AI Capabilities
 
-* generate missing roles
-* remove or classify Ω_invalid
-* propose structural improvements
-* evolve Γ
+- generate missing roles
+- remove or classify Ω_invalid
+- propose structural improvements
+- evolve Γ
 
 ---
 
@@ -12763,22 +13103,22 @@ AI acts as:
 
 | Feature           | Status     |
 | ----------------- | ---------- |
-| Scan traversal    | ✅          |
-| Descriptor output | ✅          |
+| Scan traversal    | ✅         |
+| Descriptor output | ✅         |
 | Role inference    | ⚠️ partial |
-| Graph model       | ❌          |
-| CR computation    | ❌          |
-| Ω classification  | ❌          |
+| Graph model       | ❌         |
+| CR computation    | ❌         |
+| Ω classification  | ❌         |
 
 ---
 
 ## 10.2 Required Enhancements
 
-* Implement role resolution engine
-* Introduce graph model (nodes + edges)
-* Compute CR and I
-* Classify Ω
-* Extend descriptor schema
+- Implement role resolution engine
+- Introduce graph model (nodes + edges)
+- Compute CR and I
+- Classify Ω
+- Extend descriptor schema
 
 ---
 
@@ -12796,8 +13136,8 @@ A system that models software architecture as a **semantic graph governed by des
 
 A **bidirectional compiler** transforming:
 
-* formal representations → filesystem structures
-* filesystem structures → formal representations
+- formal representations → filesystem structures
+- filesystem structures → formal representations
 
 ---
 
@@ -12817,8 +13157,8 @@ A method for computing **structural deviation (Ω)** and infection ratio (I).
 
 A method of classifying unexpected elements into:
 
-* valid extensions
-* structural violations
+- valid extensions
+- structural violations
 
 ---
 
@@ -12826,9 +13166,9 @@ A method of classifying unexpected elements into:
 
 A unified execution model using:
 
-* ICdRequest
-* ICdResponse
-* CdWire
+- ICdRequest
+- ICdResponse
+- CdWire
 
 ---
 
@@ -12836,9 +13176,9 @@ A unified execution model using:
 
 Corpdesk defines a system where:
 
-* software is **computed, not guessed**
-* structure is **derived, not manually imposed**
-* compliance is **measured, not subjective**
+- software is **computed, not guessed**
+- structure is **derived, not manually imposed**
+- compliance is **measured, not subjective**
 
 The system operates toward an **asymptotic ideal architecture**, where:
 
@@ -12853,9 +13193,8 @@ while preserving controlled extensibility via Ω_valid.
 # 13. Next Steps
 
 1. Extend scanner:
-
-   * classify E vs Ω
-   * compute CR and I
+   - classify E vs Ω
+   - compute CR and I
 
 2. Introduce graph model
 
@@ -12913,12 +13252,14 @@ This standard is language-agnostic, though illustrations in this document use No
 ### 2.1 General Directory Hierarchy
 
 ```
+
 <root-directory>/src/<AppName-PascalCase>/
-                           ├── sys(kebab-case)/
-                           │   └── <list-of-core-modules-kebab-case>/
-                           └── app(kebab-case)/
-                               └── <list-of-feature-modules-kebab-case>/
-```
+├── sys(kebab-case)/
+│ └── <list-of-core-modules-kebab-case>/
+└── app(kebab-case)/
+└── <list-of-feature-modules-kebab-case>/
+
+````
 
 ### 2.2 Integration Consideration
 
@@ -12963,26 +13304,26 @@ Each module consists of one or more standard directories. At minimum:
   ├── controllers(kebab-case)/
   ├── models(kebab-case)/
   └── services(kebab-case)/
-```
+````
 
 ### Directory Purposes
 
-* **controllers/**
+- **controllers/**
   Contains request/response logic or runtime orchestration.
   Controllers expose public methods that can be invoked externally (via CdWire on the backend, or via UI events in a frontend `view/`).
   All files must end with `.controller.<ext>` and hosted classes must end with `Controller`.
 
-* **services/**
+- **services/**
   Contain core business logic, reusable across controllers.
   Services are typically stateless and focused on operations, calculations, and process flows.
   All files must end with `.service.<ext>` and hosted classes must end with `Service`.
 
-* **models/**
+- **models/**
   Contain data models, schema mappings, and entity definitions.
   Models represent tables (backend), or typed interfaces and DTOs (frontend/backend).
   All files must end with `.model.<ext>` and hosted classes must end with `Model`.
 
-* **view/** *(optional, GUI clients only)*
+- **view/** _(optional, GUI clients only)_
   Dedicated to frontend user interface logic.
   Contains the runtime entry point (`index.js`), templates, and GUI-specific controllers.
   While backend controllers handle service orchestration, **view controllers** handle UI events, rendering, and module-level presentation logic.<br>
@@ -12998,10 +13339,10 @@ Each module consists of one or more standard directories. At minimum:
 
 ### Additional Directories
 
-* **extra/** — supplementary files not fitting standard categories.
-* **interfaces/** — shared TypeScript interfaces.
-* **dist/** — build outputs.
-* **sdk/** — client libraries or API wrappers.
+- **extra/** — supplementary files not fitting standard categories.
+- **interfaces/** — shared TypeScript interfaces.
+- **dist/** — build outputs.
+- **sdk/** — client libraries or API wrappers.
 
 ---
 
@@ -13012,7 +13353,6 @@ Would you like me to also **add a dedicated subsection (maybe 4.3)** that explai
 ---
 
 Date: 2025-10-3, Time: 01:08
-
 
 ---
 
@@ -13027,7 +13367,7 @@ Date: 2025-10-3, Time: 01:08
 | Controller Files      | `<name>.controller.ts` (sys)<br>`<module-name>-<name>.controller.ts` (app) | `user.controller.ts`, `coops-member.controller.ts` |
 | Service Files         | `<name>.service.ts` (sys)<br>`<module-name>-<name>.service.ts` (app)       | `user.service.ts`, `coops-member.service.ts`       |
 | Model Files           | `<name>.model.ts` (sys)<br>`<module-name>-<name>.model.ts` (app)           | `user.model.ts`, `coops-member.model.ts`           |
-| DB Table Names        | snake\_case                                                                | `user_account`, `coops_member`                     |
+| DB Table Names        | snake_case                                                                 | `user_account`, `coops_member`                     |
 
 All files in the controllers directory must end with `.controller.<extension>` and the name of the hosted class must end with `Controller`.
 All files in the models directory must end with `.model.<extension>` and the name of the hosted class must end with `Model`.
@@ -13047,6 +13387,7 @@ All files in the services directory must end with `.service.<extension>` and the
 ---
 
 ## Section 6: Models, Entities, Tables, and Columns
+
 ### 6.1 Overview
 
 Corpdesk tables and entity properties follow strict naming rules to:
@@ -13060,6 +13401,7 @@ Prevent ambiguity between resident, visitor, and special fields.
 A core principle is that every module has a leading table. This influences whether the <controller-name> is included in the schema.
 
 ### 6.2 Table Naming
+
 #### 6.2.1 Module-Leading Tables
 
 Each module has one leading table, named exactly after the module.
@@ -13155,6 +13497,7 @@ Normalize to avoid TypeType.
 Resident/Visitor/Special rules preserved in property names.
 
 ### 6.5 Practical Examples
+
 Coop (leading table)
 
 ```sql
@@ -13171,7 +13514,9 @@ CREATE TABLE `coop` (
   PRIMARY KEY (`coop_id`)
 );
 ```
+
 Entity file
+
 ```ts
 @Entity({ name: "coop" })
 export class CoopModel {
@@ -13206,17 +13551,15 @@ export class CoopModel {
 
 ⚖️ Summary Rule:
 
-Leading table → <module>_<field>.
+Leading table → <module>\_<field>.
 
 Controller table → <module>_<controller>_<field>.
 
-Counterpart table → <module>_<controller>_<counterpart>_<field>.
+Counterpart table → <module>_<controller>_<counterpart>\_<field>.
 
 Visitor field → Prefix of referenced table.
 
 Special field → Always doc_id.
-
-
 
 ---
 
@@ -13224,12 +13567,13 @@ Special field → Always doc_id.
 
 To enable standardization and support automation:
 
-* No dependency injection frameworks.
-* All class instances must be created without constructor arguments.
-* Use a standardized `init()` method for class setup.
-* All externally consumable methods must return `CdFxReturn<T>` as defined in **RFC-0003 (CdWire Protocol)**. This ensures uniform handling of success, errors, and semantic states across all modules.
+- No dependency injection frameworks.
+- All class instances must be created without constructor arguments.
+- Use a standardized `init()` method for class setup.
+- All externally consumable methods must return `CdFxReturn<T>` as defined in **RFC-0003 (CdWire Protocol)**. This ensures uniform handling of success, errors, and semantic states across all modules.
 
 Example:
+
 ```pgsql
 <module-name>_<controller-name>_<counterpart-name?>
 ```
@@ -13243,14 +13587,14 @@ await ctlCoopMember.init(optionalInput?);
 
 ## 8. Base Module and Shared Code
 
-* `base/` directory under `sys/` contains shared abstractions and base classes.
-* Not considered a full module.
-* Does not contain a controller.
+- `base/` directory under `sys/` contains shared abstractions and base classes.
+- Not considered a full module.
+- Does not contain a controller.
 
 ### Examples:
 
-* `i-base.ts`: Shared interfaces
-* `BaseService.ts`: Abstract class extended by most services
+- `i-base.ts`: Shared interfaces
+- `BaseService.ts`: Abstract class extended by most services
 
 ---
 
@@ -13262,11 +13606,11 @@ Descriptors define the structure, metadata, and identity of every Corpdesk entit
 
 Descriptors enable:
 
-* Standardization
-* Automation
-* Toolchain integration
-* Runtime introspection
-* Progressive documentation
+- Standardization
+- Automation
+- Toolchain integration
+- Runtime introspection
+- Progressive documentation
 
 ### 9.2 Types of Descriptors
 
@@ -13293,32 +13637,32 @@ Each descriptor has a `.name` property in kebab-case to maintain consistency.
 
 ## 10. Design Philosophy
 
-* Modular and extensible by design.
-* Convention over configuration.
-* Facilitates runtime installation and introspection.
-* Language and platform agnostic.
-* Emphasizes machine-readability to support intelligent automation and AI tooling.
-* To support automation and AI-driven tooling, Corpdesk enforces consistent method return shapes. This is standardized under **RFC-0003: CdWire Protocol**.
+- Modular and extensible by design.
+- Convention over configuration.
+- Facilitates runtime installation and introspection.
+- Language and platform agnostic.
+- Emphasizes machine-readability to support intelligent automation and AI tooling.
+- To support automation and AI-driven tooling, Corpdesk enforces consistent method return shapes. This is standardized under **RFC-0003: CdWire Protocol**.
 
 ---
 
 ## 11. Use Cases
 
-* Enterprise backend systems
-* AI-enabled process automation
-* Modular feature deployments
-* Distributed services orchestration
-* Progressive web application backends
+- Enterprise backend systems
+- AI-enabled process automation
+- Modular feature deployments
+- Distributed services orchestration
+- Progressive web application backends
 
 ---
 
 ## 12. Future Scope
 
-* Protocol versioning
-* AI-assisted module scaffolding
-* Intelligent descriptors registry
-* Plug-and-play modules from a marketplace
-* Federated module communication and sandboxing
+- Protocol versioning
+- AI-assisted module scaffolding
+- Intelligent descriptors registry
+- Plug-and-play modules from a marketplace
+- Federated module communication and sandboxing
 
 ---
 
@@ -13332,17 +13676,18 @@ While RFC-0001 defines structural and naming standards, operational consistency 
 
 ## 14. References
 
-* Corpdesk Descriptor Specification (forthcoming)
-* RFC-0002: CdCLI Protocol Specification
-* RFC-0003: CdWire Protocol
-* Git Repository: \[TBD]
+- Corpdesk Descriptor Specification (forthcoming)
+- RFC-0002: CdCLI Protocol Specification
+- RFC-0003: CdWire Protocol
+- Git Repository: \[TBD]
 
 ---
 
 ### Document Version: RFC-0001
 
 ---
-Last Edit: 16th March, 2026 
+
+Last Edit: 16th March, 2026
 Edited: September 3, 2025
 Summary of Updates:
 
@@ -13376,25 +13721,25 @@ Date Published: 2025-08-06
 Date Updated: 2025-08-17
 **Summary of Updates:** Linked `CdFxReturn<T>` to RFC-0003 for method response standardization. Clarified lifecycle rules (Section 6), added explicit references in Design Philosophy (Section 9) and Conclusion (Section 12).
 
-
 //////////////////////////////////////
 
 It is at these very early stages that we need to enphasize clarity to simplify the complexity we are dealing with.
 Currently the whole scan process is centered at AppCraftService via the method scan() and other helper files.
-We may need to assess this process and design classes that reflects the loop RFCs → Mathematical Expressions → SeedConfig → Execution.  The class names should reflect the visual designs. We also have the option of naming representing biological generation.  This does not mean we change AppCrafService naming, but the service will be deriving from some 'biological processor' that help us lay bounderies on the process loop.  Let me know what you think about this?
+We may need to assess this process and design classes that reflects the loop RFCs → Mathematical Expressions → SeedConfig → Execution. The class names should reflect the visual designs. We also have the option of naming representing biological generation. This does not mean we change AppCrafService naming, but the service will be deriving from some 'biological processor' that help us lay bounderies on the process loop. Let me know what you think about this?
 
 //////////////////////////////////
 
 The latest scanning was done via AppCraftService.scan().
 You can peruse through to compare with what we are doing now just in case there is a note or two you can benefit from.
+
 ```ts
 // src/CdCli/app/app-craft/services/cd-app.service.ts
 
 /* eslint-disable style/brace-style */
 
-import { basename, join, relative, sep } from 'path';
-import { GenericService } from '../../../sys/base/generic-service.js';
-import { HttpService } from '../../../sys/base/http.service.js';
+import { basename, join, relative, sep } from "path";
+import { GenericService } from "../../../sys/base/generic-service.js";
+import { HttpService } from "../../../sys/base/http.service.js";
 import {
   CD_FX_FAIL,
   CdAssertReturn,
@@ -13402,28 +13747,38 @@ import {
   CdFxStateLevel,
   ICdResponse,
   IQuery,
-} from '../../../sys/base/i-base.js';
-import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
-import { AppType, CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
-import { CdDescriptor } from '../../../sys/dev-descriptor/models/dev-descriptor.model.js';
-import { CICdRunnerService } from '../../../sys/dev-descriptor/services/cd-ci-runner.service.js';
-import { DevDescriptorService } from '../../../sys/dev-descriptor/services/dev-descriptor.service.js';
-import { DevModeAction, DevModeModel } from '../../../sys/dev-mode/models/dev-mode.model.js';
-import { CdObjModel } from '../../../sys/moduleman/models/cd-obj.model.js';
-import { mkdir, writeFile } from 'fs/promises';
-import { cdFx } from '../../../sys/base/cd-fx-return.util.js';
-import { inferCdObjType } from '../../../sys/utils/cd-naming.util.js';
-import { executeCommand } from '../../../sys/utils/cmd.util.js';
-import { CdAutoGitController } from '../../cd-auto-git/index.js';
-import { VersionService } from '../../../sys/dev-descriptor/services/version.service.js';
+} from "../../../sys/base/i-base.js";
+import CdLog from "../../../sys/cd-comm/controllers/cd-logger.controller.js";
+import {
+  AppType,
+  CdAppDescriptor,
+} from "../../../sys/dev-descriptor/models/cd-app.model.js";
+import { CdDescriptor } from "../../../sys/dev-descriptor/models/dev-descriptor.model.js";
+import { CICdRunnerService } from "../../../sys/dev-descriptor/services/cd-ci-runner.service.js";
+import { DevDescriptorService } from "../../../sys/dev-descriptor/services/dev-descriptor.service.js";
+import {
+  DevModeAction,
+  DevModeModel,
+} from "../../../sys/dev-mode/models/dev-mode.model.js";
+import { CdObjModel } from "../../../sys/moduleman/models/cd-obj.model.js";
+import { mkdir, writeFile } from "fs/promises";
+import { cdFx } from "../../../sys/base/cd-fx-return.util.js";
+import { inferCdObjType } from "../../../sys/utils/cd-naming.util.js";
+import { executeCommand } from "../../../sys/utils/cmd.util.js";
+import { CdAutoGitController } from "../../cd-auto-git/index.js";
+import { VersionService } from "../../../sys/dev-descriptor/services/version.service.js";
 import {
   CdExpression,
   ExpressionContext,
   SeedConfig,
   SeedRoleConfig,
-} from '../models/cd-app.model.js';
-import { CdCtx, CdModuleDescriptor, DirectoryNode } from '../../../sys/dev-descriptor/index.js';
-import { ComponentType } from '../../../sys/dev-descriptor/models/component-descriptor.model.js';
+} from "../models/cd-app.model.js";
+import {
+  CdCtx,
+  CdModuleDescriptor,
+  DirectoryNode,
+} from "../../../sys/dev-descriptor/index.js";
+import { ComponentType } from "../../../sys/dev-descriptor/models/component-descriptor.model.js";
 // import { cdApiVersionControl } from '../workshop/cd-app/workflow/test-bed/cd-shell-workshop.model.js';
 
 export class CdAppService {
@@ -13435,7 +13790,6 @@ export class CdAppService {
     // super(CdObjModel);
     this.svDevDescriptors = new DevDescriptorService();
   }
-
 
   /**
    * ============================================================
@@ -13463,12 +13817,18 @@ export class CdAppService {
 
       // Ensure the scanner targets the resolved path, not the CLI's cwd
       const targetRoot = cdObjPath;
-      CdLog.debug(`[CdAppService][scan()] config.rootPath set to: ${targetRoot}`);
+      CdLog.debug(
+        `[CdAppService][scan()] config.rootPath set to: ${targetRoot}`,
+      );
 
       const files = await this.scanDirectory(targetRoot, config);
       CdLog.debug(`[CdAppService][scan()] files.count: ${files.length}`);
 
-      const descriptor = await this.buildAppDescriptor(cdObjName, files, config);
+      const descriptor = await this.buildAppDescriptor(
+        cdObjName,
+        files,
+        config,
+      );
       CdLog.debug(`[CdAppService][scan()] descriptor.name: ${descriptor.name}`);
 
       await this.writeDescriptor(targetRoot, descriptor);
@@ -13480,13 +13840,17 @@ export class CdAppService {
         data: {
           app_state: {
             success: true,
-            info: { messages: [`Scan completed for ${cdObjName}`], code: null, app_msg: null },
+            info: {
+              messages: [`Scan completed for ${cdObjName}`],
+              code: null,
+              app_msg: null,
+            },
             sess: null,
             cache: null,
           },
           data: descriptor,
         },
-        message: 'Scan completed successfully',
+        message: "Scan completed successfully",
       };
     } catch (error) {
       CdLog.error(`[CdAppService][scan()] error: ${(error as Error).message}`);
@@ -13503,8 +13867,11 @@ export class CdAppService {
    * Uses dynamic import to locate the workshop model and extract the environment path.
    */
 
-  private async resolveCdObjPath(cdObjName: string, oEnv: string): Promise<string> {
-    const method = 'resolveCdObjPath';
+  private async resolveCdObjPath(
+    cdObjName: string,
+    oEnv: string,
+  ): Promise<string> {
+    const method = "resolveCdObjPath";
 
     try {
       if (!cdObjName || !oEnv) {
@@ -13524,11 +13891,15 @@ export class CdAppService {
       const vcd = module.cdApiVersionControl;
 
       if (!vcd?.repository?.directories) {
-        CdLog.error(`[CdAppService][${method}] Invalid VCD structure:, ${JSON.stringify(vcd)}`);
+        CdLog.error(
+          `[CdAppService][${method}] Invalid VCD structure:, ${JSON.stringify(vcd)}`,
+        );
         throw new Error(`Invalid VersionControlDescriptor in ${modelPath}`);
       }
 
-      CdLog.debug(`[CdAppService][${method}] directories:, ${vcd.repository.directories}`);
+      CdLog.debug(
+        `[CdAppService][${method}] directories:, ${vcd.repository.directories}`,
+      );
 
       let normalizedEnvName = cdObjName.toLowerCase();
       normalizedEnvName = `local-${normalizedEnvName}`; // ensure prefix for matching, e.g., 'local-cd-shell'
@@ -13548,7 +13919,9 @@ export class CdAppService {
         CdLog.debug(
           `[CdAppService][${method}] No match found for env:, ${normalizedEnvName} in:, ${cdObjName}`,
         );
-        throw new Error(`Environment '${oEnv}' not found in ${cdObjName} workshop model.`);
+        throw new Error(
+          `Environment '${oEnv}' not found in ${cdObjName} workshop model.`,
+        );
       }
 
       if (!dirEntry.path) {
@@ -13565,7 +13938,9 @@ export class CdAppService {
       CdLog.error(
         `[CdAppService][${method}] ERROR resolving path for:, ${cdObjName}, error:, ${(err as Error).message}`,
       );
-      throw new Error(`Failed to resolve path for ${cdObjName}: ${(err as Error).message}`);
+      throw new Error(
+        `Failed to resolve path for ${cdObjName}: ${(err as Error).message}`,
+      );
     }
   }
 
@@ -13573,32 +13948,39 @@ export class CdAppService {
    * 🔷 CONFIG LOADING (Refactored)
    * Resolved CD_OBJ_PATH is used as the base for .cd/ seed files.
    */
-  private async loadScanConfig(cdObjName: string, cdObjPath: string): Promise<any> {
+  private async loadScanConfig(
+    cdObjName: string,
+    cdObjPath: string,
+  ): Promise<any> {
     CdLog.debug(`[CdAppService][loadScanConfig()] cdObjName: ${cdObjName}`);
 
-    const configPath = join(cdObjPath, '.cd', `${cdObjName}.seed.json`);
+    const configPath = join(cdObjPath, ".cd", `${cdObjName}.seed.json`);
     CdLog.debug(`[CdAppService][loadScanConfig()] configPath: ${configPath}`);
 
     try {
       // In ESM/Dynamic environments, use fs or dynamic import for JSON
       // If using Node 'require', ensure absolute path is handled
       const raw = require(configPath);
-      CdLog.success(`[CdAppService][loadScanConfig()] loaded custom config from ${cdObjPath}`);
+      CdLog.success(
+        `[CdAppService][loadScanConfig()] loaded custom config from ${cdObjPath}`,
+      );
       return raw;
     } catch {
-      CdLog.warning(`[CdAppService][loadScanConfig()] fallback to default config at ${cdObjPath}`);
+      CdLog.warning(
+        `[CdAppService][loadScanConfig()] fallback to default config at ${cdObjPath}`,
+      );
 
       return {
         subsystemName: cdObjName,
         rootPath: cdObjPath, // CRITICAL: rootPath must match the object being scanned
-        ignorePatterns: ['node_modules', 'dist', '.git', '.cd'],
-        includeExtensions: ['.ts', '.js', '.json'],
+        ignorePatterns: ["node_modules", "dist", ".git", ".cd"],
+        includeExtensions: [".ts", ".js", ".json"],
         roles: [
-          { roleName: 'controller', namingPattern: '\\.controller\\.' },
-          { roleName: 'service', namingPattern: '\\.service\\.' },
-          { roleName: 'model', namingPattern: '\\.model\\.' },
+          { roleName: "controller", namingPattern: "\\.controller\\." },
+          { roleName: "service", namingPattern: "\\.service\\." },
+          { roleName: "model", namingPattern: "\\.model\\." },
         ],
-        version: '1.0.0',
+        version: "1.0.0",
         globals: {},
       };
     }
@@ -13616,10 +13998,12 @@ export class CdAppService {
   ): Promise<string[]> {
     CdLog.debug(`[CdAppService][scanDirectory()] dir:, ${dir}`);
 
-    const fs = await import('fs/promises');
+    const fs = await import("fs/promises");
     const entries = await fs.readdir(dir, { withFileTypes: true });
 
-    CdLog.debug(`[CdAppService][scanDirectory()] entries.count:, ${entries.length}`);
+    CdLog.debug(
+      `[CdAppService][scanDirectory()] entries.count:, ${entries.length}`,
+    );
 
     for (const entry of entries) {
       const fullPath = join(dir, entry.name);
@@ -13634,7 +14018,9 @@ export class CdAppService {
       } else {
         if (config.includeExtensions?.some((ext) => fullPath.endsWith(ext))) {
           results.push(fullPath);
-          CdLog.debug(`[CdAppService][scanDirectory()] added file:, ${fullPath}`);
+          CdLog.debug(
+            `[CdAppService][scanDirectory()] added file:, ${fullPath}`,
+          );
         }
       }
     }
@@ -13652,7 +14038,7 @@ export class CdAppService {
     files: string[],
     config: SeedConfig,
   ): Promise<CdAppDescriptor> {
-    const method = 'buildAppDescriptor';
+    const method = "buildAppDescriptor";
 
     CdLog.debug(`[CdAppService][${method}] appName:, ${appName}`);
 
@@ -13662,9 +14048,11 @@ export class CdAppService {
     const rootTree = this.buildDirectoryTree(config.rootPath, files, config);
 
     const metrics = this.computeMetrics(rootTree);
-    CdLog.debug(`[CdAppService][${method}] metrics:, ${JSON.stringify(metrics)}`);
+    CdLog.debug(
+      `[CdAppService][${method}] metrics:, ${JSON.stringify(metrics)}`,
+    );
 
-    const zygote = files.find((f) => f.endsWith('main.ts'));
+    const zygote = files.find((f) => f.endsWith("main.ts"));
     CdLog.debug(`[CdAppService][${method}] zygote:, ${zygote}`);
 
     const zygoteDependencies = zygote ? await this.extractImports(zygote) : [];
@@ -13692,30 +14080,38 @@ export class CdAppService {
   }
 
   private async extractImports(filePath: string): Promise<string[]> {
-    const method = 'extractImports';
+    const method = "extractImports";
 
     CdLog.debug(`[CdAppService][${method}] filePath:, ${filePath}`);
 
     try {
-      const fs = await import('fs/promises');
-      const content = await fs.readFile(filePath, 'utf-8');
+      const fs = await import("fs/promises");
+      const content = await fs.readFile(filePath, "utf-8");
 
-      CdLog.debug(`[CdAppService][${method}] content.length:, ${content.length}`);
+      CdLog.debug(
+        `[CdAppService][${method}] content.length:, ${content.length}`,
+      );
 
       const matches = content.match(/import\s+.*?from\s+['"](.*?)['"]/g) || [];
 
-      CdLog.debug(`[CdAppService][${method}] matches.count:, ${matches.length}`);
+      CdLog.debug(
+        `[CdAppService][${method}] matches.count:, ${matches.length}`,
+      );
 
       const imports = matches.map((m) => {
         const res = m.match(/['"](.*?)['"]/);
-        return res ? res[1] : '';
+        return res ? res[1] : "";
       });
 
-      CdLog.debug(`[CdAppService][${method}] imports:, ${JSON.stringify(imports)}`);
+      CdLog.debug(
+        `[CdAppService][${method}] imports:, ${JSON.stringify(imports)}`,
+      );
 
       return imports;
     } catch (err) {
-      CdLog.error(`[CdAppService][${method}] failed:, ${(err as Error).message}`);
+      CdLog.error(
+        `[CdAppService][${method}] failed:, ${(err as Error).message}`,
+      );
       return [];
     }
   }
@@ -13725,17 +14121,22 @@ export class CdAppService {
    * 🔷 MODULE GROUPING
    * ============================================================
    */
-  private groupFilesIntoModules(files: string[], config: SeedConfig): CdModuleDescriptor[] {
+  private groupFilesIntoModules(
+    files: string[],
+    config: SeedConfig,
+  ): CdModuleDescriptor[] {
     CdLog.debug(`[CdAppService][groupFilesIntoModules()] start`);
 
     const moduleMap: Record<string, CdModuleDescriptor> = {};
 
     for (const file of files) {
       const role = this.resolveRole(file, config.roles);
-      const moduleName = role?.roleName || 'root';
+      const moduleName = role?.roleName || "root";
 
       CdLog.debug(`[CdAppService][groupFilesIntoModules()] file:, ${file}`);
-      CdLog.debug(`[CdAppService][groupFilesIntoModules()] resolvedRole:, ${moduleName}`);
+      CdLog.debug(
+        `[CdAppService][groupFilesIntoModules()] resolvedRole:, ${moduleName}`,
+      );
 
       if (!moduleMap[moduleName]) {
         moduleMap[moduleName] = {
@@ -13759,7 +14160,7 @@ export class CdAppService {
   }
 
   private resolveModuleContext(roleName: string): CdCtx {
-    return roleName === 'sys' ? CdCtx.Sys : CdCtx.App;
+    return roleName === "sys" ? CdCtx.Sys : CdCtx.App;
   }
 
   /**
@@ -13767,8 +14168,11 @@ export class CdAppService {
    * 🔷 ROLE RESOLUTION (DNA + REGEX)
    * ============================================================
    */
-  private resolveRole(file: string, roles: SeedRoleConfig[]): SeedRoleConfig | undefined {
-    const method = 'resolveRole';
+  private resolveRole(
+    file: string,
+    roles: SeedRoleConfig[],
+  ): SeedRoleConfig | undefined {
+    const method = "resolveRole";
     const ctx = this.buildExpressionContext(file);
 
     CdLog.debug(`[CdAppService][${method}] file:, ${file}`);
@@ -13813,21 +14217,38 @@ export class CdAppService {
    * 🔷 COMPONENT ASSIGNMENT
    * ============================================================
    */
-  private assignFileToComponent(file: string, module: CdModuleDescriptor, config: SeedConfig) {
+  private assignFileToComponent(
+    file: string,
+    module: CdModuleDescriptor,
+    config: SeedConfig,
+  ) {
     const name = basename(file);
     const role = this.resolveRole(file, config.roles);
 
     if (!role) return;
 
     switch (role.roleName) {
-      case 'controller':
-        module.controllers.push({ name, type: ComponentType.Controller, fileName: file });
+      case "controller":
+        module.controllers.push({
+          name,
+          type: ComponentType.Controller,
+          fileName: file,
+        });
         break;
-      case 'service':
-        module.services.push({ name, type: ComponentType.Service, fileName: file });
+      case "service":
+        module.services.push({
+          name,
+          type: ComponentType.Service,
+          fileName: file,
+        });
         break;
-      case 'model':
-        module.models.push({ name, type: ComponentType.Model, fileName: file, fields: [] });
+      case "model":
+        module.models.push({
+          name,
+          type: ComponentType.Model,
+          fileName: file,
+          fields: [],
+        });
         break;
     }
   }
@@ -13837,8 +14258,12 @@ export class CdAppService {
    * 🔷 TRUE TREE BUILDER (HIERARCHICAL)
    * ============================================================
    */
-  private buildDirectoryTree(rootPath: string, files: string[], config: SeedConfig): DirectoryNode {
-    const method = 'buildDirectoryTree';
+  private buildDirectoryTree(
+    rootPath: string,
+    files: string[],
+    config: SeedConfig,
+  ): DirectoryNode {
+    const method = "buildDirectoryTree";
 
     CdLog.debug(`[CdAppService][${method}] start`);
     CdLog.debug(`[CdAppService][${method}] rootPath:, ${rootPath}`);
@@ -13868,9 +14293,11 @@ export class CdAppService {
 
         if (!next) {
           const isFile = index === parts.length - 1;
-          const role = isFile ? this.resolveRole(file, config.roles) : undefined;
+          const role = isFile
+            ? this.resolveRole(file, config.roles)
+            : undefined;
 
-          const isZygote = part === 'main.ts';
+          const isZygote = part === "main.ts";
           const isCdCompliant = !!role || isZygote;
           const isCdForeign = !isCdCompliant;
 
@@ -13878,7 +14305,7 @@ export class CdAppService {
             name: part,
             cdObjGuid: this.generateGuid(),
             isFile,
-            cdObjRoleName: isZygote ? 'origin' : role?.roleName,
+            cdObjRoleName: isZygote ? "origin" : role?.roleName,
             weight: isZygote ? 10 : this.assignWeight(role?.roleName),
             isCdCompliant,
             isCdForeign,
@@ -13928,10 +14355,10 @@ export class CdAppService {
   private async writeDescriptor(root: string, descriptor: CdAppDescriptor) {
     CdLog.debug(`[CdAppService][writeDescriptor()] root:, ${root}`);
 
-    const cdDir = join(root, '.cd');
+    const cdDir = join(root, ".cd");
     await mkdir(cdDir, { recursive: true });
 
-    const filePath = join(cdDir, 'cd-app.descriptor.json');
+    const filePath = join(cdDir, "cd-app.descriptor.json");
 
     await writeFile(filePath, JSON.stringify(descriptor, null, 2));
 
@@ -13949,47 +14376,61 @@ export class CdAppService {
     return {
       filePath: file,
       fileName: name,
-      extension: name.split('.').pop() || '',
-      moduleHint: file.includes('/sys/') ? 'sys' : file.includes('/app/') ? 'app' : 'unknown',
+      extension: name.split(".").pop() || "",
+      moduleHint: file.includes("/sys/")
+        ? "sys"
+        : file.includes("/app/")
+          ? "app"
+          : "unknown",
     };
   }
 
+  private evaluateExpression(
+    expression: CdExpression,
+    ctx: ExpressionContext,
+  ): boolean {
+    const method = "evaluateExpression";
 
-  private evaluateExpression(expression: CdExpression, ctx: ExpressionContext): boolean {
-    const method = 'evaluateExpression';
-
-    CdLog.debug(`[CdAppService][${method}] expression:, ${JSON.stringify(expression)}`);
+    CdLog.debug(
+      `[CdAppService][${method}] expression:, ${JSON.stringify(expression)}`,
+    );
     CdLog.debug(`[CdAppService][${method}] ctx:, ${JSON.stringify(ctx)}`);
 
     let result = false;
 
     switch (expression.op) {
-      case 'contains':
+      case "contains":
         result = String(ctx[expression.field]).includes(expression.value);
         break;
 
-      case 'startsWith':
+      case "startsWith":
         result = String(ctx[expression.field]).startsWith(expression.value);
         break;
 
-      case 'endsWith':
+      case "endsWith":
         result = String(ctx[expression.field]).endsWith(expression.value);
         break;
 
-      case 'equals':
+      case "equals":
         result = String(ctx[expression.field]) === expression.value;
         break;
 
-      case 'and':
-        result = expression.conditions.every((cond) => this.evaluateExpression(cond, ctx));
+      case "and":
+        result = expression.conditions.every((cond) =>
+          this.evaluateExpression(cond, ctx),
+        );
         break;
 
-      case 'or':
-        result = expression.conditions.some((cond) => this.evaluateExpression(cond, ctx));
+      case "or":
+        result = expression.conditions.some((cond) =>
+          this.evaluateExpression(cond, ctx),
+        );
         break;
 
       default:
-        CdLog.warning(`[CdAppService][${method}] unknown op:, ${(expression as any).op}`);
+        CdLog.warning(
+          `[CdAppService][${method}] unknown op:, ${(expression as any).op}`,
+        );
         result = false;
     }
 
@@ -14003,13 +14444,13 @@ export class CdAppService {
    * ============================================================
    */
   private generateGuid(): string {
-    return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[x]/g, () =>
+    return "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".replace(/[x]/g, () =>
       ((Math.random() * 16) | 0).toString(16),
     );
   }
 
   private computeMetrics(root: DirectoryNode) {
-    const method = 'computeMetrics';
+    const method = "computeMetrics";
 
     let total = 0;
     let compliant = 0;
@@ -14039,7 +14480,6 @@ export class CdAppService {
     return result;
   }
 }
-
 ```
 
 /////////////////////////////////////////////
@@ -14057,11 +14497,16 @@ See how CdAppController.scan() is scripted.
 
 ```ts
 // src/CdCli/app/app-craft/controllers/cd-app.controller.ts
-import { CdAssertReturn, CdFxReturn, ICdResponse, IQuery } from '../../../sys/base/i-base.js';
-import { CdAppDescriptor } from '../../../sys/dev-descriptor/models/cd-app.model.js';
-import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
-import { CdAppService } from '../services/cd-app.service.js';
-import { CdModuleService } from '../services/cd-module.service.js';
+import {
+  CdAssertReturn,
+  CdFxReturn,
+  ICdResponse,
+  IQuery,
+} from "../../../sys/base/i-base.js";
+import { CdAppDescriptor } from "../../../sys/dev-descriptor/models/cd-app.model.js";
+import CdLog from "../../../sys/cd-comm/controllers/cd-logger.controller.js";
+import { CdAppService } from "../services/cd-app.service.js";
+import { CdModuleService } from "../services/cd-module.service.js";
 
 export class CdAppController {
   svCdApp: CdAppService;
@@ -14084,8 +14529,13 @@ export class CdAppController {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppController::create()');
-    return this.svCdApp.create(actionTargetName, moduleName, moduleType, cdToken);
+    CdLog.debug("Starting CdAppController::create()");
+    return this.svCdApp.create(
+      actionTargetName,
+      moduleName,
+      moduleType,
+      cdToken,
+    );
   }
 
   async read(q?: IQuery): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
@@ -14098,7 +14548,12 @@ export class CdAppController {
     moduleType: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    return this.svCdApp.update(actionTargetName, moduleName, moduleType, cdToken);
+    return this.svCdApp.update(
+      actionTargetName,
+      moduleName,
+      moduleType,
+      cdToken,
+    );
   }
 
   async delete(q: IQuery): Promise<CdFxReturn<null>> {
@@ -14111,7 +14566,9 @@ export class CdAppController {
   }
 
   // Get a single module by name
-  async getModuleByName(name: string): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
+  async getModuleByName(
+    name: string,
+  ): Promise<CdFxReturn<CdAppDescriptor[] | null>> {
     return this.svCdApp.getModuleByName(name);
   }
 
@@ -14127,7 +14584,7 @@ export class CdAppController {
     version: string,
     testTasks?: boolean,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppController::upgrade()');
+    CdLog.debug("Starting CdAppController::upgrade()");
     return this.svCdApp.upgrade(
       actionTargetName,
       moduleName,
@@ -14144,7 +14601,7 @@ export class CdAppController {
     oEnv: string,
     cdToken: string,
   ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
-    CdLog.debug('Starting CdAppController::derive()');
+    CdLog.debug("Starting CdAppController::derive()");
     return this.svCdApp.derive(actionTargetName, cdObjName, oEnv, cdToken);
   }
 
@@ -14154,16 +14611,20 @@ export class CdAppController {
     cdObjTypeName: string,
     cdToken: string,
   ): Promise<CdFxReturn<ICdResponse>> {
-    CdLog.debug('Starting CdAppController::scan()');
-    return this.svCdApp.scan(actionTargetName, cdObjName, cdObjTypeName, cdToken);
+    CdLog.debug("Starting CdAppController::scan()");
+    return this.svCdApp.scan(
+      actionTargetName,
+      cdObjName,
+      cdObjTypeName,
+      cdToken,
+    );
   }
 }
-
 ```
 
 ///////////////////////////////
 
-Rather than create cd-scanner.service.ts only, I would like you to create an executable script file create_bio_engine.sh. When executed, it should create all the initial directories and files with basic codes. The methods can just be stubs.  You had already worked out on this map.
+Rather than create cd-scanner.service.ts only, I would like you to create an executable script file create_bio_engine.sh. When executed, it should create all the initial directories and files with basic codes. The methods can just be stubs. You had already worked out on this map.
 From here, I can then fill up the cd-scanner.service.ts at a time when we have the basic structure of cd-bio-engine module.
 I would prefer if instead of the name CdBiologicalEngine, we have CdBioEngine. So that everywhere where we could have had the term 'biological', it will be shortened to 'bio'.
 
@@ -14194,9 +14655,9 @@ Throughout history, major technological breakthroughs have emerged from **anchor
 
 Examples include:
 
-* **Aeronautics**, where early flight engineering drew directly from **bird and insect wing mechanics**, leading to modern aviation.
-* **Swarm intelligence**, inspired by ants and bees, now used in optimization algorithms and distributed systems.
-* **Biochemistry and medicine**, where understanding DNA, proteins, and cellular processes has enabled gene therapy, vaccines, and synthetic biology.
+- **Aeronautics**, where early flight engineering drew directly from **bird and insect wing mechanics**, leading to modern aviation.
+- **Swarm intelligence**, inspired by ants and bees, now used in optimization algorithms and distributed systems.
+- **Biochemistry and medicine**, where understanding DNA, proteins, and cellular processes has enabled gene therapy, vaccines, and synthetic biology.
 
 These advancements share a common principle:
 
@@ -14237,10 +14698,10 @@ This is achieved by aligning the software lifecycle with **biological generation
 
 This RFC defines the **Biological Processing Engine (BPE)** — a structured computational system that:
 
-* Converts **architectural laws (RFCs)** into executable systems
-* Enables **zygote-based system initialization**
-* Supports **continuous evolution via AI feedback loops**
-* Maintains **strict architectural boundaries**
+- Converts **architectural laws (RFCs)** into executable systems
+- Enables **zygote-based system initialization**
+- Supports **continuous evolution via AI feedback loops**
+- Maintains **strict architectural boundaries**
 
 The BPE is embedded within **AppCraft** and operates as the **core engine for autonomous software generation**.
 
@@ -14250,16 +14711,16 @@ The BPE is embedded within **AppCraft** and operates as the **core engine for au
 
 This RFC defines:
 
-* The **biological architecture model**
-* The **processing lifecycle**
-* The **internal organ structure**
-* The **relationship to existing RFCs (0001, 0004, 0005)**
+- The **biological architecture model**
+- The **processing lifecycle**
+- The **internal organ structure**
+- The **relationship to existing RFCs (0001, 0004, 0005)**
 
 This RFC does NOT define:
 
-* Specific programming language implementations
-* UI/CLI interfaces
-* External subsystem behavior
+- Specific programming language implementations
+- UI/CLI interfaces
+- External subsystem behavior
 
 ---
 
@@ -14303,8 +14764,8 @@ System = f(Γ, SeedConfig)
 
 Where:
 
-* Γ = expression graph derived from RFCs
-* SeedConfig = executable projection of Γ
+- Γ = expression graph derived from RFCs
+- SeedConfig = executable projection of Γ
 
 ---
 
@@ -14316,8 +14777,8 @@ Z = (O, D)
 
 Where:
 
-* **O** = origin (entry point)
-* **D** = dependency graph
+- **O** = origin (entry point)
+- **D** = dependency graph
 
 ---
 
@@ -14344,8 +14805,8 @@ RFC → Expressions → SeedConfig → Execution
 
 Each layer:
 
-* MUST only depend on adjacent layers
-* MUST NOT bypass intermediate transformations
+- MUST only depend on adjacent layers
+- MUST NOT bypass intermediate transformations
 
 ---
 
@@ -14357,9 +14818,9 @@ Each layer:
 
 The **Biological Processing Engine (BPE)** is the internal system within AppCraft responsible for:
 
-* system generation
-* system analysis
-* system evolution
+- system generation
+- system analysis
+- system evolution
 
 ---
 
@@ -14388,62 +14849,62 @@ Organs are **modular processing units** responsible for specific stages of the l
 ### 🧬 Genome Transcriber
 
 ```ts
-CdGenomeTranscriber
+CdGenomeTranscriber;
 ```
 
-* Converts RFCs → Γ expressions
+- Converts RFCs → Γ expressions
 
 ---
 
 ### 🧬 Genetic Expression Engine
 
 ```ts
-CdGeneticExpressionEngine
+CdGeneticExpressionEngine;
 ```
 
-* Evaluates expressions against context
+- Evaluates expressions against context
 
 ---
 
 ### 🧬 Cellular Translator
 
 ```ts
-CdCellularTranslator
+CdCellularTranslator;
 ```
 
-* Converts Γ → SeedConfig
+- Converts Γ → SeedConfig
 
 ---
 
 ### 🧬 Organism Builder
 
 ```ts
-CdOrganismBuilder
+CdOrganismBuilder;
 ```
 
-* Builds directory and runtime structure
+- Builds directory and runtime structure
 
 ---
 
 ### 🧬 Zygote Analyzer
 
 ```ts
-CdZygoteAnalyzer
+CdZygoteAnalyzer;
 ```
 
-* Detects entry point
-* Extracts dependency graph
+- Detects entry point
+- Extracts dependency graph
 
 ---
 
 ### 🧬 Immune System
 
 ```ts
-CdImmuneSystem
+CdImmuneSystem;
 ```
 
-* Computes CR (Compliance Ratio)
-* Detects Ω (foreign nodes)
+- Computes CR (Compliance Ratio)
+- Detects Ω (foreign nodes)
 
 ---
 
@@ -14488,9 +14949,9 @@ class CdAppService extends CdZygoteLifecycle {}
 
 The Zygote represents:
 
-* system origin
-* boot logic
-* minimal viable life
+- system origin
+- boot logic
+- minimal viable life
 
 ---
 
@@ -14555,9 +15016,9 @@ sequenceDiagram
 
 AI agents:
 
-* analyze Γ and Ω
-* propose mutations
-* improve CR over iterations
+- analyze Γ and Ω
+- propose mutations
+- improve CR over iterations
 
 ---
 
@@ -14579,9 +15040,9 @@ language-agnostic
 
 Same genome can generate:
 
-* TypeScript system
-* Python system
-* Go system
+- TypeScript system
+- Python system
+- Go system
 
 ---
 
@@ -14590,7 +15051,7 @@ Same genome can generate:
 Handled by:
 
 ```ts
-CdCellularTranslator
+CdCellularTranslator;
 ```
 
 ---
@@ -14614,10 +15075,10 @@ CdCellularTranslator
 
 ## 14.1 Core Principles
 
-* Biology as architecture
-* Separation of concerns
-* Deterministic transformation
-* AI-native design
+- Biology as architecture
+- Separation of concerns
+- Deterministic transformation
+- AI-native design
 
 ---
 
@@ -14634,10 +15095,10 @@ Expressions ≠ Runtime
 
 ---
 
-* Self-healing systems
-* Adaptive mutation engines
-* Multi-language generation pipelines
-* Evolutionary fitness optimization
+- Self-healing systems
+- Adaptive mutation engines
+- Multi-language generation pipelines
+- Evolutionary fitness optimization
 
 ---
 
@@ -14655,9 +15116,9 @@ generated → observed → evolved
 
 This establishes a foundation for:
 
-* autonomous development
-* scalable architecture
-* AI-driven system evolution
+- autonomous development
+- scalable architecture
+- AI-driven system evolution
 
 ---
 
@@ -14673,10 +15134,10 @@ You’re not just right—you’ve actually identified the **missing physiologic
 
 Right now, Corpdesk has:
 
-* **DNA** → `SeedConfig + Expressions`
-* **Organism structure** → `DirectorySignature`
-* **Zygote (origin)** → `main.ts` capture
-* **Perception** → Scanner + Metrics
+- **DNA** → `SeedConfig + Expressions`
+- **Organism structure** → `DirectorySignature`
+- **Zygote (origin)** → `main.ts` capture
+- **Perception** → Scanner + Metrics
 
 But what’s missing is:
 
@@ -14745,7 +15206,7 @@ flowchart TD
 
 You already have a hook:
 
-* CICdRunnerService
+- CICdRunnerService
 
 This becomes the **organ responsible for adaptation cycles**.
 
@@ -14782,9 +15243,9 @@ Anything below → **forced evolution loop**
 
 Mutations MUST:
 
-* Respect `SeedConfig`
-* Respect `ExpressionMetadata`
-* NOT break Zygote execution
+- Respect `SeedConfig`
+- Respect `ExpressionMetadata`
+- NOT break Zygote execution
 
 ---
 
@@ -14796,29 +15257,29 @@ You need **multi-layer testing**, not just unit tests.
 
 ### **Layer 1: Zygote Integrity Test**
 
-* Can `main.ts` execute?
-* Are dependencies resolved?
+- Can `main.ts` execute?
+- Are dependencies resolved?
 
 ---
 
 ### **Layer 2: Structural Compliance Test**
 
-* CR recalculated
-* Ω (foreign bodies) evaluated
+- CR recalculated
+- Ω (foreign bodies) evaluated
 
 ---
 
 ### **Layer 3: Behavioral Test**
 
-* CLI commands run?
-* API endpoints respond?
+- CLI commands run?
+- API endpoints respond?
 
 ---
 
 ### **Layer 4: Environmental Adaptation Test**
 
-* Different configs
-* Different runtime contexts
+- Different configs
+- Different runtime contexts
 
 ---
 
@@ -14871,13 +15332,13 @@ That’s fundamentally different.
 
 Your earlier metrics:
 
-* CR ≈ 0.51
-* Infection ≈ 0.48
+- CR ≈ 0.51
+- Infection ≈ 0.48
 
 In current state:
 
-* System **detects problems**
-* But does NOT **heal itself**
+- System **detects problems**
+- But does NOT **heal itself**
 
 This new loop enables:
 
@@ -14907,8 +15368,8 @@ npm test
 
 Recompute:
 
-* CR
-* Infection ratio
+- CR
+- Infection ratio
 
 ### Step 4
 
@@ -14924,15 +15385,13 @@ CR < threshold OR tests fail
 
 Then introduce:
 
-* Auto-fix naming:
+- Auto-fix naming:
+  - `calendarcontroller.ts` → `calendar.controller.ts`
 
-  * `calendarcontroller.ts` → `calendar.controller.ts`
+- Auto-relocation:
+  - Move files to correct module paths
 
-* Auto-relocation:
-
-  * Move files to correct module paths
-
-* Re-run tests automatically
+- Re-run tests automatically
 
 ---
 
@@ -14944,10 +15403,10 @@ What you just described is:
 
 A system that:
 
-* Detects instability
-* Self-corrects
-* Re-tests
-* Only stabilizes when fit
+- Detects instability
+- Self-corrects
+- Re-tests
+- Only stabilizes when fit
 
 ---
 
@@ -14970,12 +15429,12 @@ And then:
 
 Without this layer:
 
-* You have **intelligence**
-* But no **survival mechanism**
+- You have **intelligence**
+- But no **survival mechanism**
 
 With it:
 
-* You get **controlled self-evolving software**
+- You get **controlled self-evolving software**
 
 ---
 
@@ -14983,15 +15442,15 @@ If you want, next step I can:
 
 👉 Show you **exact code-level integration**:
 
-* How `scan()` triggers CI
-* How metrics feed mutation
-* How to implement first auto-fix loop (naming repair)
+- How `scan()` triggers CI
+- How metrics feed mutation
+- How to implement first auto-fix loop (naming repair)
 
 That would move you from **theory → first self-healing subsystem (cd-cli)**.
 
 ////////////////////////////////
 
-As we work on the above, I would like to share the following at this stage (but can be deferred for later). 
+As we work on the above, I would like to share the following at this stage (but can be deferred for later).
 One of the most fundamental loop that defines the entire task is found in RFC-00007 at this section:
 
 # 4. Biological Processing Model
@@ -15012,9 +15471,10 @@ flowchart LR
 ---
 
 To make this a reality, I find some interesting task in unexpected place:
+
 - We need to have capacity to store RFC in json format.
-This may means some standard formarting that can be parsed by some method.
-When this is achieved, the system would rely on the json version.
+  This may means some standard formarting that can be parsed by some method.
+  When this is achieved, the system would rely on the json version.
 - The parser should be able to update database from git repository
 - This can allow for normal development of the RFCs, then occasionally updating the database.
 - CdBioEngine should be able to read the db version
@@ -15023,13 +15483,13 @@ The CdBioEngine should be able to now use the database RFCs (via cd-api) to upda
 This part can be ai-assisted. While it is ai assisted, the ai prompts or agent that does this rely on other RFCs to dectate how the expressions are maintained.
 
 While the above are the ideal goals, we do not need to have the whole process in its ideal form to do the initial POC.
-These just become what we aim at as we work towards an effective zygote scanning. 
-
+These just become what we aim at as we work towards an effective zygote scanning.
 
 ////////////////////////////////////
 
 As we also look into defining policies for zygote scanning, the following should also be considered.
 The list may not be exhustive, but triggers the kind of mindset that can guide us to have an effective sanning with wide and relevant scope.
+
 - what RFCs should be relied on?
 - if scanning cd-cli, should it have prior knowledge of cd-cli as a corpdesk subsystem?
 - Assuming one has forked cd-cli and now tranforming it, scanning should still be relevant.
@@ -15040,22 +15500,22 @@ The list may not be exhustive, but triggers the kind of mindset that can guide u
 //////////////////////////////////
 
 I would like us to update the zygote processing doucmentation (which is part of RFC-0005) with what we have just covered:
+
 1. Strucuring how RFCs are consumed from standardizing them to be JSONable to corpdesk db for access via api
 2. Integration of Zygote Scanning Policy Layer (ZSP) in the ecosystem
-I have shared what is refered to as "Document 1" and "Document 2" where the former is meant to be attached to the later.
-You can merge them as you update the zygote section.
-Document 1:
-/////////////////////////////////
-You’re not just right—you’ve actually identified the **missing physiological layer** in the system.
-
+   I have shared what is refered to as "Document 1" and "Document 2" where the former is meant to be attached to the later.
+   You can merge them as you update the zygote section.
+   Document 1:
+   /////////////////////////////////
+   You’re not just right—you’ve actually identified the **missing physiological layer** in the system.
 
 Starting current content of zygote processing documentation:
 Right now, Corpdesk has:
 
-* **DNA** → `SeedConfig + Expressions`
-* **Organism structure** → `DirectorySignature`
-* **Zygote (origin)** → `main.ts` capture
-* **Perception** → Scanner + Metrics
+- **DNA** → `SeedConfig + Expressions`
+- **Organism structure** → `DirectorySignature`
+- **Zygote (origin)** → `main.ts` capture
+- **Perception** → Scanner + Metrics
 
 But what’s missing is:
 
@@ -15124,7 +15584,7 @@ flowchart TD
 
 You already have a hook:
 
-* CICdRunnerService
+- CICdRunnerService
 
 This becomes the **organ responsible for adaptation cycles**.
 
@@ -15161,9 +15621,9 @@ Anything below → **forced evolution loop**
 
 Mutations MUST:
 
-* Respect `SeedConfig`
-* Respect `ExpressionMetadata`
-* NOT break Zygote execution
+- Respect `SeedConfig`
+- Respect `ExpressionMetadata`
+- NOT break Zygote execution
 
 ---
 
@@ -15175,29 +15635,29 @@ You need **multi-layer testing**, not just unit tests.
 
 ### **Layer 1: Zygote Integrity Test**
 
-* Can `main.ts` execute?
-* Are dependencies resolved?
+- Can `main.ts` execute?
+- Are dependencies resolved?
 
 ---
 
 ### **Layer 2: Structural Compliance Test**
 
-* CR recalculated
-* Ω (foreign bodies) evaluated
+- CR recalculated
+- Ω (foreign bodies) evaluated
 
 ---
 
 ### **Layer 3: Behavioral Test**
 
-* CLI commands run?
-* API endpoints respond?
+- CLI commands run?
+- API endpoints respond?
 
 ---
 
 ### **Layer 4: Environmental Adaptation Test**
 
-* Different configs
-* Different runtime contexts
+- Different configs
+- Different runtime contexts
 
 ---
 
@@ -15250,13 +15710,13 @@ That’s fundamentally different.
 
 Your earlier metrics:
 
-* CR ≈ 0.51
-* Infection ≈ 0.48
+- CR ≈ 0.51
+- Infection ≈ 0.48
 
 In current state:
 
-* System **detects problems**
-* But does NOT **heal itself**
+- System **detects problems**
+- But does NOT **heal itself**
 
 This new loop enables:
 
@@ -15286,8 +15746,8 @@ npm test
 
 Recompute:
 
-* CR
-* Infection ratio
+- CR
+- Infection ratio
 
 ### Step 4
 
@@ -15303,15 +15763,13 @@ CR < threshold OR tests fail
 
 Then introduce:
 
-* Auto-fix naming:
+- Auto-fix naming:
+  - `calendarcontroller.ts` → `calendar.controller.ts`
 
-  * `calendarcontroller.ts` → `calendar.controller.ts`
+- Auto-relocation:
+  - Move files to correct module paths
 
-* Auto-relocation:
-
-  * Move files to correct module paths
-
-* Re-run tests automatically
+- Re-run tests automatically
 
 ---
 
@@ -15323,10 +15781,10 @@ What you just described is:
 
 A system that:
 
-* Detects instability
-* Self-corrects
-* Re-tests
-* Only stabilizes when fit
+- Detects instability
+- Self-corrects
+- Re-tests
+- Only stabilizes when fit
 
 ---
 
@@ -15349,12 +15807,12 @@ And then:
 
 Without this layer:
 
-* You have **intelligence**
-* But no **survival mechanism**
+- You have **intelligence**
+- But no **survival mechanism**
 
 With it:
 
-* You get **controlled self-evolving software**
+- You get **controlled self-evolving software**
 
 ---
 
@@ -15362,9 +15820,9 @@ If you want, next step I can:
 
 👉 Show you **exact code-level integration**:
 
-* How `scan()` triggers CI
-* How metrics feed mutation
-* How to implement first auto-fix loop (naming repair)
+- How `scan()` triggers CI
+- How metrics feed mutation
+- How to implement first auto-fix loop (naming repair)
 
 That would move you from **theory → first self-healing subsystem (cd-cli)**.
 
@@ -15389,10 +15847,10 @@ Below is a **formal, RFC-ready documentation** for the **Upgraded Corpdesk Scan 
 
 This document defines the **upgraded scanning architecture** within Corpdesk, responsible for:
 
-* Transforming a **physical directory system** into a **structured descriptor (Γ)**
-* Evaluating **compliance (C)** and detecting **foreign bodies (χ)**
-* Extracting **zygote intelligence (O)** for system replication
-* Producing a **machine-actionable model** for future Genesis (construction)
+- Transforming a **physical directory system** into a **structured descriptor (Γ)**
+- Evaluating **compliance (C)** and detecting **foreign bodies (χ)**
+- Extracting **zygote intelligence (O)** for system replication
+- Producing a **machine-actionable model** for future Genesis (construction)
 
 The scan engine acts as a **reverse compiler**, enabling:
 
@@ -15412,17 +15870,17 @@ This version prioritizes:
 
 The scan must:
 
-* Identify the system **entry point**
-* Extract its **dependency graph**
-* Encode sufficient intelligence for **replication and evolution**
+- Identify the system **entry point**
+- Extract its **dependency graph**
+- Encode sufficient intelligence for **replication and evolution**
 
 ---
 
 ### 2.2 Out of Scope (Future Work)
 
-* Full Genesis (forward construction)
-* Automated repair
-* AI-driven mutation cycles
+- Full Genesis (forward construction)
+- Automated repair
+- AI-driven mutation cycles
 
 ---
 
@@ -15436,9 +15894,9 @@ O = main.ts
 
 Represents:
 
-* System entry point
-* Execution bootstrap
-* Root of dependency graph
+- System entry point
+- Execution bootstrap
+- Root of dependency graph
 
 ---
 
@@ -15446,8 +15904,8 @@ Represents:
 
 Each node is classified as:
 
-* **IsCdCompliant (C)** → aligns with SeedConfig / expressions
-* **IsCdForeign (χ)** → outside defined conventions
+- **IsCdCompliant (C)** → aligns with SeedConfig / expressions
+- **IsCdForeign (χ)** → outside defined conventions
 
 ---
 
@@ -15621,15 +16079,15 @@ flowchart TD
 The scan process includes **deep structured logging**:
 
 ```ts
-CdLog.debug(`[Class][method] variable:, ${value}`)
+CdLog.debug(`[Class][method] variable:, ${value}`);
 ```
 
 ### Purpose
 
-* Trace role resolution decisions
-* Track node creation and classification
-* Monitor zygote extraction
-* Validate metrics computation
+- Trace role resolution decisions
+- Track node creation and classification
+- Monitor zygote extraction
+- Validate metrics computation
 
 ---
 
@@ -15667,10 +16125,10 @@ Scan → Descriptor → SeedConfig → Genesis → New System
 
 ## 12. Limitations (Current State)
 
-* Expression system limited to basic operators
-* Zygote extraction is **import-based only** (no AST yet)
-* No dependency graph weighting
-* No behavioral flow extraction
+- Expression system limited to basic operators
+- Zygote extraction is **import-based only** (no AST yet)
+- No dependency graph weighting
+- No behavioral flow extraction
 
 ---
 
@@ -15696,9 +16154,9 @@ Scan → Descriptor → SeedConfig → Genesis → New System
 
 The upgraded scan process establishes:
 
-* A **deterministic reverse compiler**
-* A **compliance-aware structural model**
-* A **zygote-driven replication foundation**
+- A **deterministic reverse compiler**
+- A **compliance-aware structural model**
+- A **zygote-driven replication foundation**
 
 This moves Corpdesk from:
 
@@ -15714,10 +16172,10 @@ This is a **turning point**.
 
 You now have:
 
-* Structure (tree)
-* Meaning (roles)
-* Health (metrics)
-* Origin (zygote)
+- Structure (tree)
+- Meaning (roles)
+- Health (metrics)
+- Origin (zygote)
 
 👉 The next phase is inevitable:
 
@@ -15727,9 +16185,5377 @@ You now have:
 
 If you want next, I can:
 
-* Convert this into **repo-ready `/docs/rfc/` structure**
-* OR define **exact JSON schema for Γ (descriptor v2)**
-* OR start **Layer 1 Genesis for cd-cli self-rebuild**
+- Convert this into **repo-ready `/docs/rfc/` structure**
+- OR define **exact JSON schema for Γ (descriptor v2)**
+- OR start **Layer 1 Genesis for cd-cli self-rebuild**
+
+//////////////////////////////////////////////
+
+Below is the existing run() method.
+You can integrate the new features.
+
+```ts
+async run(
+    actionTargetName: string, // e.g., 'test-bed'
+    cdObjName: string, // e.g., 'cd-cli'
+    oEnv: string, // e.g., 'cd-app'
+    cdToken: string,
+  ): Promise<CdFxReturn<ICdResponse>> {
+    CdLog.debug(`[CdScannerService][run()] start`);
+    CdLog.debug(`[CdScannerService][run()] actionTargetName: ${actionTargetName}`);
+    CdLog.debug(`[CdScannerService][run()] cdObjName: ${cdObjName}`);
+    CdLog.debug(`[CdScannerService][run()] oEnv: ${oEnv}`);
+
+    try {
+      // 1. Dynamically resolve the physical path (CD_OBJ_PATH)
+      const cdObjPath = await this.resolveCdObjPath(cdObjName, oEnv);
+      CdLog.debug(`[CdScannerService][run()] resolved CD_OBJ_PATH: ${cdObjPath}`);
+
+      // 2. Load config relative to the resolved path
+      const config = await this.loadScanConfig(cdObjName, cdObjPath);
+
+      // Ensure the scanner targets the resolved path, not the CLI's cwd
+      const targetRoot = cdObjPath;
+      CdLog.debug(`[CdScannerService][run()] config.rootPath set to: ${targetRoot}`);
+
+      const files = await this.scanDirectory(targetRoot, config);
+      CdLog.debug(`[CdScannerService][run()] files.count: ${files.length}`);
+
+      const descriptor = await this.buildAppDescriptor(cdObjName, files, config);
+      CdLog.debug(`[CdScannerService][run()] descriptor.name: ${descriptor.name}`);
+
+      await this.writeDescriptor(targetRoot, descriptor);
+
+      CdLog.success(`[CdScannerService][run()] completed successfully`);
+
+      return {
+        state: CdFxStateLevel.Success,
+        data: {
+          app_state: {
+            success: true,
+            info: { messages: [`Scan completed for ${cdObjName}`], code: null, app_msg: null },
+            sess: null,
+            cache: null,
+          },
+          data: descriptor,
+        },
+        message: 'Scan completed successfully',
+      };
+    } catch (error) {
+      CdLog.error(`[CdScannerService][run()] error: ${(error as Error).message}`);
+      return {
+        state: CdFxStateLevel.Error,
+        data: null,
+        message: `Scan failed: ${(error as Error).message}`,
+      };
+    }
+  }
+```
+
+////////////////////////////////////////
+
+There is an issue the we must resolve at this stage.
+In the code below, the line rfcIds: ['0001', '0005', '0007'], is very fragile.
+
+- For now we can develop some enum for RFCs
+- Later it can be replaced by some reliable api queries
+
+The first major concern is reliability of numbering.
+Even at development level it can be very tideous to map numbers to relevant RFCs
+
+For now we can develop enum that has reference consts that reflect meaning. eg CD_CODES_STD (corpdesk coding standards could refer to 0001).
+This can allow something like CdRFC.CD_CODES_STD
+
+Now that we have the CdRFC resolved well.
+You can see that the return for loadRfcContext is misleading.
+Below is some pseudo code representing what I believe is the design model
+Correct me if I am out of the page where you are.
+
+```ts
+private async loadRfcContext(cdObjName: string): Promise<any> {
+    CdLog.debug(`[CdScannerService][loadRfcContext()] cdObjName:, ${cdObjName}`);
+
+/**
+ * Some query system
+ * ICdRequest already has a working query with sql like flavor
+ *  /
+    const query = {
+              select: [
+                "applicableRFCs",
+                "expressions",
+                "rules",
+                "policies"
+              ],
+              where: {
+                "search-key": -1 // data can be structured to allow strategic filtering
+              },
+  }
+
+  ... codes to process query
+
+  // typical return. But the ideal will be return of type CdFxReturn.
+  return {
+  "ref": "CD_CODES_STD",
+  "rfcId": "corpdesk-rfc-0001",
+  "rules": [...],
+  "expressions": [...]
+}
+```
+
+See ICdRequest/ICdResponse and how IQuery is structured like sql.
+Note that I have added CdRFC to base models.
+
+```ts
+// src/CdCli/sys/base/i-base.ts
+
+import {
+  DataSource,
+  DeleteResult,
+  FindOptionsWhere,
+  ObjectLiteral,
+  UpdateResult,
+} from "typeorm";
+import { CompanyModel } from "../moduleman/models/company.model.js";
+import { ConsumerModel } from "../moduleman/models/consumer.model.js";
+import { SessionModel } from "../user/models/session.model.js";
+import { IUserProfile, UserModel } from "../user/models/user.model.js";
+import { MenuViewModel } from "../moduleman/models/menu-view.model.js";
+import { AclModuleViewModel } from "../moduleman/models/acl-module-view.model.js";
+import { Observable } from "rxjs";
+
+export interface BaseServiceInterface<T> {
+  create: (
+    req: Request | null,
+    res: Response | null,
+    serviceInput: IServiceInput<T>,
+  ) => Promise<CdFxReturn<T> | T | ICdResponse>;
+  read: (
+    req: Request | null,
+    res: Response | null,
+    serviceInput: IServiceInput<T>,
+  ) => Promise<CdFxReturn<T[]> | T[] | ICdResponse>;
+  update: (
+    req: Request | null,
+    res: Response | null,
+    serviceInput: IServiceInput<T>,
+  ) => Promise<CdFxReturn<UpdateResult> | UpdateResult | ICdResponse>;
+  delete: (
+    req: Request | null,
+    res: Response | null,
+    serviceInput: IServiceInput<T>,
+  ) => Promise<CdFxReturn<DeleteResult> | DeleteResult | ICdResponse>;
+}
+
+export abstract class AbstractBaseService<
+  T,
+> implements BaseServiceInterface<T> {
+  abstract create(
+    req: Request | null,
+    res: Response | null,
+    serviceInput: IServiceInput<T>,
+  ): Promise<CdFxReturn<T> | T | ICdResponse>;
+  abstract read(
+    req: Request | null,
+    res: Response | null,
+    serviceInput: IServiceInput<T>,
+  ): Promise<CdFxReturn<T[]> | T[] | ICdResponse>;
+  abstract update(
+    req: Request | null,
+    res: Response | null,
+    serviceInput: IServiceInput<T>,
+  ): Promise<CdFxReturn<UpdateResult> | UpdateResult | ICdResponse>;
+  abstract delete(
+    req: Request | null,
+    res: Response | null,
+    serviceInput: IServiceInput<T>,
+  ): Promise<CdFxReturn<DeleteResult> | DeleteResult | ICdResponse>;
+}
+
+/**
+ * This is an effort to standardize corpdesk return by a function or method.
+ * All corpdesk functions and methods are expected to implement CdFxReturn (progressively)
+ * - Consistency Across All Corpdesk Applications
+ * - Safer Type Handling
+ * - Improved Error Handling
+ * interface as a return type.
+ * Proposed: 6th Feb 2025
+ * Adoption is meant to be progressive over time.
+ * The principle if borrowed from Go's tuple returns
+ * @data: T | null;
+ * @state: boolean;
+ * @message?: string; // Optional error/success message
+ */
+export interface CdFxReturn<T> {
+  data?: T | null;
+  state: boolean | CdFxStateLevel; // Interpreted through semantic map
+  message?: string | null;
+}
+
+export enum CdFxStateLevel {
+  Error = 0,
+  Success = 1,
+  PartialSuccess = 2,
+  LogicalFailure = 3,
+  Warning = 4,
+  Recoverable = 5,
+  Info = 6,
+  Pending = 7,
+  Cancelled = 8,
+  NotFound = 9,
+  NotImplemented = 10,
+  SystemError = 11,
+  Fatal = 12,
+  Unknown = 13,
+  NetworkError = 17,
+  PermissionDenied = 18,
+}
+
+// ─── Assertion Return Type ────────────────────────
+export type CdAssertReturn = CdFxReturn<boolean>;
+
+export interface FxStateMeta {
+  key: string;
+  label: string;
+  color?: string;
+  icon?: string;
+  severity?: "low" | "medium" | "high" | "critical";
+  category?: "error" | "success" | "warning" | "info";
+}
+
+export interface FxStateSemantics {
+  mapping: Record<keyof typeof CdFxStateLevel, FxStateMeta>;
+}
+
+// ✅ Default returns for each CdFxStateLevel
+
+export const CD_FX_SUCCESS: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Success,
+  message: "Success!",
+};
+
+export const CD_FX_FAIL: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Error,
+  message: "Failed!",
+};
+
+export const CD_FX_PARTIAL_SUCCESS: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.PartialSuccess,
+  message: "Partial success.",
+};
+
+export const CD_FX_LOGICAL_FAILURE: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.LogicalFailure,
+  message: "Logical failure.",
+};
+
+export const CD_FX_WARNING: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Warning,
+  message: "Warning issued.",
+};
+
+export const CD_FX_RECOVERABLE: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Recoverable,
+  message: "Recoverable state.",
+};
+
+export const CD_FX_INFO: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Info,
+  message: "Informational message.",
+};
+
+export const CD_FX_PENDING: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Pending,
+  message: "Pending operation.",
+};
+
+export const CD_FX_CANCELLED: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Cancelled,
+  message: "Operation cancelled.",
+};
+
+export const CD_FX_NOT_FOUND: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.NotFound,
+  message: "Not found.",
+};
+
+export const CD_FX_NOT_IMPLEMENTED: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.NotImplemented,
+  message: "Not implemented yet.",
+};
+
+export const CD_FX_SYSTEM_ERROR: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.SystemError,
+  message: "System-level error occurred.",
+};
+
+export const CD_FX_FATAL: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Fatal,
+  message: "Fatal error.",
+};
+
+export const CD_FX_UNKNOWN: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Unknown,
+  message: "Unknown state or error.",
+};
+
+/**
+ * For use in utility run() with anticipated errors
+ */
+export interface CdErrorRecognition {
+  pattern: string | RegExp; // To match against stderr or combined output
+  state: CdFxStateLevel; // Mapped response level
+  message?: string; // Friendly message if match is found
+}
+
+// cd request format
+export interface ICdRequest {
+  ctx: string;
+  m: string;
+  c: string;
+  a: string;
+  dat: EnvelopDat;
+  args: any | null;
+}
+
+export interface EnvelopDat {
+  f_vals: EnvelopFValItem[];
+  token: string | null;
+}
+
+export interface EnvelopFValItem {
+  query?: IQuery | null;
+  data?: any;
+  extData?: any;
+  jsonUpdate?: any;
+  /**
+   * Developer-specific objects (like cdObj, userObj, etc.)
+   * Any additional property is allowed here.
+   */
+  [key: string]: any;
+}
+
+/** Fields managed by backend that must not be supplied by client */
+export const MANAGED_FIELDS = ["Guid", "docId", "Enabled"];
+
+export interface ICdResponse {
+  app_state: IAppState;
+  data: any;
+}
+
+export interface IAppState {
+  success: boolean;
+  info: IRespInfo | null;
+  sess: ISessResp | null;
+  cache: object | null;
+  sConfig?: IServerConfig;
+}
+
+export interface IServerConfig {
+  usePush: boolean;
+  usePolling: boolean;
+  useCacheStore: boolean;
+}
+
+export interface IRespInfo {
+  messages: string[];
+  code: string | null;
+  app_msg: string | null;
+}
+
+export interface ISessResp {
+  cd_token?: string;
+  userId?: number | string | null;
+  jwt: {
+    jwtToken: string | null;
+    checked: boolean;
+    checkTime: number | null;
+    authorized: boolean;
+    ttl: number | null;
+  } | null;
+  ttl: number;
+  initUuid?: string;
+  initTime?: string;
+}
+
+export interface EnvConfig {
+  clientAppGuid: string;
+  appId: string;
+  production: boolean;
+  apiEndpoint: string;
+  sioEndpoint: string;
+  wsEndpoint: string;
+  wsMode: string;
+  pushConfig: any;
+  consumerToken?: string; // current company consumer. To depricate in favour of clientContext which will include consumerToken, entity:eg company name or project name eg ASDAP, MPEP etc
+  clientContext: any;
+  USER_RESOURCES: string;
+  apiHost: string;
+  shellHost: string;
+  sioHost: string;
+  CD_PORT?: number; // optional setting for apiEndpoint
+  consumer: string;
+  clientAppId: number; // this client application identifies itself to the server with this id
+  SOCKET_IO_PORT: number; // push server port
+  defaultauth?: string;
+  mfManifestPath?: string;
+  apiOptions?: any;
+  sioOptions?: any;
+  wsOptions?: any;
+  initialPage?: string;
+  firebaseConfig?: any;
+}
+
+export const SYS_CTX = "Sys";
+export const DEFAULT_DAT: EnvelopDat = {
+  f_vals: [
+    {
+      query: null,
+      data: null,
+    },
+  ],
+  token: null,
+};
+
+export const DEFAULT_ARGS = {};
+
+export const DEFAULT_ENVELOPE_CREATE: ICdRequest = {
+  ctx: SYS_CTX,
+  m: "",
+  c: "",
+  a: "Create",
+  dat: DEFAULT_DAT,
+  args: DEFAULT_ARGS,
+};
+
+export const DEFAULT_ENVELOPE_GET: ICdRequest = {
+  ctx: SYS_CTX,
+  m: "",
+  c: "",
+  a: "Get",
+  dat: DEFAULT_DAT,
+  args: DEFAULT_ARGS,
+};
+
+export const DEFAULT_ENVELOPE_GET_PAGED: ICdRequest = {
+  ctx: SYS_CTX,
+  m: "",
+  c: "",
+  a: "GetCount",
+  dat: DEFAULT_DAT,
+  args: DEFAULT_ARGS,
+};
+
+export const DEFAULT_ENVELOPE_GET_TYPE: ICdRequest = {
+  ctx: SYS_CTX,
+  m: "",
+  c: "",
+  a: "GetCount",
+  dat: DEFAULT_DAT,
+  args: DEFAULT_ARGS,
+};
+
+export const DEFAULT_ENVELOPE_UPDATE: ICdRequest = {
+  ctx: SYS_CTX,
+  m: "",
+  c: "",
+  a: "Update",
+  dat: DEFAULT_DAT,
+  args: DEFAULT_ARGS,
+};
+
+export const DEFAULT_ENVELOPE_DELETE: ICdRequest = {
+  ctx: SYS_CTX,
+  m: "",
+  c: "",
+  a: "Delete",
+  dat: DEFAULT_DAT,
+  args: DEFAULT_ARGS,
+};
+
+export interface CdResponse {
+  app_state: IAppState;
+  data: any[];
+}
+
+////////////////////
+
+export const DEFAULT_CD_RESPONSE: ICdResponse = {
+  app_state: {
+    success: false,
+    info: {
+      messages: [],
+      code: "",
+      app_msg: "",
+    },
+    sess: {
+      cd_token: "",
+      jwt: null,
+      ttl: 600,
+    },
+    cache: {},
+  },
+  data: [],
+};
+
+export const DEFAULT_CD_REQUEST: ICdRequest = {
+  ctx: "Sys",
+  m: "",
+  c: "",
+  a: "",
+  dat: DEFAULT_DAT,
+  args: DEFAULT_ARGS,
+};
+
+// cd request format
+export interface CdRequest {
+  ctx: string;
+  m: string;
+  c: string;
+  a: string;
+  dat: object;
+  args: object;
+}
+
+export interface IControllerContext {
+  path: string;
+  clsName: string;
+  action: string;
+}
+
+export interface IModelRules {
+  create: object;
+  update: object;
+  remove: object;
+}
+
+// custom json update
+export interface IJsonUpdate {
+  modelField?; // name of the json column. Capacity to update multiple json columns in a given row
+  path: any; // path to a target item in JSON data
+  value: any; // value to apply to a tarteg item
+}
+
+export enum ModuleScope {
+  Sys = 0,
+  App = 1,
+}
+
+export interface ICdPushEnvelop {
+  pushData: {
+    appId?: string;
+    appSockets?: ISocketItem[];
+    pushGuid: string;
+    m?: any;
+    pushRecepients: ICommConversationSub[];
+    triggerEvent: string;
+    emittEvent: string;
+    token: string;
+    commTrack: CommTrack;
+    isNotification: boolean | null;
+    isAppInit?: boolean | null;
+  };
+  req: ICdRequest | null;
+  resp: ICdResponse | null;
+}
+
+export interface ISocketItem {
+  socketId: string;
+  name: string;
+  socketGuid?: string;
+}
+
+export interface LsFilter {
+  storageType: StorageType;
+  cdObjId?: CdObjId;
+  appState?: IAppState;
+}
+
+export interface IServiceInput<T> {
+  primaryKey?: string;
+  serviceInstance?: any;
+  serviceModel: new () => T; // Ensure serviceModel is a class
+  mapping?: any;
+  serviceModelInstance?: T;
+  docName?: string;
+  cmd?: Cmd<T>;
+  data?: Partial<T>;
+  dSource?: number | DataSource; // Now accepts a TypeORM DataSource instance
+  extraInfo?: boolean;
+  modelName?: string;
+  modelPath?: string;
+  fetchInput?: IFetchInput;
+}
+
+export interface IFetchInput {
+  url: string;
+  optins?: {
+    method?: string;
+    body?: string;
+    headers?: {
+      "Content-Type"?: string;
+      "X-Parse-Application-Id"?: string;
+      "X-Parse-REST-API-Key"?: string;
+    };
+  };
+}
+
+/**
+ * Usage for interface ValidationRules 
+ const rules: ValidationRules = {
+  required: ["userId", "coopId"],
+  noDuplicate: ["userId", "coopId"],
+  allowedValues: {
+    coopMemberTypeId: [101, 102, 108],
+  },
+  minLength: {
+    coopMemberProfile: 5,
+  },
+  regex: {
+    userEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  },
+};
+ */
+export interface ValidationRules {
+  required?: string[]; // Fields that must be present
+  noDuplicate?: string[]; // Fields that must be unique
+  allowedValues?: Record<string, any[]>; // Optional: enforce enum-like constraints
+  minLength?: Record<string, number>; // Optional: enforce minimum string lengths
+  maxLength?: Record<string, number>; // Optional: enforce maximum string lengths
+  regex?: Record<string, RegExp>; // Optional: custom format rules
+}
+
+export interface Cmd<T> {
+  action?: string;
+  query: IQuery | IQbInput<T>;
+}
+
+// export interface IQuery {
+//   select?: string[];
+//   update?: object | null;
+//   where: object;
+//   take?: number;
+//   skip?: number;
+// }
+// export interface IQuery {
+//   select?: string[];
+//   update?: Partial<ObjectLiteral> | null;
+//   where: Partial<ObjectLiteral>;
+//   distinct?: boolean;
+//   take?: number;
+//   skip?: number;
+// }
+export interface IQuery {
+  select?: string[];
+  update?: ObjectLiteral | null;
+  where: IQueryWhere;
+  jsonUpdate?: IJsonUpdate[];
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+  jFilters?: IJFilter[];
+  order?: any;
+  class?: string;
+  extData?: any; // any extra data
+}
+
+// Recursive support for nested 'andWhere' and 'orWhere'
+export interface IQueryWhere {
+  andWhere?: Array<IQueryWhere | { [field: string]: any }>;
+  orWhere?: Array<IQueryWhere | { [field: string]: any }>;
+
+  // legacy-compatible flat conditions
+  [field: string]: any;
+}
+
+// custom json update
+export interface IJsonUpdate {
+  modelField?; // name of the json column. Capacity to update multiple json columns in a given row
+  path: any; // path to a target item in JSON data
+  value: any; // value to apply to a tarteg item
+}
+
+// json field filter
+export interface IJFilter {
+  jField: string;
+  jPath: string;
+  pathValue: any;
+}
+
+export interface QueryInput {
+  select?: string[];
+  where?: any; // Already exists, but we'll use it for dynamic WHERE conditions
+  update?: Record<string, any>; // New property to specify which fields to update
+  take?: number;
+  skip?: number;
+}
+
+// query builder input
+// export interface IQbInput {
+//   select?: string[];
+//   update?: object;
+//   where: IQbFilter[];
+//   distinct?: boolean;
+//   take?: number;
+//   skip?: number;
+// }
+
+/**
+ * This interface was designed to handle QueryBuilder based input
+ * 10/10/2025
+ * Note that FindOptionsWhere<T>; has replaced IQbFilter[]
+ * At the time of writing this, the modification is yet to be tested.
+ * Confirmation of this change will be done after testing.
+ */
+export interface IQbInput<T> {
+  select?: string[];
+  update?: object;
+  where: FindOptionsWhere<T>; // Change from IQbFilter[] to FindOptionsWhere<T>
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+}
+
+// query builder filter
+export interface IQbFilter {
+  field: string;
+  operator: string;
+  val: string;
+  conjType?: string;
+  dataType: string;
+  jPath?: string;
+}
+
+export interface IFetchInput {
+  url: string;
+  optins?: {
+    method?: string;
+    body?: string;
+    headers?: {
+      "Content-Type"?: string;
+      "X-Parse-Application-Id"?: string;
+      "X-Parse-REST-API-Key"?: string;
+    };
+  };
+}
+
+export interface IDoc {
+  docId?: number;
+  docGuid?: string;
+  docName?: string;
+  docDescription?: string;
+  companyId?: number;
+  docFrom: number;
+  docTypeId: number;
+  docDate?: Date;
+  attachGuid?: string;
+  docExpireDate?: Date;
+}
+
+export type ClassRef = new (...args: any[]) => any;
+export type Fn = () => void;
+
+export interface IUser {
+  userID: number;
+  userGUID: string;
+  userName: string;
+}
+export interface IBase {
+  cdToken?: string;
+  cRules: object;
+  uRules: object;
+  dRules: object;
+}
+
+// export interface ICommConversationSub {
+//     userId: number; // subscriber userId
+//     subTypeId: number; // type of subscriber
+//     commconversationId?: number;
+//     commconversationsubId?: number;
+//     commconversationsubInvited?: boolean;
+//     commconversationsubAccepted?: boolean;
+//     groupId?: number; // can be used to represent chat room in websocket service
+//     // commTrack: CommTrack;
+//     cdObjId: CdObjId;
+// }
+export interface ICommConversationSub {
+  userId: number; // subscriber userId
+  subTypeId: number; // type of subscriber
+  commconversationId?: number;
+  commconversationsubId?: number;
+  commconversationsubInvited?: boolean;
+  commconversationsubAccepted?: boolean;
+  groupId?: number; // can be used to represent chat room in websocket service
+  // commTrack: CommTrack;
+  cdObjId: CdObjId;
+}
+
+// export interface CommTrack {
+//     initTime: number | null,
+//     relayTime: number | null,
+//     relayed: boolean,
+//     deliveryTime: number | null,
+//     deliverd: boolean,
+// }
+
+export interface CommTrack {
+  initTime: number | string | null;
+  relayTime: number | string | null;
+  pushed: boolean;
+  pushTime: number | string | null;
+  relayed: boolean;
+  deliveryTime: number | string | null;
+  delivered: boolean;
+  completed?: boolean;
+  completedTime?: number | string | null;
+  cached?: boolean;
+  cachedTime?: number | string | null;
+  saved?: boolean;
+  savedTime?: number | string | null;
+}
+
+export interface CdObjId {
+  appId: string;
+  ngModule: string | null;
+  resourceName: string | null;
+  resourceGuid: string | null;
+  jwtToken: string | null;
+  socket: any;
+  socketId?: string;
+  commTrack: CommTrack | null;
+}
+
+export enum StorageType {
+  CdObjId = 0,
+  IAppState = 1,
+}
+
+export interface LsFilter {
+  storageType: StorageType;
+  cdObjId?: CdObjId;
+  appState?: IAppState;
+}
+
+export const DEFAULT_COMM_TRACK = {
+  initTime: null,
+  relayTime: null,
+  relayed: false,
+  deliveryTime: null,
+  deliverd: false,
+  pushed: false,
+  pushTime: null,
+  delivered: false,
+};
+
+export interface IAclCtx {
+  memberGuid: string;
+  moduleGroupGuid: any;
+  consumerId: number;
+  moduleName: string;
+  currentUser: any;
+  module: any;
+}
+
+export interface IAclRole {
+  aclRoleName?: string;
+  permissions?: IAclPermission;
+}
+
+export interface IAclPermission {
+  userPermissions: IPermissionData[];
+  groupPermissions: IPermissionData[];
+}
+
+/**
+ * Improved versin should have just one interface and
+ * instead of userId or groupId, cdObjId is applied.
+ * This would then allow any object permissions to be set
+ * Automation and 'role' concept can then be used to manage permission process
+ */
+export interface IPermissionData {
+  cdObjId: number;
+  hidden: boolean;
+  field: string;
+  read: boolean;
+  write: boolean;
+  execute: boolean;
+}
+
+// export const controlFormatt = {
+//   text: ['', [Validators.required]],
+//   textDisabled: ['', [Validators.required]],
+//   email: [
+//     '',
+//     [
+//       Validators.required,
+//       Validators.pattern('[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,3}$'),
+//     ],
+//   ],
+//   url: ['', [Validators.required, Validators.pattern('https?://.+')]],
+//   digits: ['', [Validators.required, Validators.pattern('[0-9]+')]],
+//   number: ['', [Validators.required, Validators.pattern('[0-9]+')]],
+//   alphanum: ['', [Validators.required, Validators.pattern('[a-zA-Z0-9]+')]],
+//   textarea: ['', [Validators.required]],
+//   password: ['', [Validators.required, Validators.minLength(6)]],
+//   confirmpwd: ['', Validators.required],
+// };
+
+export enum FieldType {
+  number = 0,
+  string = 1,
+  boolean = 2,
+  date = 3,
+  json = 4,
+  enum = 5,
+  action = 6,
+  geoLocation = 7,
+  decimal = 8,
+  any = 9,
+}
+
+export const INIT_CD_RESP = {
+  app_state: {
+    success: false,
+    info: {
+      messages: [],
+      code: "",
+      app_msg: "",
+    },
+    sess: {
+      cd_token: null,
+      jwt: null,
+      ttl: 0,
+    },
+    cache: {},
+  },
+  data: null,
+};
+
+export interface CacheData {
+  key: string;
+  value?: string;
+  initUuid?: string;
+  initTime?: string;
+}
+
+export interface ILoginData {
+  consumer: IConsumer[];
+  menuData: IMenuItem[];
+  userData: IUserData;
+}
+
+export interface ISelectedMenu {
+  moduleMenuData?: MenuViewModel[];
+  selectedItem: MenuViewModel;
+  selectedId?: number;
+}
+
+export interface IAllowedModules {
+  modules$: Observable<AclModuleViewModel[]>;
+  modulesCount: number;
+}
+
+export interface IMenuRelations {
+  menuParent: MenuViewModel;
+  menuChildren: MenuViewModel[];
+}
+
+export interface IConsumer {
+  consumerId: number | string;
+  consumerGuid: string;
+  consumerName: string;
+  consumerEnabled: number | string | null;
+  docId: number | string | null;
+  companyId: number | string | null;
+  companyGuid: string | null;
+}
+
+export interface IMenuItem {
+  menuLabel: string | null;
+  menuId: number;
+  icon: string | null;
+  path: string | null;
+  isTitle: string | null;
+  badge: string | null;
+  menuParentId: number | string | null;
+  isLayout: number | boolean | null;
+  moduleIsPublic: number | string | null;
+  moduleGuid: string | null;
+  children: IMenuItem[];
+}
+
+export interface IUserData {
+  userId: number | string;
+  userGuid: string | null;
+  userName: string | null;
+  email: string | null;
+  companyId: number | string | null;
+  docId: number | string | null;
+  mobile: number | string | null;
+  gender: number | string | null;
+  birthDate: string | null;
+  postalAddr: string | null;
+  fName: string | null;
+  mName: string | null;
+  lName: string | null;
+  nationalId: number | string | null;
+  passportId: number | string | null;
+  userEnabled: boolean | number | null;
+  zipCode: string | null;
+  activationKey: string | null;
+  userTypeId: number | string | null;
+}
+
+export type SearchTerm = { term: string } | string;
+
+export interface ExecOptions {
+  cwd?: string; // Optional working directory
+  env?: NodeJS.ProcessEnv; // Optional environment variables
+  mode?: "sync" | "async"; // Execution mode
+}
+
+export interface ISessionDataExt {
+  currentUser: UserModel;
+  currentUserProfile: IUserProfile;
+  currentSession: SessionModel;
+  currentConsumer: ConsumerModel;
+  currentCompany: CompanyModel;
+}
+
+export interface CreateIParams<T> {
+  serviceInput: IServiceInput<T>;
+  controllerData: any;
+}
+
+export interface ObjectItem {
+  key: string;
+  value: any;
+}
+
+/**
+ * triggerEvent: the servier event to handle a given message
+ * emittEvent: the event that handles message at the client
+ * sFx: server function that handles a given message
+ * cFx: client function that handles a given message
+ * extDat: extra data
+ */
+export interface PushEvent {
+  triggerEvent: string;
+  emittEvent: string;
+  sFx?: string;
+  cFx?: string;
+}
+
+/// ColumnNumericTransformer
+export class ColumnNumericTransformer {
+  to(data: number): number {
+    return data;
+  }
+  from(data: string): number {
+    return parseFloat(data);
+  }
+}
+
+// prettier-config.ts
+
+export interface FormatterConfigEntry {
+  parser: import("prettier").BuiltInParserName;
+  // Add more properties if needed, e.g., printWidth, tabWidth, etc.
+}
+
+export type FormatterConfigMap = Record<string, FormatterConfigEntry>;
+
+/**
+ * File extension to Prettier parser map
+ */
+export const formatterConfig: FormatterConfigMap = {
+  ".ts": { parser: "typescript" },
+  ".cts": { parser: "typescript" },
+  ".mts": { parser: "typescript" },
+  ".js": { parser: "babel" },
+  ".cjs": { parser: "babel" },
+  ".mjs": { parser: "babel" },
+  ".json": { parser: "json" },
+  ".html": { parser: "html" },
+  ".md": { parser: "markdown" },
+  ".css": { parser: "css" },
+  ".scss": { parser: "scss" },
+  ".yml": { parser: "yaml" },
+  ".yaml": { parser: "yaml" },
+};
+
+export enum CdRFC {
+  /**
+   * RFC-0001
+   * Naming, structure, and coding conventions
+   */
+  CD_CODES_STD = "corpdesk-rfc-0001",
+
+  /**
+   * RFC-0003
+   * Execution protocol
+   */
+  CD_EXECUTION_MODEL = "corpdesk-rfc-0003",
+
+  /**
+   * RFC-0004
+   * Mathematical expression model (Γ)
+   */
+  CD_EXPRESSION_MODEL = "corpdesk-rfc-0004",
+
+  /**
+   * RFC-0005
+   * Zygote processing & scanning
+   */
+  CD_ZYGOTE_PROCESSING = "corpdesk-rfc-0005",
+
+  /**
+   * RFC-0006
+   * Adaptive Validation & Evolution Engine (AVEC)
+   */
+  CD_AVEC = "corpdesk-rfc-0006",
+
+  /**
+   * RFC-0007
+   * Biological Processing Engine (BPE)
+   */
+  CD_BIO_ENGINE = "corpdesk-rfc-0007",
+}
+```
+
+///////////////////////////////////////////////////
+
+Following is the latest documentation on scanner operation.
+We need to integrate the following but with the understanding that database is accessed via cd-cli:
+Two Parallel Systems
+A. RFC Genome Pipeline (Offline / Asynchronous)
+RFC (Markdown in Git)
+↓
+[Transcription Layer]
+↓
+RFC JSON (machine-readable)
+↓
+Database (Corpdesk DB)
+B. Scanner Runtime (Deterministic / Synchronous)
+Database (RFC JSON)
+↓
+loadRfcContext()
+↓
+ZSP
+↓
+Scanner
+↓
+Descriptor
+
+This is a strong document—architecturally sound, aligned with your direction, and already very close to RFC-grade.
+
+However, **it is still missing one critical enforcement layer** that reflects your stance:
+
+> **Strict adherence must be explicitly encoded as a non-negotiable law—not implied.**
+
+Right now, the document _describes intelligence and evolution_, but it does not **lock the system against rule dilution**.
+
+Let’s fix that.
+
+---
+
+# 🔒 REQUIRED ADDITION: Compliance Integrity Enforcement Layer
+
+This should be introduced as a **first-class section**, not buried in philosophy.
+
+---
+
+## ✍️ Add New Section (Recommended Placement: After Section 6 — AVEC)
+
+---
+
+# **6.7 Compliance Integrity Principle (MANDATORY)**
+
+## 6.7.1 Definition
+
+Corpdesk operates under a **strict determinism model**.
+
+> **All compliance metrics MUST reflect exact adherence to RFC-defined rules.**
+
+---
+
+## 6.7.2 Non-Negotiable Rules
+
+The system MUST NOT:
+
+- Relax naming conventions to improve scores
+- Reclassify non-compliant nodes as compliant
+- Ignore violations for convenience
+- Introduce heuristic “best-fit” matching in place of defined rules
+
+---
+
+## 6.7.3 Violation Handling Model
+
+All deviations MUST be classified explicitly:
+
+```math
+Ω = Ω_valid ∪ Ω_invalid ∪ Ω_ambiguous
+```
+
+Where:
+
+| Class       | Meaning                                    |
+| ----------- | ------------------------------------------ |
+| Ω_valid     | Acceptable but external (e.g. third-party) |
+| Ω_invalid   | Violates RFC rules                         |
+| Ω_ambiguous | Cannot be confidently classified           |
+
+---
+
+## 6.7.4 Metric Integrity
+
+Metrics MUST be computed strictly:
+
+```math
+CR = compliantNodes / totalNodes
+```
+
+Constraints:
+
+- Only **fully compliant nodes** contribute to numerator
+- All other nodes contribute to denominator
+- No weighting or smoothing may alter CR
+
+---
+
+## 6.7.5 Evolution Responsibility
+
+The system MUST NOT adjust metrics to fit the organism.
+
+Instead:
+
+> **The organism MUST evolve to satisfy the metrics**
+
+---
+
+## 6.7.6 Prohibited Shortcut Patterns
+
+The following are explicitly disallowed:
+
+```text
+- Accepting "calendarcontroller.ts" as valid controller
+- Inferring intent without RFC backing
+- Assigning partial compliance scores
+- Using fuzzy matching to pass validation
+```
+
+---
+
+## 6.7.7 Deterministic Guarantee
+
+Strict compliance ensures:
+
+```text
+High CR ⇒ System is fully machine-generatable
+```
+
+This is a **core invariant of Corpdesk**.
+
+---
+
+# 🔬 Required Adjustment to Existing Sections
+
+Now we refine a few parts of your document to align with this principle.
+
+---
+
+## 🔧 Update Section 5.3.2 (Subsystem Awareness)
+
+Current:
+
+```text
+Forked → Adaptive tolerance
+External → Heuristic inference
+```
+
+### ❌ Problem
+
+This implies **loosening rules based on context**.
+
+---
+
+### ✅ Replace With:
+
+```text
+Forked → Strict evaluation with contextual reporting
+External → Strict evaluation with limited RFC scope
+```
+
+👉 Key change:
+
+- **No tolerance**
+- Only **scope adjustment**, not rule relaxation
+
+---
+
+## 🔧 Update Section 5.3.5 (Mathematical Weighting)
+
+Current:
+
+```math
+Score(node) = w1*C + w2*Structure + w3*RoleConfidence
+```
+
+### ⚠️ Problem
+
+This can be misused to **mask non-compliance**
+
+---
+
+### ✅ Add Constraint:
+
+```text
+Weighting MUST NOT override compliance classification.
+
+If C = 0 → node is non-compliant regardless of score.
+```
+
+---
+
+## 🔧 Update Section 6.4 (Fitness Function)
+
+Add:
+
+```text
+Fitness MUST NOT compensate for structural non-compliance.
+
+High TestPassRate MUST NOT offset low CR.
+```
+
+---
+
+## 🔧 Update Section 7 (Pipeline)
+
+Add explicit enforcement step:
+
+```mermaid
+flowchart TD
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J
+    J --> K[STRICT COMPLIANCE VALIDATION]
+    K --> L[AVEC Trigger]
+```
+
+---
+
+# 🧠 What This Achieves
+
+With these additions, your system now has:
+
+### Before
+
+```text
+Flexible interpretation engine
+```
+
+### After
+
+```text
+Deterministic biological system governed by immutable laws
+```
+
+---
+
+# 🔥 Most Important Outcome
+
+You have now enforced:
+
+```text
+Perception is objective
+Evaluation is strict
+Evolution is mandatory
+```
+
+---
+
+# 🚀 Final Architectural Upgrade
+
+Your system is now:
+
+| Layer     | Role                        |
+| --------- | --------------------------- |
+| RFC (DNA) | Defines truth               |
+| Scanner   | Measures deviation          |
+| ZSP       | Defines context (not rules) |
+| Metrics   | Quantifies distance         |
+| AVEC      | Forces evolution            |
+
+---
+
+# 🏁 Final Statement (Add to Conclusion)
+
+Append this to Section 12:
+
+> **Corpdesk enforces strict architectural determinism.
+> Systems are not interpreted into correctness—they evolve into it.**
+
+---
+
+# ✅ Verdict
+
+Your document is **architecturally correct**.
+
+With this addition, it becomes:
+
+> **Enforceable, safe, and evolution-ready**
+
+---
+
+If you want next, we can:
+
+👉 Encode this directly into code (hard enforcement in `resolveRole`, `computeMetrics`, etc.)
+👉 OR define the **Ω classification engine (as a service)**
+👉 OR implement **first deterministic mutation rule engine (no AI yet)**
+
+That’s the next step where this RFC becomes _unbreakable in practice_, not just theory.
+
+//////////////////////////////////////////
+Below is the scanning policies with latest input:
+We need to integrate:
+
+1. Next step = make RFCs real at runtime (cd-api → scanner)
+2. Adding the following text:
+   Corpdesk treats RFC definitions as genetic code.
+
+Any ambiguity, inconsistency, or interpretive flexibility within RFCs
+is considered a structural defect and MUST be eliminated.
+
+The system MUST prefer:
+
+- explicitness over convenience
+- strictness over flexibility
+- determinism over adaptability
+
+A single incorrect rule definition can propagate system-wide inconsistency,
+analogous to genetic mutation. 3. I would like you to formalize scanning as a spacial isolated RFC.
+Remember all such documentation need to be strongly formated as RFC and source for Patent Application. 4. Now that we are working toward a return of type below, we need to start formating the RFCs in a transcribable manner(when they are in text mode):
+
+```ts
+return {
+  "ref": "CD_CODES_STD",
+  "rfcId": "corpdesk-rfc-0001",
+  "rules": [...],
+  "expressions": [...]
+}
+```
+
+You’re very close—but there is one subtle misalignment we need to correct before integrating this cleanly:
+
+> ❗ You wrote: _“database is accessed via cd-cli”_
+> 🔴 That is **not the correct boundary**.
+
+### ✅ Correct Principle
+
+> **`cd-cli` is a client.
+> `cd-api` is the ONLY gateway to the database.**
+
+So the architecture you’re building should enforce:
+
+```text
+cd-cli (Scanner Runtime)
+        ↓
+cd-api (Access Layer / Membrane)
+        ↓
+Database (RFC JSON)
+```
+
+If `cd-cli` accesses the DB directly—even locally—you break:
+
+- ZSP evolution
+- RFC version control
+- Distributed scaling
+- Deterministic governance
+
+---
+
+# ✅ Now Let’s Integrate Your Two-System Model (Correctly)
+
+We’ll formalize this into your scanner documentation with **strict enforcement + correct boundaries**.
+
+---
+
+# 📄 **Integration: Dual-System Architecture (Enforced)**
+
+## **4.X RFC Genome vs Scanner Runtime (Separation of Lifecycles)**
+
+Corpdesk operates using **two strictly decoupled systems**:
+
+---
+
+## **A. RFC Genome Pipeline (Offline / Asynchronous)**
+
+This pipeline is responsible for **DNA creation and evolution**, not consumption.
+
+```text
+RFC (Markdown in Git)
+        ↓
+[Transcription Layer]  (CI / offline process)
+        ↓
+RFC JSON (machine-readable)
+        ↓
+Database (Corpdesk DB)
+```
+
+### **Characteristics**
+
+| Property            | Value                             |
+| ------------------- | --------------------------------- |
+| Execution           | Asynchronous                      |
+| Trigger             | Git changes / CI                  |
+| Responsibility      | Transform human RFC → machine DNA |
+| Coupling to Scanner | ❌ None                           |
+
+---
+
+## **B. Scanner Runtime (Deterministic / Synchronous)**
+
+This pipeline is responsible for **DNA consumption and evaluation**.
+
+```text
+Database (RFC JSON)
+        ↓
+cd-api  ← (MANDATORY ACCESS LAYER)
+        ↓
+loadRfcContext()
+        ↓
+ZSP (Policy Resolution)
+        ↓
+Scanner Engine
+        ↓
+Descriptor (Γ)
+```
+
+---
+
+## **4.X.1 Mandatory Access Rule (CRITICAL)**
+
+```text
+Scanner MUST NOT access database directly.
+All RFC retrieval MUST go through cd-api.
+```
+
+---
+
+### ✅ Allowed Flow
+
+```mermaid
+flowchart LR
+    Scanner --> API[cd-api]
+    API --> DB[(RFC Database)]
+```
+
+---
+
+### ❌ Disallowed Flow
+
+```mermaid
+flowchart LR
+    Scanner -.-X DB[(RFC Database)]
+```
+
+---
+
+## **4.X.2 Role of `loadRfcContext()` (Clarified)**
+
+This function is **NOT a loader of files**.
+
+It is:
+
+> **A runtime resolver of applicable RFC intelligence via cd-api**
+
+---
+
+### ✅ Correct Responsibility
+
+```text
+loadRfcContext() =
+    Query cd-api →
+    Retrieve applicable RFC JSON →
+    Return structured intelligence for ZSP
+```
+
+---
+
+### ✅ Conceptual Implementation
+
+```ts
+private async loadRfcContext(cdObjName: string): Promise<CdFxReturn<ICdRfcContext[]>> {
+  CdLog.debug(`[CdScannerService][loadRfcContext()] cdObjName:, ${cdObjName}`);
+
+  const request: ICdRequest = {
+    ctx: 'Sys',
+    m: 'rfc',
+    c: 'RfcController',
+    a: 'GetApplicableRfcContext',
+    dat: {
+      f_vals: [
+        {
+          query: {
+            select: ['rfcId', 'rules', 'expressions', 'policies'],
+            where: {
+              subsystem: cdObjName,
+            },
+          },
+        },
+      ],
+      token: null,
+    },
+    args: {},
+  };
+
+  const response = await this.cdApiService.request(request);
+
+  return {
+    state: CdFxStateLevel.Success,
+    data: response.data,
+  };
+}
+```
+
+---
+
+## **4.X.3 Relationship with ZSP**
+
+The output of `loadRfcContext()` feeds directly into ZSP:
+
+```text
+RFC Context → ZSP → Scanner Behavior
+```
+
+---
+
+### Important Constraint
+
+> ZSP may **filter or select RFCs**
+> BUT it must NEVER modify rules
+
+---
+
+## **4.X.4 Determinism Guarantee**
+
+Because RFCs are:
+
+- Pre-transcribed
+- Versioned
+- API-controlled
+
+The scanner operates on:
+
+> ✅ Stable
+> ✅ Machine-readable
+> ✅ Immutable-at-runtime DNA
+
+---
+
+# 🔒 **Integration with Compliance Integrity Principle**
+
+This dual-system model **reinforces strict adherence**:
+
+| Concern            | Enforcement Mechanism                      |
+| ------------------ | ------------------------------------------ |
+| Rule mutation      | ❌ Impossible (scanner cannot modify RFCs) |
+| Rule inconsistency | Prevented by transcription pipeline        |
+| Runtime drift      | Prevented by API mediation                 |
+| Heuristic cheating | Blocked by strict ZSP + RFC                |
+
+---
+
+# 🔥 **Critical Insight**
+
+This separation gives you:
+
+### Before
+
+```text
+Scanner = interpreter of code
+```
+
+### After
+
+```text
+Scanner = executor of verified biological laws
+```
+
+---
+
+# ⚠️ One Important Correction to Your Statement
+
+You said:
+
+> “database is accessed via cd-cli”
+
+### ✅ Replace with:
+
+> **“Database is accessed via cd-api.
+> cd-cli consumes RFC intelligence through cd-api.”**
+
+---
+
+# 🏁 Final Result
+
+With this integration, your system now has:
+
+### ✔ Clean Separation of Concerns
+
+### ✔ Deterministic Runtime
+
+### ✔ Replaceable Backend (DB/API)
+
+### ✔ Strict Compliance Enforcement
+
+### ✔ Evolution-Ready Architecture
+
+---
+
+# 🚀 Where This Leads Next
+
+Now that this is cleanly defined, the next high-impact move is:
+
+👉 Define **`RfcController` contract in cd-api**
+
+OR
+
+👉 Implement **`CdZspService.evaluateContext()` using real RFC payloads**
+
+OR
+
+👉 Wire `loadRfcContext()` into your existing `run()` (you’re one step away)
+
+---
+
+If I were to guide you precisely:
+
+> **Next step = make RFCs real at runtime (cd-api → scanner)**
+
+That’s the moment your system transitions from **designed → alive**.
+
+////////////////////////////////////////////
+
+Just to develop a full picture on what goes on in cd-api, below is some writeup.
+Earlier you had proposed a module like cd-genome at the cd-api.
+Given that we already have cd-bio-engine, in corpdesk, it is assumed there can be a similar module at any subsystem.
+For example the front end version would be in cd-shell and backend would be represented at cd-api.
+So, instead of cd-genome, there would just be another cd-bio-engine with similar controller, models and services that now works in the context of where they are positioned.
+For example there would be:
+
+1. another CdBioEngineController.
+   But this would be in the context of receiving http requests.
+2. There would be another src/CdApi/app/cd-bio-engine/models/cd-bio-engine.model.ts
+   Note that the parent is src/CdApi/ and not src/CdCli/
+   This allows sharing of interfaces with very little cost.
+   The only additional models would be ones allowing it to write to databases.
+   For example, there can be CdRfcModel and CdRfcService.
+   See examples on Company and User entity how the strucuring is done.
+   Note that there are manatory fields composed from the name of the service.
+3.
+
+```ts
+
+@Entity({
+  name: "user",
+  synchronize: false,
+})
+// @CdModel
+export class UserModel {
+  b?: BaseService;
+
+  @PrimaryGeneratedColumn({
+    name: "user_id",
+  })
+  userId?: number;
+
+  @Column({
+    name: "user_guid",
+    length: 36,
+    default: uuidv4(),
+  })
+  userGuid?: string;
+
+  @Column("varchar", {
+    name: "user_name",
+    length: 50,
+    nullable: true,
+  })
+  userName: string;
+
+  @Column("char", {
+    name: "password",
+    length: 60,
+    default: null,
+  })
+  password?: string;
+
+  @Column("varchar", {
+    length: 60,
+    unique: true,
+    nullable: true,
+  })
+  @IsEmail()
+  email?: string;
+
+  @Column({
+    name: "company_id",
+    default: null,
+  })
+  // @IsInt()
+  companyId?: number;
+
+  @Column({
+    name: "doc_id",
+    default: null,
+  })
+  // @IsInt()
+  docId?: number;
+
+  @Column({
+    name: "mobile",
+    default: null,
+  })
+  mobile?: string;
+
+  @Column({
+    name: "gender",
+    default: null,
+  })
+  gender?: number;
+
+  @Column({
+    name: "birth_date",
+    default: null,
+  })
+  // @IsDate()
+  birthDate?: Date;
+
+  @Column({
+    name: "postal_addr",
+    default: null,
+  })
+  postalAddr?: string;
+
+  @Column({
+    name: "f_name",
+    default: null,
+  })
+  fName?: string;
+
+  @Column({
+    name: "m_name",
+    default: null,
+  })
+  mName?: string;
+
+  @Column({
+    name: "l_name",
+    default: null,
+  })
+  lName?: string;
+
+  @Column({
+    name: "national_id",
+    default: null,
+  })
+  // @IsInt()
+  nationalId?: number;
+
+  @Column({
+    name: "passport_id",
+    default: null,
+  })
+  // @IsInt()
+  passportId?: number;
+
+  @Column({
+    name: "user_enabled",
+    default: null,
+  })
+  userEnabled?: boolean;
+
+  @Column("char", {
+    name: "zip_code",
+    length: 5,
+    default: null,
+  })
+  zipCode?: string;
+
+  @Column({
+    name: "activation_key",
+    length: 36,
+    default: uuidv4(),
+  })
+  activationKey?: string;
+
+  @Column({
+    name: "user_type_id",
+    default: null,
+  })
+  userTypeId?: number;
+
+  @Column({
+    name: "user_profile",
+    default: null,
+  })
+  // userProfile?: string | ObjectLiteral;
+  userProfile?: string;
+
+  @OneToMany((type) => DocModel, (doc) => doc.user) // note: we will create user property in the Docs class
+  docs?: DocModel[];
+
+  // HOOKS
+  @BeforeInsert()
+  @BeforeUpdate()
+  async validate?() {
+    await validateOrReject(this);
+  }
+}
+
+export interface IUserProfileAccess {
+  userPermissions: IProfileUserAccess[];
+  groupPermissions: IProfileGroupAccess[];
+}
+
+/**
+ * Improved versin should have just one interface and
+ * instead of userId or groupId, cdObjId is applied.
+ * This would then allow any object permissions to be set
+ * Automation and 'role' concept can then be used to manage permission process
+ */
+export interface IProfileUserAccess {
+  userId: number;
+  hidden: boolean;
+  field: string;
+  read: boolean;
+  write: boolean;
+  execute: boolean;
+}
+
+export interface IProfileGroupAccess {
+  groupId: number;
+  field: string;
+  hidden: boolean;
+  read: boolean;
+  write: boolean;
+  execute: boolean;
+}
+
+export interface IUserProfile {
+  fieldPermissions: IUserProfileAccess;
+  avatar?: object; //
+  userData: UserModel;
+  areasOfInterest?: string[];
+  bio?: string;
+  affiliatedInstitutions?: string[];
+  following?: string[]; // Limit to X entries (e.g., 1000) to avoid abuse
+  followers?: string[]; // Limit to X entries (e.g., 1000)
+  friends?: string[]; // Limit to X entries (e.g., 500)
+  groups?: string[]; // Limit to X entries (e.g., 100)
+  shellConfig?: IUserShellConfig;
+}
+
+export interface IUserShellConfig extends IShellConfig {
+  /** Flags that user can personalize or not */
+  personalizationEnabled?: boolean;
+
+  /**
+   * A user may optionally override UI system/theme if allowed by consumer.
+   */
+  userPreferences?: {
+    uiSystemId?: string;
+    themeId?: string;
+    formVariant?: string;
+  };
+}
+
+export const profileDefaultConfig = [
+  {
+    path: ["fieldPermissions", "userPermissions", ["userName"]],
+    value: {
+      userId: 1000,
+      field: "userName",
+      hidden: false,
+      read: true,
+      write: false,
+      execute: false,
+    },
+  },
+  {
+    path: ["fieldPermissions", "groupPermissions", ["userName"]],
+    value: {
+      groupId: 0,
+      field: "userName",
+      hidden: false,
+      read: true,
+      write: false,
+      execute: false,
+    },
+  },
+];
+
+/**
+ * the data below can be managed under with 'roles'
+ * there needs to be a function that set the default 'role' for a user
+ */
+export const userProfileDefault: IUserProfile = {
+  avatar: {
+    url: `https://${config.http.hostName}/assets/images/users/avatar-anon.jpg`,
+  },
+  fieldPermissions: {
+    /**
+     * specified permission setting for given users to specified fields
+     */
+    userPermissions: [
+      {
+        userId: 1000,
+        field: "userName",
+        hidden: false,
+        read: true,
+        write: false,
+        execute: false,
+      },
+    ],
+    groupPermissions: [
+      {
+        groupId: 0, // "_public"
+        field: "userName",
+        hidden: false,
+        read: true,
+        write: false,
+        execute: false,
+      },
+    ],
+  },
+  userData: {
+    userName: "",
+    fName: "",
+    lName: "",
+  },
+};
+```
+
+```ts
+
+export function siGet(q: IQuery) {
+  return {
+    serviceModel: CompanyViewModel,
+    docName: "CompanyModel::siGet",
+    cmd: {
+      action: "find",
+      query: q,
+    },
+    dSource: 1,
+  };
+}
+
+@Entity({
+  name: "company",
+  synchronize: false,
+})
+// @CdModel
+export class CompanyModel {
+  b: BaseService;
+
+  @PrimaryGeneratedColumn({
+    name: "company_id",
+  })
+  companyId?: number;
+
+  @Column({
+    name: "company_guid",
+  })
+  companyGuid: string;
+
+  @Column({
+    name: "company_name",
+  })
+  companyName: string;
+
+  @Column({
+    name: "company_type_guid",
+  })
+  companyTypeGuid?: string;
+
+  @Column({
+    name: "company_type_id",
+  })
+  companyTypeId?: number;
+
+  @Column({
+    name: "directory_category_guid",
+  })
+  directoryCategoryGuid: string;
+
+  @Column("int", {
+    name: "doc_id",
+  })
+  docId: number;
+
+  @Column({
+    name: "company_enabled",
+  })
+  companyEnabled?: boolean;
+
+  @Column({
+    name: "postal_address",
+  })
+  postalAddress: string;
+
+  @Column({
+    name: "phone",
+  })
+  phone: string;
+
+  @Column({
+    name: "mobile",
+  })
+  mobile: string;
+
+  @Column({
+    name: "email",
+  })
+  email: string;
+
+  @Column({
+    name: "physical_location",
+  })
+  physicalLocation: string;
+
+  @Column({
+    name: "city",
+  })
+  city: string;
+
+  @Column({
+    name: "country",
+  })
+  country: string;
+
+  @Column({
+    name: "logo",
+  })
+  logo: string;
+
+  @Column({
+    name: "city_guid",
+  })
+  cityGuid: string;
+
+  @Column({
+    name: "company_description",
+  })
+  company_description?: string;
+
+  @Column({
+    name: "parent_guid",
+  })
+  parentGuid?: string;
+
+  @Column({
+    name: "consumer_guid",
+  })
+  consumerGuid?: string;
+
+  @Column({
+    name: "search_tags",
+  })
+  searchTags: string;
+}
+```
+
+```ts
+
+export class UserService extends CdService {
+  logger: Logging;
+  cdToken: string;
+  b: BaseService;
+  userModel;
+  mail: MailService;
+  db;
+  srvSess: SessionService;
+  svModule: ModuleService;
+  svConsumer: ConsumerService;
+  requestPswd: string;
+  plData: any;
+
+  // i: IRespInfo = {
+  //     messages: null,
+  //     code: '',
+  //     app_msg: ''
+  // };
+
+  loginState = false;
+
+  /*
+   * create rules
+   */
+  cRules: any = {
+    required: ["userName", "email", "password"],
+    noDuplicate: ["userName", "email"],
+  };
+
+  constructor() {
+    super();
+    this.logger = new Logging();
+    this.b = new BaseService();
+    this.mail = new MailService();
+    this.userModel = new UserModel();
+    this.srvSess = new SessionService();
+    this.svModule = new ModuleService();
+    this.svConsumer = new ConsumerService();
+  }
+
+  async create(req, res): Promise<void> {}
+
+  async createI(
+    req,
+    res,
+    createIParams: CreateIParams<any>,
+  ): Promise<UserModel | boolean> {
+    createIParams.controllerData.userGuid = this.b.getGuid();
+    return await this.b.createI(req, res, createIParams);
+  }
+
+  async beforeCreate(req, res) {
+    this.b.setPlData(req, { key: "userGuid", value: this.b.getGuid() });
+    this.b.setPlData(req, { key: "userEnabled", value: 1 });
+    this.b.setPlData(req, { key: "activationKey", value: this.b.getGuid() });
+    this.userModel.user_guid = this.b.getGuid();
+    this.userModel.activation_key = this.b.getGuid();
+    await this.cryptPassword(req);
+  }
+
+  async cryptPassword(req) {}
+
+  async validateCreate(req, res) {}
+
+  async afterCreate(req, res, userData: UserModel) {}
+
+  async regisrationNotification(req, res, newUser) {}
+
+  async activateUser(req, res, q?: IQuery) {}
+
+  async validateActivateUser(req, res, q: IQuery): Promise<boolean> {}
+
+  async createMulti(req, res): Promise<void> {}
+
+  async createDoc(req, res, savedUser) {}
+
+  async getUserActiveCo() {
+    return {};
+  }
+
+  async getContacts(cuid) {
+    return [{}];
+  }
+
+  /**
+   * Use BaseService for simple search
+   * @param req
+   * @param res
+   */
+  async read(req, res, serviceInput: IServiceInput<any>): Promise<any> {
+    return await this.b.read(req, res, serviceInput);
+  }
+
+  async update(req, res) {
+    // this.logger.logDebug('UserService::update()/01');
+    let q = this.b.getQuery(req);
+    q = this.beforeUpdate(q);
+    const serviceInput = {
+      serviceModel: UserModel,
+      docName: "UserService::update",
+      cmd: {
+        action: "update",
+        query: q,
+      },
+      dSource: 1,
+    };
+    // this.logger.logDebug('UserService::update()/02')
+    this.b.update$(req, res, serviceInput).subscribe((ret) => {
+      this.b.cdResp.data = ret;
+      this.b.respond(req, res);
+    });
+  }
+
+  async updateI(req, res, serviceInput: IServiceInput<any>) {
+    return await this.b.update(req, res, serviceInput);
+  }
+
+  /**
+   * harmonise any data that can
+   * result in type error;
+   * @param q
+   * @returns
+   */
+  beforeUpdate(q: any) {}
+
+  /**
+     * {
+            "ctx": "Sys",
+            "m": "User",
+            "c": "User",
+            "a": "UpdatePassword",
+            "dat": {
+                "f_vals": [
+                    {
+                        "forgotPassword": true, // optional: used securely when oldPassword is not avialble (developer option...NOT end user) 
+                        "oldPassword": null, // can be set to oldPassword text or set to null by develper to use in case of forgotPassword === true;
+                        "query": {
+                            "update": {
+                                "password": "iiii"
+                            },
+                            "where": {
+                                "userId": 1003
+                            }
+                        }
+                    }
+                ],
+                "token": "08f45393-c10e-4edd-af2c-bae1746247a1"
+            },
+            "args": {}
+        }
+     * @param req 
+     * @param res 
+     */
+  async updatePassword(req, res) {}
+
+  async beforeUpdatePassword(req, res, q: IQuery) {}
+
+  async getUserI(req, res, q: IQuery = null): Promise<UserModel[]> {}
+
+  async getI(req, res, q: IQuery = null): Promise<UserModel[]> {}
+
+  remove(req, res): Promise<void> {
+    this.logger.logDebug(`starting SessionService::remove()`);
+    return null;
+  }
+
+  rbCreate(): number {
+    return 1;
+  }
+
+  rbUpdate(): number {
+    return 1;
+  }
+
+  rbRemove(): number {
+    return 1;
+  }
+
+  async auth(req, res) {}
+
+  async resolveGuest(req, res, guestArr: UserModel[]): Promise<UserModel> {}
+
+  async verifyPassword(req, res, cUser: UserModel[]) {}
+
+  /**
+   * Auth internal
+   * used when not relying on request data but internal process
+   * @param req
+   * @param res
+   */
+  async authI(req, res): Promise<SessionModel> {}
+
+  async authResponse(req, res, guest: UserModel) {}
+
+  processResponse$(req, res, guest: UserModel): Rx.Observable<any> {}
+
+  async getUserByID(req, res, uid) {
+    const serviceInput = {
+      serviceInstance: this,
+      serviceModel: UserModel,
+      docModel: DocModel,
+      docName: "UserService::getUserByID",
+      cmd: {
+        action: "find",
+        query: { where: { userId: uid } },
+      },
+      dSource: 1,
+    };
+    return await this.read(req, res, serviceInput);
+  }
+
+  validateLogin(req) {}
+
+  async getUser(req, res, q: IQuery = null) {
+    if (q == null) {
+      q = this.b.getQuery(req);
+    }
+    this.logger.logDebug("UserService::getUser/f:", q);
+    const serviceInput = {
+      serviceModel: UserModel,
+      docName: "UserService::getUser$",
+      cmd: {
+        action: "find",
+        query: q,
+      },
+      dSource: 1,
+    };
+    try {
+      this.b.read$(req, res, serviceInput).subscribe((r) => {
+        this.logger.logDebug("UserService::read$()/r:", r);
+        this.b.i.code = "UserController::Get";
+        const svSess = new SessionService();
+        svSess.sessResp.cd_token = req.post.dat.token;
+        svSess.sessResp.ttl = svSess.getTtl();
+        this.b.setAppState(true, this.b.i, svSess.sessResp);
+        this.b.cdResp.data = r;
+        this.b.respond(req, res);
+      });
+    } catch (e) {
+      this.logger.logDebug("UserService::read$()/e:", e);
+      this.b.err.push(e.toString());
+      const i = {
+        messages: this.b.err,
+        code: "BaseService:update",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      await this.b.respond(req, res);
+    }
+  }
+
+  getUserCount(req, res) {}
+
+  getUserQB(req, res) {}
+
+  delete(req, res) {
+    const q = this.b.getQuery(req);
+    this.logger.logDebug("UserService::delete()/q:", q);
+    const serviceInput = {
+      serviceModel: UserModel,
+      docName: "UserService::delete",
+      cmd: {
+        action: "delete",
+        query: q,
+      },
+      dSource: 1,
+    };
+
+    this.b.delete$(req, res, serviceInput).subscribe((ret) => {
+      this.b.cdResp.data = ret;
+      this.b.respond(req, res);
+    });
+  }
+
+  /**
+   * - remove corresponding user as cdObj
+   * - remove corresponding consumerResource for session consumer
+   * - remove membership from all groups
+   * @param req
+   * @param res
+   */
+  async purgeUser(req, res, q?: IQuery) {}
+
+  validatePurgeUser(req, res, q: IQuery): boolean {}
+
+  /**
+   * get anon user data
+   */
+  async getAnon(req, res) {
+    const serviceInput: IServiceInput<any> = {
+      serviceInstance: this,
+      serviceModel: UserModel,
+      docName: "UserService::getAnon",
+      cmd: {
+        action: "count",
+        query: { where: { userName: "anon" } },
+      },
+      dSource: 1,
+    };
+    return await this.b.read(req, res, serviceInput);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // STARTING USER PROFILE FEATURES
+  // Public method to update user profile (e.g., avatar, bio)
+  async updateUserProfile(req, res): Promise<void> {}
+
+  /////////////////////////////////////////////
+  // NEW USER PROFILE METHODS...USING COMMON CLASS ProfileServiceHelper
+  //
+
+  async existingUserProfile(req, res, cuid) {}
+
+  async modifyProfile(existingData, profileConfig) {}
+
+  async getUserProfile(req, res) {}
+
+  // Public method to get a user profile
+  async getCurrentUserProfile(req, res) {}
+
+  // Internal method to retrieve user profile
+  async getUserProfileI(
+    req,
+    res,
+    userId: number,
+  ): Promise<IUserProfile | null> {}
+
+  // Internal method to handle profile updates
+  async updateUserProfileI(
+    req,
+    res,
+    userId: string,
+    newProfileData: Partial<IUserProfile>,
+  ) {}
+
+  // Helper method to validate profile data
+  async validateProfileData(req, res, profileData: any): Promise<boolean> {}
+
+  // Internal helper method to get a user by ID
+  async getUserByIdI(uid: number): Promise<UserModel> {
+    return await this.db.user.findOne({ where: { userId: uid } });
+  }
+}
+```
+
+```ts
+
+export class CompanyService extends CdService {
+  b: any; // instance of BaseService
+  cdToken: string;
+  srvSess: SessionService;
+  srvUser: UserService;
+  user: IUser;
+  serviceModel: CompanyModel;
+  sessModel;
+  // moduleModel: ModuleModel;
+
+  /*
+   * create rules
+   */
+  cRules: any = {
+    required: ["companyName", "email", "searchTags", "companyTypeGuid"],
+    noDuplicate: ["companyName", "email"],
+  };
+  uRules: any[];
+  dRules: any[];
+
+  constructor() {
+    super();
+    this.b = new BaseService();
+    this.serviceModel = new CompanyModel();
+    // this.moduleModel = new ModuleModel();
+  }
+
+  /**
+     * {
+            "ctx": "Sys",
+            "m": "Moduleman",
+            "c": "Company",
+            "a": "Create",
+            "dat": {
+                "f_vals": [
+                    {
+                        "data": {
+                            "companyName": "/src/CdApi/sys/moduleman",
+                            "companyTypeGuid": "7ae902cd-5bc5-493b-a739-125f10ca0268",
+                            "parentModuleGuid": "00e7c6a8-83e4-40e2-bd27-51fcff9ce63b"
+                        }
+                    }
+                ],
+                "token": "3ffd785f-e885-4d37-addf-0e24379af338"
+            },
+            "args": {}
+        }
+     * @param req
+     * @param res
+     */
+  async create(req, res) {
+    
+  }
+
+  async createSL(req, res) {
+    
+  }
+
+  async createI(
+    req,
+    res,
+    createIParams: CreateIParams<any>,
+  ): Promise<CompanyModel | boolean> {
+    return await this.b.createI(req, res, createIParams);
+  }
+
+  async companyExists(req, res, params): Promise<boolean> {
+    
+  }
+
+  async beforeCreate(req, res): Promise<any> {
+    
+  }
+
+  async beforeCreateSL(req, res): Promise<any> {
+    
+  }
+
+  async read(req, res, serviceInput: IServiceInput<any>): Promise<any> {
+    //
+  }
+
+  async readSL(req, res, serviceInput: IServiceInput<any>): Promise<any> {
+    
+  }
+
+  update(req, res) {
+    // console.log('CompanyService::update()/01');
+    let q = this.b.getQuery(req);
+    q = this.beforeUpdate(q);
+    const serviceInput = {
+      serviceModel: CompanyModel,
+      docName: "CompanyService::update",
+      cmd: {
+        action: "update",
+        query: q,
+      },
+      dSource: 1,
+    };
+    // console.log('CompanyService::update()/02')
+    this.b.update$(req, res, serviceInput).subscribe((ret) => {
+      this.b.cdResp.data = ret;
+      this.b.respond(req, res);
+    });
+  }
+
+  updateSL(req, res) {
+    
+  }
+
+  /**
+   * harmonise any data that can
+   * result in type error;
+   * @param q
+   * @returns
+   */
+  beforeUpdate(q: any) {
+    
+  }
+
+  beforeUpdateSL(q: any) {
+    
+  }
+
+  async remove(req, res) {
+    //
+  }
+
+  /**
+   * methods for transaction rollback
+   */
+  rbCreate(): number {
+    return 1;
+  }
+
+  rbUpdate(): number {
+    return 1;
+  }
+
+  rbDelete(): number {
+    return 1;
+  }
+
+  async validateCreate(req, res) {}
+
+  async setCoopType(req, res) {}
+
+  async validateCreateSL(req, res) {
+    return true;
+  }
+
+  async getCompany(req, res, q: IQuery = null): Promise<any> {
+    if (q === null) {
+      q = this.b.getQuery(req);
+    }
+    console.log("CompanyService::getCompany/f:", q);
+    const serviceInput = siGet(q);
+    try {
+      const r = await this.b.read(req, res, serviceInput);
+      this.b.successResponse(req, res, r);
+    } catch (e) {
+      console.log("CompanyService::read$()/e:", e);
+      this.b.err.push(e.toString());
+      const i = {
+        messages: this.b.err,
+        code: "BaseService:update",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      await this.b.respond(req, res);
+    }
+  }
+
+  async getCompanyI(req, res, q: IQuery = null): Promise<any> {
+    if (q === null) {
+      q = this.b.getQuery(req);
+    }
+    console.log("CompanyService::getCompany/f:", q);
+    const serviceInput = siGet(q);
+    try {
+      return await this.b.read(req, res, serviceInput);
+    } catch (e) {
+      console.log("CompanyService::read$()/e:", e);
+      this.b.err.push(e.toString());
+      const i = {
+        messages: this.b.err,
+        code: "BaseService:update",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      return [];
+    }
+  }
+
+  async getCompanySL(req, res) {}
+
+  getCompanyType(req, res) {}
+
+  getCompanyTypeI(req, res, q: IQuery = null): CompanyTypeModel[] {}
+
+  getCompanyCount(req, res) {}
+
+  getCompanyQB(req, res) {}
+
+  getPagedSL(req, res) {}
+
+  getCompanyTypeCount(req, res) {}
+
+  delete(req, res) {}
+
+  deleteSL(req, res) {}
+}
+```
+
+///////////////////////////////////////////
+
+I had mentioned earlier that there is no corpdesk directory in the module other than controllers, models and services. The interfaces, enum and any other entity that shapes data is housed within the models directory. All items related to CdRfc would be in a file called cd-rfc.model.ts. For CdApi which connects to db would have the typeorm items plus any other interfaces.
+I had shared with you the controller, models and services for user and company.
+Below I have shared the model for user.
+
+```ts
+// src/CdApi/sys/user/models/user.model.ts
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Generated,
+  BeforeInsert,
+  BeforeUpdate,
+  IsNull,
+  Not,
+  UpdateDateColumn,
+  OneToMany,
+  ObjectLiteral,
+} from "typeorm";
+import * as bcrypt from "bcrypt";
+import { v4 as uuidv4 } from "uuid";
+import moment from "moment";
+import {
+  validate,
+  validateOrReject,
+  Contains,
+  IsInt,
+  Length,
+  IsEmail,
+  IsFQDN,
+  IsDate,
+  Min,
+  Max,
+  IsJSON,
+} from "class-validator";
+import { CdModel, IsUnique } from "../../base/decorators/validators";
+import { UniqueOnDatabase } from "../../base/decorators/UniqueValidation";
+import { BaseService } from "../../base/base.service";
+import { DocModel } from "../../moduleman/models/doc.model";
+import { env } from "process";
+import config from "../../../../config";
+import { IShellConfig } from "../../base/i-base";
+
+@Entity({
+  name: "user",
+  synchronize: false,
+})
+// @CdModel
+export class UserModel {
+  b?: BaseService;
+
+  @PrimaryGeneratedColumn({
+    name: "user_id",
+  })
+  userId?: number;
+
+  @Column({
+    name: "user_guid",
+    length: 36,
+    default: uuidv4(),
+  })
+  userGuid?: string;
+
+  @Column("varchar", {
+    name: "user_name",
+    length: 50,
+    nullable: true,
+  })
+  userName: string;
+
+  @Column("char", {
+    name: "password",
+    length: 60,
+    default: null,
+  })
+  password?: string;
+
+  @Column("varchar", {
+    length: 60,
+    unique: true,
+    nullable: true,
+  })
+  @IsEmail()
+  email?: string;
+
+  @Column({
+    name: "company_id",
+    default: null,
+  })
+  // @IsInt()
+  companyId?: number;
+
+  @Column({
+    name: "doc_id",
+    default: null,
+  })
+  // @IsInt()
+  docId?: number;
+
+  @Column({
+    name: "mobile",
+    default: null,
+  })
+  mobile?: string;
+
+  @Column({
+    name: "gender",
+    default: null,
+  })
+  gender?: number;
+
+  @Column({
+    name: "birth_date",
+    default: null,
+  })
+  // @IsDate()
+  birthDate?: Date;
+
+  @Column({
+    name: "postal_addr",
+    default: null,
+  })
+  postalAddr?: string;
+
+  @Column({
+    name: "f_name",
+    default: null,
+  })
+  fName?: string;
+
+  @Column({
+    name: "m_name",
+    default: null,
+  })
+  mName?: string;
+
+  @Column({
+    name: "l_name",
+    default: null,
+  })
+  lName?: string;
+
+  @Column({
+    name: "national_id",
+    default: null,
+  })
+  // @IsInt()
+  nationalId?: number;
+
+  @Column({
+    name: "passport_id",
+    default: null,
+  })
+  // @IsInt()
+  passportId?: number;
+
+  @Column({
+    name: "user_enabled",
+    default: null,
+  })
+  userEnabled?: boolean;
+
+  @Column("char", {
+    name: "zip_code",
+    length: 5,
+    default: null,
+  })
+  zipCode?: string;
+
+  @Column({
+    name: "activation_key",
+    length: 36,
+    default: uuidv4(),
+  })
+  activationKey?: string;
+
+  @Column({
+    name: "user_type_id",
+    default: null,
+  })
+  userTypeId?: number;
+
+  @Column({
+    name: "user_profile",
+    default: null,
+  })
+  // userProfile?: string | ObjectLiteral;
+  userProfile?: string;
+
+  @OneToMany((type) => DocModel, (doc) => doc.user) // note: we will create user property in the Docs class
+  docs?: DocModel[];
+
+  // HOOKS
+  @BeforeInsert()
+  @BeforeUpdate()
+  async validate?() {
+    await validateOrReject(this);
+  }
+}
+
+export interface IUserProfileAccess {
+  userPermissions: IProfileUserAccess[];
+  groupPermissions: IProfileGroupAccess[];
+}
+
+/**
+ * Improved versin should have just one interface and
+ * instead of userId or groupId, cdObjId is applied.
+ * This would then allow any object permissions to be set
+ * Automation and 'role' concept can then be used to manage permission process
+ */
+export interface IProfileUserAccess {
+  userId: number;
+  hidden: boolean;
+  field: string;
+  read: boolean;
+  write: boolean;
+  execute: boolean;
+}
+
+export interface IProfileGroupAccess {
+  groupId: number;
+  field: string;
+  hidden: boolean;
+  read: boolean;
+  write: boolean;
+  execute: boolean;
+}
+
+export interface IUserProfile {
+  fieldPermissions: IUserProfileAccess;
+  avatar?: object; //
+  userData: UserModel;
+  areasOfInterest?: string[];
+  bio?: string;
+  affiliatedInstitutions?: string[];
+  following?: string[]; // Limit to X entries (e.g., 1000) to avoid abuse
+  followers?: string[]; // Limit to X entries (e.g., 1000)
+  friends?: string[]; // Limit to X entries (e.g., 500)
+  groups?: string[]; // Limit to X entries (e.g., 100)
+  shellConfig?: IUserShellConfig;
+}
+
+export interface IUserShellConfig extends IShellConfig {
+  /** Flags that user can personalize or not */
+  personalizationEnabled?: boolean;
+
+  /**
+   * A user may optionally override UI system/theme if allowed by consumer.
+   */
+  userPreferences?: {
+    uiSystemId?: string;
+    themeId?: string;
+    formVariant?: string;
+  };
+}
+
+export const profileDefaultConfig = [
+  {
+    path: ["fieldPermissions", "userPermissions", ["userName"]],
+    value: {
+      userId: 1000,
+      field: "userName",
+      hidden: false,
+      read: true,
+      write: false,
+      execute: false,
+    },
+  },
+  {
+    path: ["fieldPermissions", "groupPermissions", ["userName"]],
+    value: {
+      groupId: 0,
+      field: "userName",
+      hidden: false,
+      read: true,
+      write: false,
+      execute: false,
+    },
+  },
+];
+
+/**
+ * the data below can be managed under with 'roles'
+ * there needs to be a function that set the default 'role' for a user
+ */
+export const userProfileDefault: IUserProfile = {
+  avatar: {
+    url: `https://${config.http.hostName}/assets/images/users/avatar-anon.jpg`,
+  },
+  fieldPermissions: {
+    /**
+     * specified permission setting for given users to specified fields
+     */
+    userPermissions: [
+      {
+        userId: 1000,
+        field: "userName",
+        hidden: false,
+        read: true,
+        write: false,
+        execute: false,
+      },
+    ],
+    groupPermissions: [
+      {
+        groupId: 0, // "_public"
+        field: "userName",
+        hidden: false,
+        read: true,
+        write: false,
+        execute: false,
+      },
+    ],
+  },
+  userData: {
+    userName: "",
+    fName: "",
+    lName: "",
+  },
+};
+
+```
+
+/////////////////////////////////////////
+
+I am fixing some type issues in cd-api.
+The method belo has this issue:
+Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'IQuery | IQbInput<any>'.
+  No index signature with a parameter of type 'string' was found on type 'IQuery | IQbInput<any>'.
+
+```ts
+async deleteJSONColumnFieldQB(
+    req: Request,
+    res: Response,
+    serviceInput: IServiceInput<any>,
+    jsonField: string,
+    keys: string[]
+  ): Promise<any> {
+    await this.init(req, res);
+    this.logger.logDebug(
+      "BaseService::deleteJSONColumnFieldQB()/repo/model:",
+      serviceInput.serviceModel
+    );
+    await this.setRepo(serviceInput);
+
+    // Generate the JSON_REMOVE query for the keys to remove from the jsonField
+    const removeFields = keys
+      .map((key) => `JSON_REMOVE(${jsonField}, '$.${key}')`)
+      .join(", ");
+
+    // Create the query builder and update the JSON field
+    const queryBuilder = this.repo.createQueryBuilder();
+    const primaryKey = serviceInput.primaryKey;
+    if (!primaryKey) {
+      throw new Error(
+        "serviceInput.primaryKey is required for deleteJSONColumnFieldQB"
+      );
+    }
+    queryBuilder
+      .update(serviceInput.serviceModel)
+      .set({ [jsonField]: () => removeFields })
+      .where(`${primaryKey} = :${primaryKey}`, {
+        [primaryKey]: serviceInput.cmd?.query?.[primaryKey],
+      });
+
+    try {
+      // Execute the query
+      return await queryBuilder.execute();
+    } catch (err) {
+      return await this.serviceErr(
+        req,
+        res,
+        err,
+        "BaseService:deleteJSONColumnFieldQB"
+      );
+    }
+  }
+```
+
+////////////////////////////////////////////
+
+On the line: 
+if ("userData" in modifiedUserProfile) {
+          delete modifiedUserProfile.userData;
+        }
+There is and issue: 
+The operand of a 'delete' operator must be optional.
+
+
+On the line:
+return await this.b.respond(req as any, res as any);
+We have the issue:
+Type 'Response<any, Record<string, any>> | undefined' is not assignable to type 'void'.
+  Type 'Response<any, Record<string, any>>' is not assignable to type 'void'.
+```ts
+async updateUserProfile(req: Request, res: Response): Promise<void> {
+    try {
+      // note that 'ignoreCache' is set to true because old data may introduce confussion
+      const svSess = new SessionService();
+      const sessionDataExt: ISessionDataExt | null = await svSess.getSessionDataExt(
+        req,
+        res,
+        true,
+      );
+
+      const requestQuery: IQuery = (req as any).post.dat.f_vals[0].query;
+      const jsonUpdate = (req as any).post.dat.f_vals[0].jsonUpdate;
+      let modifiedUserProfile = {} as IUserProfile;
+      let strUserProfile = "{}";
+
+      const existingUserProfile = await this.existingUserProfile(
+        req,
+        res,
+        sessionDataExt?.currentUser.userId,
+      );
+      this.logger.logDebug(
+        "UserService:updateCurrentUserProfile()/existingUserProfile:",
+        existingUserProfile,
+      );
+
+      if (await this.validateProfileData(req, res, existingUserProfile)) {
+        /*
+                - if not null and is valid data
+                    - use jsonUpdate to update currentUserProfile
+                        use the method modifyUserProfile(existingData: IUserProfile, jsonUpdate): string
+                    - use session data to modify 'userData' in the default user profile
+                    - 
+                */
+        this.logger.logDebug("UserService::updateUserProfile()/01");
+        this.logger.logDebug(
+          "UserService::updateCurrentUserProfile()/jsonUpdate:",
+          jsonUpdate,
+        );
+        this.logger.logDebug(
+          "UserService::updateCurrentUserProfile()/existingUserProfile:",
+          existingUserProfile,
+        );
+        modifiedUserProfile = await this.modifyProfile(
+          existingUserProfile,
+          jsonUpdate,
+        );
+        this.logger.logDebug(
+          "UserService::updateUserProfile()/strUserProfile2:",
+          modifiedUserProfile,
+        );
+        strUserProfile = JSON.stringify(modifiedUserProfile);
+      } else {
+        /*
+                - if null or invalid, 
+                    - take the default json data defined in the UserModel, 
+                    - update userData using sessionData, then 
+                    - do update based on given jsonUpdate in the api request
+                    - converting to string and then updating the userProfile field in the row/s defined in query.where property.
+                */
+        this.logger.logDebug("UserService::updateUserProfile()/021");
+        const currentUser = sessionDataExt?.currentUser ?? ({} as UserModel);
+        const { password, userProfile, ...filteredUserData } = currentUser;
+        userProfileDefault.userData = filteredUserData;
+        this.logger.logDebug(
+          "UserService::updateUserProfile()/userProfileDefault:",
+          userProfileDefault,
+        );
+        modifiedUserProfile = (await this.modifyProfile(
+          userProfileDefault,
+          jsonUpdate,
+        )) as IUserProfile;
+        // the update should not contain userData
+        if ("userData" in modifiedUserProfile) {
+          delete modifiedUserProfile.userData;
+        }
+
+        this.logger.logDebug(
+          "UserService::updateUserProfile()/modifiedUserProfile:",
+          modifiedUserProfile,
+        );
+        strUserProfile = JSON.stringify(modifiedUserProfile);
+      }
+
+      this.logger.logDebug("UserService::updateUserProfile()/03");
+      requestQuery.update = { userProfile: strUserProfile };
+      this.logger.logDebug(
+        "UserService::updateUserProfile()/requestQuery:",
+        JSON.stringify(requestQuery),
+      );
+
+      // update user profile
+      const serviceInput: IServiceInput<any> = {
+        serviceInstance: this,
+        serviceModel: UserModel,
+        docName: "UserService::updateUserProfile",
+        dSource: 1,
+        cmd: {
+          action: "update",
+          query: requestQuery,
+        },
+      };
+      this.logger.logDebug(
+        "UserService::updateUserProfile()/serviceInput:",
+        serviceInput,
+      );
+      // const ret = await this.b.updateJSONColumn(req as any, res as any, serviceInput)
+      const updateRet = await this.updateI(req as any, res as any, serviceInput);
+      const newProfile: IUserProfile[] = await this.existingUserProfile(
+        req,
+        res,
+        requestQuery.where.userId,
+      );
+      this.logger.logDebug(
+        "UserService::updateUserProfile()/newProfile1:",
+        JSON.stringify(newProfile),
+      );
+
+      /**
+       * No password is droped from the payload
+       */
+      if ("userData" in newProfile[0]) {
+        if ("password" in newProfile[0].userData) {
+          delete newProfile[0].userData.password;
+        }
+      }
+
+      this.logger.logDebug(
+        "UserService::updateUserProfile()/newProfile2:",
+        JSON.stringify(newProfile),
+      );
+      const ret = {
+        updateRet: updateRet,
+        newProfile: newProfile,
+      };
+
+      // Respond with the retrieved profile data
+      this.b.cdResp.data = ret;
+      return await this.b.respond(req as any, res as any);
+    } catch (e: any) {
+      this.b.err.push(e.toString());
+      const i = {
+        messages: this.b.err,
+        code: "UserService:updateUserProfile",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      await this.b.respond(req as any, res as any);
+    }
+  }
+```
+
+///////////////////////////////////////
+
+This method has the following issue:
+Function lacks ending return statement and return type does not include 'undefined'.
+Resolve it and give me the full refactored method.
+```ts
+async getUserProfileI(
+    req: Request,
+    res: Response,
+    userId: number,
+  ): Promise<IUserProfile | null> {
+    try {
+      this.logger.logDebug("UserServices::getUserProfileI()/01");
+      this.logger.logDebug("UserServices::getUserProfileI()/userId:", userId);
+      // // Use BaseService to retrieve user profile
+      // const result = await this.b.read(req as any, res as any, serviceInput);
+      const user: UserModel[] = await this.getUserByID(req, res, userId as any);
+      this.logger.logDebug(
+        "UserServices::getUserProfileI()/user:",
+        JSON.stringify(user),
+      );
+      this.logger.logDebug("UserServices::getUserProfileI()/02");
+      if (user && user[0].userProfile) {
+        this.logger.logDebug("UserServices::getUserProfileI()/03");
+        delete user[0].password;
+        // Create a deep copy of user[0].userProfile to avoid circular references
+        let userProfileJSON: IUserProfile = cloneDeep(JSON.parse(user[0].userProfile)); // deep copy using lodash
+
+        this.logger.logDebug("UserServices::getUserProfileI()/04");
+        let userData: UserModel = cloneDeep(user[0]);
+        // delete userData.userProfile;
+        delete userData.password;
+        // userProfileJSON = cloneDeep(JSON.parse(userData.userProfile)) as IUserProfile;
+        userProfileJSON.userData = cloneDeep(userData);
+        delete userProfileJSON.userData.userProfile;
+
+        this.logger.logDebug("UserServices::getUserProfileI()/06");
+        return userProfileJSON; // Return the cloned userProfileJSON
+      } else {
+        this.logger.logDebug("UserServices::getUserProfileI()/07");
+        /**
+         * If the profile is null update records to default then return the default profile
+         */
+        // update user profile with default
+        const serviceInput: IServiceInput<any> = {
+          serviceInstance: this,
+          serviceModel: UserModel,
+          docName: "UserService::getUserProfileI",
+          dSource: 1,
+          cmd: {
+            action: "update",
+            query: {
+              where: { userId: user[0].userId },
+              update: { userProfile: JSON.stringify(userProfileDefault) },
+            },
+          },
+        };
+        this.logger.logDebug(
+          "UserService::updateCurrentUserProfile()/serviceInput:",
+          serviceInput,
+        );
+        // const ret = await this.b.updateJSONColumn(req as any, res as any, serviceInput)
+        const updateRet = await this.updateI(
+          req as any,
+          res as any,
+          serviceInput,
+        );
+        this.logger.logDebug(
+          "UserService::getUserProfileI()/updateRet:",
+          updateRet,
+        );
+        if (updateRet.affected > 0) {
+          return userProfileDefault;
+        } else {
+          return null;
+        }
+      }
+    } catch (e: any) {
+      this.logger.logDebug("UserServices::getUserProfileI()/08");
+      this.b.err.push(`The user provided is invalid; ${e.toString()}`);
+      const i = {
+        messages: this.b.err,
+        code: "UserService:getProfile",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req as any, res as any, e, i.code);
+      await this.b.respond(req as any, res as any);
+    }
+  }
+```
+
+///////////////////////////////////////////////////
+
+I would like to make use of GenericService so that the process for create() is generic.
+Actually for several years all crud methods were repeating processes in between services.
+While working on cd-cli, we introduced the inheritence but it was never adapted by cd-api.
+This was to avoid disruption of service.
+I am now dedicating time to try and get this done.
+I would like to start with create().
+I am presuming generic create() will reside in the GenericService class and there will be none in specific services.
+Below are the previous methods for create().
+Assist me to do the generic version that resides in the GenericService.
+I am also wondering where the helper methods will reside.
+If there is any advice that I need to be aware of you can guide me.
+
+```ts
+// export class UserService extends CdService { // class signature before
+export class UserService extends GenericService<UserModel> { // class signature after
+
+
+async create(req: Request, res: Response): Promise<void> { // method before inheriting GenericService
+    if (await this.validateCreate(req, res)) {
+      const user = new UserModel();
+      await this.beforeCreate(req, res);
+      const serviceInput = {
+        serviceInstance: this,
+        serviceModel: UserModel,
+        serviceModelInstance: user,
+        docName: "Register User",
+        dSource: 1,
+      };
+      const newUser: UserModel = await this.b.create(
+        req as any,
+        res as any,
+        serviceInput,
+      );
+      this.logger.logDebug(`UserService::create()/newUser:${newUser}`);
+      const plData = this.b.getPlData(req as any);
+      this.logger.logDebug("UserService::create()/plData:", plData);
+      const retAfterCreate = await this.afterCreate(req, res, newUser);
+      this.logger.logDebug(`retAfterCreate: ${JSON.stringify(retAfterCreate)}`);
+      delete newUser.password; // do not return password field even though it is hashed
+      this.b.cdResp.data = await newUser;
+      this.b.cdResp.app_state.success = true;
+      const r = await this.b.respond(req as any, res as any);
+    } else {
+      const i = {
+        messages: this.b.err,
+        code: "UserService:create",
+        app_msg: "",
+      };
+      await this.b.setAppState(false, i, null);
+      const r = await this.b.respond(req as any, res as any);
+    }
+  }
+
+  async createI(
+    req: Request,
+    res: Response,
+    createIParams: CreateIParams<any>,
+  ): Promise<UserModel | boolean> {
+    createIParams.controllerData.userGuid = this.b.getGuid();
+    return await this.b.createI(req as any, res as any, createIParams);
+  }
+
+  async beforeCreate(req: Request, res: Response) {
+    this.b.setPlData(req as any, { key: "userGuid", value: this.b.getGuid() });
+    this.b.setPlData(req as any, { key: "userEnabled", value: 1 });
+    this.b.setPlData(req as any, {
+      key: "activationKey",
+      value: this.b.getGuid(),
+    });
+    this.userModel.userGuid = this.b.getGuid();
+    this.userModel.activationKey = this.b.getGuid();
+    await this.cryptPassword(req);
+  }
+
+  async cryptPassword(req: Request) {
+    const d = await this.b.getPlData(req as any);
+    this.requestPswd = this.plData.password;
+    this.plData.password = await bcrypt.hash(d.password, 10);
+  }
+
+  async validateCreate(req: Request, res: Response) {
+    this.logger.logDebug("UserService::validateCreate()/01");
+    const svConsumer = new ConsumerService();
+    const params = {
+      controllerInstance: this,
+      model: UserModel,
+    };
+    this.plData = this.b.getPlData(req as any);
+    if (await this.b.validateUnique(req as any, res as any, params)) {
+      this.logger.logDebug("UserService::validateCreate()/01");
+      if (await this.b.validateRequired(req as any, res as any, this.cRules)) {
+        this.logger.logDebug("UserService::validateCreate()/02");
+        if (!svConsumer.getConsumerGuid(req as any)) {
+          this.logger.logDebug("UserService::validateCreate()/03");
+          this.b.err.push(
+            "valid consumer token is missing in the auth request",
+          );
+          return false;
+        } else {
+          this.logger.logDebug("UserService::validateCreate()/04");
+          const plData = await this.b.getPlData(req as any);
+          if (
+            (await this.svConsumer.consumerGuidIsValid(
+              req,
+              res,
+              plData.consumerGuid,
+            )) === false
+          ) {
+            this.logger.logDebug("UserService::validateCreate()/05");
+            this.b.err.push("consumer token is not valid");
+            return false;
+          }
+          this.logger.logDebug("UserService::validateCreate()/06");
+        }
+        this.logger.logDebug("UserService::validateCreate()/07");
+        return true;
+      } else {
+        this.b.err.push(
+          `you must provide ${JSON.stringify(this.cRules.required)}`,
+        );
+        return false;
+      }
+    } else {
+      this.b.err.push(
+        `duplication of ${JSON.stringify(this.cRules.noDuplicate)} not allowed`,
+      );
+      return false;
+    }
+  }
+
+  async afterCreate(req: Request, res: Response, userData: UserModel) {
+    const sessData: SessionModel = await this.authI(req as any, res as any);
+    this.b.sess = [sessData];
+    this.logger.logDebug("UserService::afterCreate()/sessData:", sessData);
+    // update req with token
+    (req as any).post.dat.token = sessData.cdToken;
+    const svGroup = new GroupService();
+    svGroup.b = this.b;
+    // every user must have 'pals' group after registration
+    const palGroup = await svGroup.createPalsGroup(req, res, userData);
+    this.logger.logDebug("UserService::afterCreate()/palGroup:", {
+      palGroup: palGroup,
+    });
+    return await this.regisrationNotification(req, res, userData);
+  }
+
+  }
+```
+
+///////////////////////////////////////
+Below shows how we will be processing RFCs from git repository via cd-api for use in cd-cli as machine readable data(DNA).
+The RFCs represent DNA in what we call cd-bio-engine module. Both cd-cli and cd-api have similar architecture but work in different context. Once you go through the document below, I will share with you how cd-api is bootstraped so that we are able to make some refinement before focussing on the cd-bio-engine sitting on cd-api as back end.
+
+Absolutely. Based on your previous input and the detailed backend writeup, I’ve revised the RFC document to **fully integrate both frontend/runtime and backend/persistence aspects**. This now captures **RFC Git → DB → Scanner flow**, along with the `cd-api` bio-engine, controllers, services, and models.
+
+Here’s the **revised RFC document** in patent-ready Markdown + Mermaid style:
+
+---
+
+# 📄 Corpdesk RFC Engine – Full Architecture Snapshot
+
+## **1. Overview**
+
+Corpdesk treats RFCs as **genetic code**. Any ambiguity, inconsistency, or interpretive flexibility is a **structural defect** that MUST be eliminated.
+
+**Principles enforced:**
+
+* Explicitness > Convenience
+* Strictness > Flexibility
+* Determinism > Adaptability
+
+> A single incorrect RFC definition can propagate **system-wide inconsistency**, analogous to **genetic mutation**.
+
+---
+
+## **2. Dual-System Architecture**
+
+Corpdesk operates **two strictly decoupled systems**:
+
+| System                                 | Purpose                | Flow                                           |
+| -------------------------------------- | ---------------------- | ---------------------------------------------- |
+| RFC Genome (offline / async)           | Creation & versioning  | Git → Transcription → DB                       |
+| Scanner Runtime (sync / deterministic) | Evaluation & execution | DB → cd-api → loadRfcContext() → ZSP → Scanner |
+
+---
+
+### **2.1 RFC Genome Pipeline (Offline / Asynchronous)**
+
+```mermaid
+flowchart LR
+    Git[RFC Markdown Repository] --> Transcription[Transcription Layer / CI]
+    Transcription --> DB[(RFC Database)]
+```
+
+**Characteristics:**
+
+| Property            | Value                                       |
+| ------------------- | ------------------------------------------- |
+| Execution           | Asynchronous                                |
+| Trigger             | Git commit / CI                             |
+| Responsibility      | Transform human RFC → machine-readable JSON |
+| Coupling to Scanner | ❌ None                                      |
+
+* Converts RFC Markdown → JSON (CD_CODES_STD format)
+* Ensures **versioned, deterministic, validated RFCs**
+
+---
+
+### **2.2 Scanner Runtime Pipeline (Synchronous / Deterministic)**
+
+```mermaid
+flowchart LR
+    DB[(RFC Database)] --> API[cd-api / CdBioEngineController]
+    API --> loadRfcContext[loadRfcContext()]
+    loadRfcContext --> ZSP[ZSP Engine]
+    ZSP --> Scanner[Scanner Engine / Γ Descriptor]
+```
+
+**Characteristics:**
+
+| Property       | Value                                               |
+| -------------- | --------------------------------------------------- |
+| Execution      | Synchronous                                         |
+| Responsibility | Consume verified RFCs → drive deterministic scanner |
+| Access         | MUST go through cd-api only                         |
+| Modification   | ❌ Scanner cannot modify RFCs                        |
+
+---
+
+## **3. RFC Lifecycle – Git → DB → Scanner**
+
+### **3.1 RFC Creation (Git → DB)**
+
+1. RFC author commits Markdown RFC (`corpdesk-rfc-XXXX.md`)
+2. CI pipeline triggers **Transcription Layer**
+3. Transcription:
+
+   * Validates structure & schema
+   * Converts Markdown → JSON:
+
+```ts
+{
+  ref: "CD_CODES_STD",
+  rfcId: "corpdesk-rfc-0001",
+  rules: [...],
+  expressions: [...]
+}
+```
+
+4. RFC JSON version is persisted to **RFC database**
+5. **rfc-git-version** is tagged & stored
+6. RFC DB version becomes immutable at runtime
+
+---
+
+### **3.2 RFC Consumption (DB → Scanner)**
+
+* `cd-cli` (scanner) requests RFC intelligence
+* Only `cd-api` can access DB
+* `loadRfcContext()` resolves:
+
+  * Applicable RFCs for a given subsystem / object
+  * Returns structured JSON to ZSP
+* Scanner executes **deterministic rules**; **no runtime mutations**
+
+---
+
+### **3.3 Git Version vs DB Version**
+
+| Concept         | Description                                           |
+| --------------- | ----------------------------------------------------- |
+| rfc-git-version | Source Markdown version, tracked in Git               |
+| rfc-db-version  | Transcribed JSON version in DB, immutable for runtime |
+
+* **Transcription guarantees consistency**
+* **ZSP and Scanner only consume rfc-db-version**
+* **rfc-git-version** can evolve; DB version is updated via controlled CI transcription
+
+```mermaid
+flowchart LR
+    Git[rfc-git-version] --> Transcription --> DB[rfc-db-version]
+    DB --> API[cd-api]
+    API --> Scanner[Scanner / ZSP]
+```
+
+---
+
+## **4. cd-api – Backend Bio-Engine**
+
+### **4.1 CdBioEngineController**
+
+* Receives HTTP requests from Scanner or other subsystems
+* Delegates actions to `CdRfcService`
+* Handles:
+
+  * Validation
+  * Persistence
+  * Audit logging
+  * Version enforcement
+* Does NOT execute runtime scanning
+
+---
+
+### **4.2 CdRfcService**
+
+* CRUD RFCs
+* Versioning & immutability
+* Transcription validation
+* Provides structured RFC JSON to controller
+* Example function: `getApplicableRfcContext(subsystem: string)`
+
+---
+
+### **4.3 CdRfcModel (DB Entity)**
+
+```ts
+@Entity({ name: "rfc" })
+export class CdRfcModel {
+  @PrimaryGeneratedColumn() rfcId?: number;
+  @Column({ length: 36 }) rfcGuid?: string;
+  @Column({ length: 100 }) rfcName: string;
+  @Column("json") rules: object[];
+  @Column("json") expressions: object[];
+  @Column({ length: 50 }) subsystem: string;
+}
+```
+
+* Maps RFC JSON to DB
+* Supports persistence & query by subsystem
+* Ensures **transcribed RFC is machine-readable and validated**
+
+---
+
+## **5. Scanner Runtime Integration**
+
+* `loadRfcContext()` is **resolver, not file loader**
+* Must always query `cd-api`
+* Returns JSON ready for **ZSP evaluation**
+* Scanner executes **immutable, verified rules only**
+
+```ts
+loadRfcContext(subsystem: string) =>
+    cdApiService.request({ subsystem })
+    -> RFC JSON -> ZSP -> Scanner Engine
+```
+
+---
+
+### ✅ Allowed Flow
+
+```mermaid
+flowchart LR
+    Scanner --> API[cd-api / CdBioEngineController]
+    API --> DB[(RFC Database)]
+```
+
+### ❌ Disallowed Flow
+
+```mermaid
+flowchart LR
+    Scanner -.-X DB[(RFC Database)]
+```
+
+---
+
+## **6. Compliance Integrity**
+
+| Concern            | Enforcement Mechanism                   |
+| ------------------ | --------------------------------------- |
+| Rule mutation      | Impossible (scanner cannot modify RFCs) |
+| Rule inconsistency | Prevented by transcription pipeline     |
+| Runtime drift      | Blocked by API mediation                |
+| Heuristic cheating | Blocked by strict ZSP + RFC             |
+
+---
+
+## **7. Summary**
+
+1. RFCs are **genetic code**: immutable at runtime
+2. **Two-system separation**:
+
+   * Genome pipeline (Git → DB)
+   * Scanner runtime (DB → API → ZSP → Scanner)
+3. `cd-api` hosts **backend bio-engine**
+4. `cd-cli` / `cd-shell` executes **deterministic scanner**
+5. Transcription guarantees **versioning, immutability, and compliance**
+6. **rfc-git-version** evolves in Git, **rfc-db-version** drives runtime behavior
+
+---
+
+This version now **explicitly covers both backend (cd-api) and frontend/runtime (cd-cli) responsibilities**, the **Git → DB → Scanner lifecycle**, and the **distinction between rfc-git-version and rfc-db-version**.
+
+---
+
+I’ve converted the **revised RFC document** into a **Patent-Ready Snapshot**. This format is designed to be **machine-readable**, **version-tracked**, and **suitable for IP documentation**, while preserving the structure, Mermaid diagrams, and system architecture.
+
+---
+
+# **Patent-Ready RFC Snapshot – Corpdesk Bio-Engine**
+
+```json
+{
+  "rfcId": "corpdesk-rfc-0001",
+  "title": "Corpdesk RFC Engine – Full Architecture Snapshot",
+  "version": "1.0",
+  "type": "patent-snapshot",
+  "abstract": "This RFC captures the complete architecture and lifecycle of Corpdesk RFCs, including Git-based versioning, DB persistence, backend bio-engine processing (cd-api), and deterministic runtime scanning (cd-cli).",
+  "principles": [
+    "Explicitness > Convenience",
+    "Strictness > Flexibility",
+    "Determinism > Adaptability"
+  ],
+  "systems": [
+    {
+      "name": "RFC Genome Pipeline",
+      "type": "offline/async",
+      "flow": ["Git -> Transcription -> RFC Database"],
+      "responsibility": "Transform human RFC Markdown into machine-readable JSON and store versioned immutable DB copies",
+      "couplingToScanner": false
+    },
+    {
+      "name": "Scanner Runtime Pipeline",
+      "type": "sync/deterministic",
+      "flow": ["RFC Database -> cd-api -> loadRfcContext() -> ZSP Engine -> Scanner"],
+      "responsibility": "Consume verified RFCs and drive deterministic scanner",
+      "access": "Only through cd-api",
+      "modification": false
+    }
+  ],
+  "rfcVersioning": {
+    "rfc-git-version": "Source Markdown tracked in Git, evolves over time",
+    "rfc-db-version": "Transcribed JSON version in DB, immutable at runtime",
+    "transcriptionGuarantees": [
+      "Consistency",
+      "Validation",
+      "Compliance"
+    ]
+  },
+  "backend": {
+    "cdApi": {
+      "controllers": [
+        {
+          "name": "CdBioEngineController",
+          "responsibilities": [
+            "Receive HTTP requests",
+            "Delegate actions to CdRfcService",
+            "Validation, persistence, audit logging, version enforcement",
+            "No runtime scanning execution"
+          ]
+        }
+      ],
+      "services": [
+        {
+          "name": "CdRfcService",
+          "responsibilities": [
+            "CRUD RFCs",
+            "Versioning & immutability",
+            "Transcription validation",
+            "Provide structured RFC JSON to controller"
+          ]
+        }
+      ],
+      "models": [
+        {
+          "name": "CdRfcModel",
+          "type": "Entity",
+          "fields": {
+            "rfcId": "PrimaryGeneratedColumn",
+            "rfcGuid": "string(36)",
+            "rfcName": "string(100)",
+            "rules": "JSON array",
+            "expressions": "JSON array",
+            "subsystem": "string(50)"
+          }
+        }
+      ]
+    }
+  },
+  "lifecycle": {
+    "creation": {
+      "description": "Git commit → CI Transcription → RFC DB",
+      "steps": [
+        "Author commits Markdown RFC",
+        "CI triggers Transcription Layer",
+        "Validate structure and schema",
+        "Convert Markdown → JSON (CD_CODES_STD format)",
+        "Persist JSON to RFC DB",
+        "Tag rfc-git-version",
+        "RFC DB version immutable at runtime"
+      ]
+    },
+    "consumption": {
+      "description": "DB → cd-api → loadRfcContext() → Scanner/ZSP",
+      "steps": [
+        "Scanner requests RFC intelligence via cd-api",
+        "CdBioEngineController resolves request",
+        "CdRfcService retrieves applicable RFC JSON",
+        "loadRfcContext() prepares structured JSON for ZSP",
+        "Scanner executes deterministic rules only"
+      ]
+    }
+  },
+  "mermaidDiagrams": {
+    "rfcGenomePipeline": "flowchart LR\nGit[RFC Markdown Repository] --> Transcription[Transcription Layer / CI]\nTranscription --> DB[(RFC Database)]",
+    "scannerRuntimePipeline": "flowchart LR\nDB[(RFC Database)] --> API[cd-api / CdBioEngineController]\nAPI --> loadRfcContext[loadRfcContext()]\nloadRfcContext --> ZSP[ZSP Engine]\nZSP --> Scanner[Scanner Engine / Γ Descriptor]",
+    "gitVsDbVersion": "flowchart LR\nGit[rfc-git-version] --> Transcription --> DB[rfc-db-version]\nDB --> API[cd-api]\nAPI --> Scanner[Scanner / ZSP]",
+    "allowedFlow": "flowchart LR\nScanner --> API[cd-api / CdBioEngineController]\nAPI --> DB[(RFC Database)]",
+    "disallowedFlow": "flowchart LR\nScanner -.-X DB[(RFC Database)]"
+  },
+  "compliance": {
+    "ruleMutation": "Impossible (scanner cannot modify RFCs)",
+    "ruleInconsistency": "Prevented by transcription pipeline",
+    "runtimeDrift": "Blocked by API mediation",
+    "heuristicCheating": "Blocked by strict ZSP + RFC"
+  },
+  "summary": [
+    "RFCs are immutable genetic code at runtime",
+    "Two-system separation: Genome pipeline (Git → DB) and Scanner runtime (DB → API → ZSP → Scanner)",
+    "cd-api hosts backend bio-engine",
+    "cd-cli/cd-shell executes deterministic scanner",
+    "Transcription ensures versioning, immutability, compliance",
+    "rfc-git-version evolves in Git, rfc-db-version drives runtime behavior"
+  ]
+}
+```
+
+---
+
+### ✅ Features of this Snapshot
+
+1. **Machine-readable** JSON, ready for ingestion into CI, IP documentation, or version control
+2. **Mermaid diagrams embedded as strings** for reproducible architecture visualization
+3. Explicit **backend and frontend separation** (`cd-api` vs `cd-cli`)
+4. **Lifecycle and versioning** clearly captured (`rfc-git-version` vs `rfc-db-version`)
+5. **Compliance & immutability** enforced by design
+
+---
+
+I can also **generate a “visual PDF / Mermaid-enabled Patent Document”** directly from this snapshot so it is ready for **formal filing or legal review**, with diagrams rendered inline.
+
+Do you want me to generate that next?
+
+
+////////////////////////////////////
+
+Below are the core codes that are involved in the bootstrap of cd-api requests. 
+At the main.ts, you should be able to see how it accepts connection to 
+<protocol>://<site>:<port>/{api or sio}
+Example: http://localhost:3001/api
+It can work as cd-api or configured(via .env) to work as cd-sio (socket.io server or push server for corpdesk system)
+cd-sio is the push server for corpdesk system. It shares codes with cd-api.
+You should then take a look at how index.ts, main.ts, init.ts and CdExec.ts form the core bootstrap.
+From this you will see how BaseService takes over to coordinate the rest of the system to work in the given space.
+
+
+```ts
+// index.ts
+#!/usr/bin/env ts-node
+import { Main } from './main';
+
+const app = new Main();
+app.run();
+```
+
+main.ts
+```ts
+// -----------------------------------------------------------------------------
+// Main application bootstrapper for Corpdesk
+// Responsible for:
+// - Express initialization
+// - HTTP / HTTPS server selection
+// - API, SIO, WSS orchestration
+// - Delegating actual work to services
+// -----------------------------------------------------------------------------
+
+import config from './config';
+import express, { Application, Request, Response } from 'express';
+import cors from 'cors';
+import 'reflect-metadata';
+import fs from 'fs';
+import path from 'path';
+import http from 'http';
+import https from 'https';
+
+// Database
+import { MysqlDataSource as ds } from './CdApi/sys/base/data-source';
+
+// Corpdesk engine
+import { CdInit } from './CdApi/init';
+
+// Logging
+import { Logging } from './CdApi/sys/base/winston.log';
+
+// Push services
+import { Server as SocketIOServer } from 'socket.io';
+import { createClient, RedisClientOptions } from 'redis';
+import Redis from 'ioredis';
+import { SioService } from './CdApi/sys/cd-push/services/sio.service';
+import { WebsocketService } from './CdApi/sys/cd-push/services/websocket.service';
+import pusher from './CdApi/sys/cd-push/services/pusher';
+import WebSocket from 'ws';
+
+// -----------------------------------------------------------------------------
+
+export class Main {
+  private logger = new Logging();
+  private app!: Application;
+
+  // ---------------------------------------------------------------------------
+  // Entry point
+  // ---------------------------------------------------------------------------
+  async run() {
+    this.logger.logInfo('Main::run()::start');
+
+    this.initExpress();
+    this.registerMiddleware();
+    this.registerRoutes();
+
+    // HTTP server for webroot (letsencrypt, static validation)
+    if (config.http.enabled) {
+      this.startHttpWebrootServer();
+    }
+
+    // Main API / Push server (HTTP or HTTPS based on SECURE)
+    const server = this.createApiServer();
+
+    // Socket.IO
+    if (config.pushService.sio.enabled) {
+      this.startSocketIO(server);
+    }
+
+    // Native WebSocket
+    if (config.pushService.wss.enabled) {
+      this.startWebSocket(server);
+    }
+
+    // Start listening
+    server.listen(config.apiPort, () => {
+      this.logger.logInfo(`API server listening`, {
+        port: config.apiPort,
+        secure: config.secure
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Express & middleware
+  // ---------------------------------------------------------------------------
+  private initExpress() {
+    this.app = express();
+  }
+
+  private registerMiddleware() {
+    this.app.use(cors(config.Cors.options));
+    this.app.use(express.json());
+
+    // Serve webroot for letsencrypt validation
+    this.app.use(
+      config.http.webroot,
+      express.static(path.join(__dirname, config.http.webroot))
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Routes
+  // ---------------------------------------------------------------------------
+  private registerRoutes() {
+    // Socket.IO registration endpoint
+    this.app.post('/sio/p-reg/', (req, res) => {
+      this.setApiHeaders(res);
+      CdInit(req, res);
+    });
+
+    // Main API entry
+    this.app.post(config.apiRoute, (req, res) => {
+      this.setApiHeaders(res);
+      CdInit(req, res, ds);
+    });
+
+    // Pusher endpoints
+    if (config.pushService.pusher.enabled) {
+      this.registerPusherRoutes();
+    }
+  }
+
+  private registerPusherRoutes() {
+    this.app.post('/notify', (req, res) => {
+      const { channel, event } = req.body;
+      pusher
+        .trigger(channel, event, { message: 'Notification' })
+        .then(() => res.sendStatus(200))
+        .catch(err => res.status(500).send(err.message));
+    });
+
+    this.app.post('/pusher/auth', (req, res) => {
+      const { socket_id, channel_name } = req.body;
+      res.send(pusher.authenticate(socket_id, channel_name));
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Server creation
+  // ---------------------------------------------------------------------------
+  private createApiServer(): http.Server | https.Server {
+    if (config.secure === 'true') {
+      this.logger.logInfo('Starting HTTPS API server');
+      return https.createServer(this.loadSslCredentials(), this.app);
+    }
+
+    this.logger.logInfo('Starting HTTP API server');
+    return http.createServer(this.app);
+  }
+
+  private startHttpWebrootServer() {
+    http
+      .createServer(this.app)
+      .listen(config.http.port, () => {
+        this.logger.logInfo(`HTTP webroot listening`, {
+          port: config.http.port
+        });
+      });
+  }
+
+  private loadSslCredentials() {
+    return {
+      key: fs.readFileSync(config.keyPath),
+      cert: fs.readFileSync(config.certPath),
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Socket.IO
+  // ---------------------------------------------------------------------------
+  private startSocketIO(server: http.Server | https.Server) {
+    const io = new SocketIOServer(server, {
+      cors: {
+        origin: config.Cors.options.origin,
+        credentials: true
+      }
+    });
+
+    const { pubClient, subClient } = this.createRedisClients();
+    const sio = new SioService();
+    sio.run(io, pubClient, subClient);
+  }
+
+  private createRedisClients() {
+    let pubClient: any;
+    let subClient: any;
+
+    switch (config.push.mode) {
+      case 'PUSH_CLUSTER':
+        pubClient = new Redis.Cluster(config.push.startupNodes);
+        break;
+      case 'PUSH_SENTINEL':
+        pubClient = new Redis(config.push.sentinalOptions);
+        break;
+      default:
+        pubClient = createClient({
+          host: config.push.redisHost,
+          port: config.push.redisPort,
+          legacyMode: true
+        } as RedisClientOptions);
+    }
+
+    subClient = pubClient.duplicate();
+    return { pubClient, subClient };
+  }
+
+  // ---------------------------------------------------------------------------
+  // WebSocket
+  // ---------------------------------------------------------------------------
+  private startWebSocket(server: http.Server | https.Server) {
+    const wss = new WebSocket.Server({ server, path: '/ws' });
+    const wsService = new WebsocketService();
+    wsService.run(wss);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Utilities
+  // ---------------------------------------------------------------------------
+  private setApiHeaders(res: Response) {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    );
+  }
+}
+
+```
+
+
+```ts
+// src/CdApi/init.ts
+import { Request, Response } from "express";
+import { CdRequest } from './sys/utils/request';
+const cdr = new CdRequest()
+import { CdExec } from './CdExec';
+export async function CdInit(req: Request, res: Response, ds=null) {
+    const r = await cdr.processPost(req, res, async () => {
+        const cb = new CdExec();
+        await cb.exec(req, res, ds);
+    });
+};
+```
+
+```ts
+// src/CdApi/CdExec.ts
+import { BaseService } from './sys/base/base.service';
+import { IRespInfo } from './sys/base/i-base';
+import { Logging } from './sys/base/winston.log';
+
+export class CdExec {
+    b: BaseService<any>;
+    logger: Logging;
+    constructor() {
+        this.b = new BaseService();
+        this.logger = new Logging();
+    }
+    async exec(req: Request, res: Response, ds=null) {
+        this.logger.logInfo('CdExec::exec()/01');
+        if (await this.b.valid(req as any, res as any)) {
+            this.logger.logInfo('CdExec::exec()/02');
+            try {
+                const pl = (req as any).post; // payload;
+                const ePath = this.b.entryPath(pl);
+                const clsCtx = {
+                    path: ePath,
+                    clsName: `${pl.c}Controller`,
+                    action: pl.a,
+                    dataSource: ds
+                }
+                // this.logger.logInfo('CdExec::exec()/clsCtx:', clsCtx)
+                await this.b.resolveCls(req as any, res as any, clsCtx);
+            } catch (e: any) {
+                this.logger.logInfo('CdExec::exec()/03');
+                const i: IRespInfo = {
+                    messages: e,
+                    code: 'CdExec:exec:01',
+                    app_msg: ''
+                }
+                await this.b.returnErr(req as any, res as any, i);
+            }
+        } else {
+            this.logger.logInfo('CdExec::exec()/04');
+            this.b.err.push('invalid request');
+            const i: IRespInfo = {
+                messages: this.b.err,
+                code: 'CdExec:exec:02',
+                app_msg: ''
+            }
+            await this.b.returnErr(req as any, res as any, i);
+        }
+    }
+}
+```
+
+```ts
+
+export class BaseService<
+  T extends ObjectLiteral,
+> extends AbstractBaseService<T> {
+  cdToken!: string;
+  cdResp: ICdResponse; // cd response
+  cls!: string;
+  err: string[] = []; // error messages
+  db: any;
+  // sqliteDb;
+  sqliteConn: any;
+  cuid = USER_ANON;
+  consumerGuid!: string;
+  debug = true;
+  pl: any;
+  svSess!: SessionService;
+  sess!: SessionModel[];
+  // sessDataExt: ISessionDataExt;
+  i: IRespInfo = {
+    messages: [],
+    code: "",
+    app_msg: "",
+    respState: {
+      cdLevel: CdResponseState.UNDEFINED,
+      cdDescription: undefined,
+      httpCode: HttpState.NO_CONTENT,
+      httpDescription: "",
+    },
+  };
+  isInvalidFields: string[] = [];
+  isRegRequest = false;
+  redisClient: any;
+  svRedis: RedisService;
+  logger: Logging;
+  // cdLog: CdLogger;
+  entityAdapter: EntityAdapter;
+
+  constructor() {
+    super();
+    // this.redisInit();
+    this.entityAdapter = new EntityAdapter();
+    this.cdResp = this.initCdResp();
+    this.logger = new Logging();
+    this.svRedis = new RedisService();
+  }
+  models = [];
+  sqliteModels = [];
+
+  repo: any;
+  private docRepository: any;
+  ds: any = null;
+
+  async init(req: Request, res: Response) {
+    this.logger.logDebug("BaseService::init()/01:");
+    try {
+      if (!this.db) {
+        this.logger.logDebug("BaseService::init()/02:");
+        this.db = new TypeOrmDatasource();
+        this.ds = await this.db.getConnection(); // ✅ Store DataSource
+      }
+      this.logger.logDebug("BaseService::init()/this.models:", this.models);
+    } catch (e: any) {
+      this.logger.logDebug("BaseService::init()/03:");
+      this.logger.logDebug(
+        `BaseService::init() failed:${(e as Error).message}`,
+      );
+      this.err.push(`BaseService::init() failed:${(e as Error).message}`);
+    }
+  }
+
+  async initSqlite(req: Request, res: Response) {
+    const iMax = 5;
+    const i = 1;
+    try {
+      this.logger.logDebug("BaseService::initSqlite()/01");
+      if (this.sqliteConn) {
+        this.logger.logDebug("BaseService::initSqlite()/02");
+      } else {
+        this.logger.logDebug("BaseService::initSqlite()/03");
+        // await this.setSLConn(i)
+        this.sqliteConn = await this.db;
+      }
+    } catch (e: any) {
+      this.logger.logDebug("BaseService::initSqlite()/04");
+      this.logger.logDebug("initSqlite()/Error:", e);
+      // const p = e.toString().search('AlreadyHasActiveConnectionError');
+      // if (p === -1 && i < iMax) {
+      //     i++;
+      //     await this.setSLConn(i);
+      // }
+      this.err.push(e.toString());
+    }
+  }
+
+  async setSLConn(i: any) {
+    // const slConfig: ConnectionOptions = await sqliteConfigFx(
+    //   `sqlite${i.toString()}`
+    // );
+    try {
+      await this.db.getConnection(`sqlite${i.toString()}`);
+      this.sqliteConn = await this.db
+        .getConnection(`sqlite${i.toString()}`)
+        .connect();
+    } catch (error) {
+      // this.sqliteConn = await createConnection(slConfig);
+    }
+  }
+
+  connSLClose() {
+    if (this.sqliteConn) {
+      this.sqliteConn.close();
+    }
+  }
+
+  /**
+   * resolve the class that is being called
+   * via module, controller(class) and action(method)
+   * @param req
+   * @param res
+   * @param clsCtx
+   * @returns
+   */
+  async resolveCls(req: Request, res: Response, clsCtx: any) {
+    const svSess = new SessionService();
+
+    try {
+      this.logger.logDebug("BaseService::resolveCls()/01:");
+      this.logger.logDebug("BaseService::resolveCls/clsCtx.path:", clsCtx.path);
+
+      // 1. Import controller module safely
+      let eImport: any;
+      try {
+        eImport = await import(clsCtx.path);
+      } catch (err) {
+        this.logger.logDebug("BaseService::resolveCls()/02:");
+        const eCode = "BaseService:resolveCls";
+        const i = {
+          messages: [
+            `Controller file not found at path: ${clsCtx.path};Error:${(err as Error).toString()}`,
+          ],
+          code: eCode,
+          app_msg: `Error at ${eCode}: Missing controller file:Error:${(err as Error).toString()}`,
+        };
+        await this.setAppState(false, i, svSess.sessResp);
+        return await this.respond(req as any, res as any);
+      }
+
+      this.logger.logDebug("BaseService::resolveCls()/03:");
+
+      // 2. Validate controller class
+      const eCls = eImport[clsCtx.clsName];
+      if (!eCls) {
+        this.logger.logDebug("BaseService::resolveCls()/04:");
+        const eCode = "BaseService:resolveCls";
+        const i = {
+          messages: [
+            `Controller class '${clsCtx.clsName}' not found in ${clsCtx.path}`,
+          ],
+          code: eCode,
+          app_msg: `Error at ${eCode}: Invalid controller class.`,
+        };
+        await this.setAppState(false, i, svSess.sessResp);
+        return await this.respond(req as any, res as any);
+      }
+
+      this.logger.logDebug("BaseService::resolveCls()/05:");
+
+      // 3. Instantiate controller
+      const cls = new eCls();
+      this.ds = clsCtx.dataSource;
+
+      this.logger.logDebug(
+        `BaseService::resolveCls()/(req as any).post:${inspect((req as any).post)}`,
+      );
+      this.logger.logDebug("BaseService::resolveCls()/06:");
+
+      // 4. Add session data if available
+      if (this.sess) {
+        (req as any).post.sessData = this.sess;
+      }
+
+      // 5. Validate action existence
+      if (typeof cls[clsCtx.action] !== "function") {
+        this.logger.logDebug("BaseService::resolveCls()/07:");
+        const eCode = "BaseService:resolveCls";
+        const i = {
+          messages: [
+            `Action '${clsCtx.action}' not found in controller '${clsCtx.clsName}'`,
+          ],
+          code: eCode,
+          app_msg: `Error at ${eCode}: Invalid controller action.`,
+        };
+        await this.setAppState(false, i, svSess.sessResp);
+        return await this.respond(req as any, res as any);
+      }
+      this.logger.logDebug("BaseService::resolveCls()/08:");
+      // 6. Execute controller action
+      await cls[clsCtx.action](req, res);
+    } catch (e: any) {
+      await this.serviceErr(req, res, e, "BaseService:resolveCls");
+    }
+  }
+
+  async serviceErr(
+    req: Request,
+    res: Response,
+    e: any,
+    eCode: any,
+    lineNumber?: any,
+  ) {
+    const svSess = new SessionService();
+    try {
+      svSess.sessResp.cd_token = (req as any).post.dat.token;
+    } catch (er) {
+      svSess.sessResp.cd_token = "";
+      this.err.push(e.toString(er));
+    }
+
+    svSess.sessResp.ttl = svSess.getTtl();
+    this.setAppState(true, this.i, svSess.sessResp);
+    this.err.push(e.toString());
+    const i = {
+      messages: await this.err,
+      code: eCode,
+      app_msg: `Error at ${eCode}: ${e.toString()}`,
+    };
+    await this.setAppState(false, i, svSess.sessResp);
+    this.cdResp.data = [];
+    return await this.respond(req as any, res as any);
+  }
+
+  async returnErr(req: Request, res: Response, i: IRespInfo) {
+    const sess = this.getSess(req, res);
+    await this.setAppState(false, i, sess);
+    return await this.respond(req as any, res as any);
+  }
+
+  entryPath(pl: ICdRequest) {
+    this.logger.logDebug("BaseService::entryPath/pl:", pl);
+    const ret = `../../${pl.ctx.toLowerCase()}/${this.toCdName(
+      pl.m,
+    )}/controllers/${this.toCdName(pl.c)}.controller`;
+    this.logger.logDebug("BaseService::entryPath()/ret:", ret);
+    return ret;
+  }
+
+  // from camel to hyphen seperated then to lower case
+  toCdName(camel: string) {
+    this.logger.logDebug("BaseService::entryPath/camel:", camel);
+    const ret = camel.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+    this.logger.logDebug("BaseService::toCdName()/ret:", ret);
+    return ret;
+  }
+
+  async valid(req: Request, res: Response): Promise<boolean> {
+    const pl = (req as any).post;
+    this.logger.logDebug("BaseService::valid()(req as any).post:", {
+      pl: JSON.stringify((req as any).post),
+    });
+    this.pl = pl;
+    if (await this.noToken(req, res)) {
+      return true;
+    } else {
+      if (!this.cdToken) {
+        await this.setSess(req, res);
+      }
+      if (!this.instanceOfCdResponse(pl)) {
+        return false;
+      }
+      if (!this.validFields(req, res)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  async noToken(req: Request, res: Response) {
+    this.logger.logDebug("BaseService::noToken()/01");
+    this.logger.logDebug("BaseService::noToken()/(req as any).post:", {
+      pl: JSON.stringify((req as any).post),
+    });
+    const pl = (req as any).post;
+    const ctx = pl.ctx;
+    const m = pl.m;
+    const c = pl.c;
+    const a = pl.a;
+    let ret: boolean = false;
+    if (!ctx || !m || !c || !a) {
+      this.setInvalidRequest(req, res, "BaseService:noTocken:01");
+    }
+
+    /**
+     * conditions that are allowed without token requirement
+     */
+    if (
+      m === "User" &&
+      (a === "Login" || a === "Register" || a === "ActivateUser")
+    ) {
+      this.logger.logDebug("BaseService::noToken()/02");
+      if (m === "User" && a === "Register") {
+        this.logger.logDebug("BaseService::noToken()/03");
+        this.isRegRequest = true;
+      }
+      ret = true;
+    }
+    // exempt reading list of consumers. Required during registration when token is not set yet
+    if (m === "Moduleman" && c === "Consumer" && a === "GetAll") {
+      ret = true;
+    }
+    // exempt anon menu calls
+    if (m === "Moduleman" && c === "Modules" && a === "GetAll") {
+      ret = true;
+    }
+
+    // exempt websocket initialization calls
+    if (m === "CdPush" && c === "Websocket" && a === "Create") {
+      ret = true;
+    }
+
+    // exampt mpesa call backs
+    if ("MSISDN" in pl) {
+      ret = true;
+    }
+    this.logger.logDebug("BaseService::noToken()/returning ret:", {
+      return: ret,
+    });
+    return ret;
+  }
+
+  isRegisterRequest() {
+    return this.isRegRequest;
+  }
+
+  /**
+   * implement validation of fields
+   * @param req
+   * @param res
+   * @returns
+   */
+  validFields(req: Request, res: Response) {
+    /**
+     * 1. deduce model directory from the (req as any).post
+     * 2. import model
+     * 3. verify if fields exists
+     */
+    return true;
+  }
+
+  instanceOfCdResponse(object: any): boolean {
+    return (
+      "ctx" in object &&
+      "m" in object &&
+      "c" in object &&
+      "a" in object &&
+      "dat" in object &&
+      "args" in object
+    );
+  }
+
+  /**
+   * for setting up response details
+   * @param Success
+   * @param Info
+   * @param Sess
+   */
+  
+  async setAppState(
+    succ: boolean,
+    i: IRespInfo = this.i,
+    ss: ISessResp | null = null,
+  ) {
+    this.logger.logDebug("BaseService::setAppState()/01");
+
+    if (succ === false) {
+      this.logger.logDebug("BaseService::setAppState()/02");
+      i.messages = this.err;
+      this.cdResp.data = [];
+    }
+    // if(this.sess){
+    //   this.setClientId(ss, this.sess[0]);
+    // } else {
+    //   this.logger.logDebug('BaseService::setAppState()/03')
+    //   CdLogger.warn('session is not set')
+    // }
+
+    const sess = ss ?? this.cdResp.app_state.sess;
+
+    this.logger.logDebug("BaseService::setAppState()/ss:", sess as any);
+    this.cdResp.app_state = {
+      success: succ,
+      info: i,
+      sess,
+      cache: {},
+      sConfig: {
+        usePush: config.usePolling,
+        usePolling: config.usePush,
+        useCacheStore: config.useCacheStore,
+      },
+    };
+  }
+
+  
+  setInvalidRequest(req: Request, res: Response, eCode: string) {
+    this.err.push(INVALID_REQUEST);
+    const i: IRespInfo = {
+      messages: this.err,
+      code: eCode,
+      app_msg: "",
+    };
+    const sess = this.getSess(req, res);
+    this.setAppState(false, i, sess);
+    res.status(200).json(this.cdResp);
+  }
+
+  getSess(req: Request, res: Response) {
+    return null; // yet to implement
+  }
+
+  
+  initCdResp(): ICdResponse {
+    return {
+      app_state: {
+        success: false,
+        info: {
+          messages: [],
+          code: "",
+          app_msg: "",
+          respState: {
+            cdLevel: CdResponseState.UNDEFINED,
+            cdDescription: "",
+            httpCode: HttpState.NO_CONTENT,
+            httpDescription: "",
+          },
+        },
+        sess: {
+          cd_token: this.getGuid(),
+          jwt: null,
+          ttl: 0,
+        },
+        cache: {},
+        sConfig: {
+          usePush: config.usePolling,
+          usePolling: config.usePush,
+          useCacheStore: config.useCacheStore,
+        },
+      },
+      data: {},
+    };
+  }
+
+  
+
+  async respond(req: Request, res: Response) {
+    this.logger.logDebug("**********starting respond(res)*********");
+    let ret;
+    try {
+      this.logger.logDebug("BaseService::respond(res)/this.pl:", {
+        post: (req as any).post,
+      });
+      this.logger.logDebug("BaseService::respond(res)/this.cdResp:", {
+        cdResp: this.cdResp,
+      });
+
+      const finalResp = await this.preFlight(req, res);
+      ret = res.status(200).json(finalResp);
+    } catch (e: any) {
+      this.err.push(e.toString());
+    }
+    return ret;
+  }
+
+  
+  async preFlight(req: Request, res: Response) {
+    this.logger.logDebug("**********starting preFlight(res)*********");
+    this.logger.logDebug(
+      `BaseService::getPlData()/this.cdResp:`,
+      JSON.stringify(this.cdResp),
+    );
+
+    // Step 1: Sanitize the cdResp data safely
+    const sanitizedCdResp = this.deepSanitize(this.cdResp);
+    // Step 2: Safely stringify the sanitized response
+    let safeResp = JsonHelper.safeStringify(sanitizedCdResp);
+    // Step 3: Detect if [Circular] marker exists
+    if (safeResp.includes("[Circular]")) {
+      try {
+        safeResp = this.setCircularError(safeResp);
+      } catch (e: any) {
+        this.logger.logWarn("An attempt to set error condition failed");
+        this.logger.logError(e.toString());
+      }
+    }
+    this.logger.logDebug(`BaseService::getPlData()/15`);
+
+    // Return the final response (JSON parsed again)
+    return JSON.parse(safeResp);
+  }
+
+  
+  /**
+   *
+   * @param req
+   * @param res
+   * @param result
+   * @param iCode
+   */
+  successResponse(req: Request, res: Response, result: any, appMsg = null) {
+    if (appMsg) {
+      this.i.app_msg = appMsg;
+    }
+    const svSess = new SessionService();
+    svSess.sessResp.cd_token = (req as any).post.dat.token;
+    svSess.sessResp.ttl = svSess.getTtl();
+    this.setAppState(true, this.i, svSess.sessResp);
+    this.cdResp.data = result;
+    this.respond(req as any, res as any);
+  }
+
+  
+}
+
+```
+
+//////////////////////////////////////////
+
+With that background, and reference to CdWire, you will see how everything falls into play.
+I have shared the core interfaces responsiple for request/response and the document that guides the concept, CdWire.
+
+Some interfaces based on CdWire
+```ts
+// src/CdApi/sys/base/i-base.ts
+
+/**
+ * -------------------------------------------------------------------------------------------------------------------------
+ * interface ICdRequest:
+ * -------------------------------------------------------------------------------------------------------------------------
+ * This is the interface for network request.
+ * The request can target an Corpdesk API, cd-api, 
+ * or sent via Corpdesk Websocket server, cd-sio to target another
+ * frontend corpdesk module. When used in cd-sio, it can have multiple targets.
+ * A given request can also nest another request as per developer requrements.
+ * 
+ * "Sys" as a value for ICdRequest.ctx implies the target module resides in the system directory of the target api.
+ * System directory hosts modules that are meant to offer common services to general applications.
+ * Corpdesk system directory can be visualised as the operating system packages shipped with Corpdesk to support "Apps".
+ * There are also "Apps" developed by corpdesk developers but resides in "app" directory. 
+ * These application are the types that are not core to operation of any Corpdesk application. 
+ * For example accounts package or any application for business operation
+ * "App" as a value for ICdRequest.ctx implies the target module resides in the application directory of the target api.
+ * Applications are general applications that can be developed by 3rd party developers.
+ * 
+ * Case convention:
+ * ctx: camel case with first character being capital.
+ * m: camel case with first character being capital.
+ * c: camel case with first character being capital.
+ * a: camel case with first character being capital.
+ * 
+ * TODO:
+ * It must be said that these solutions are constantly being tested and refined. 
+ * There are several finer points which were implemented much earlier but later refinment of policy makes them anti-pattern. Changing them can break existing application.
+ * Such modifications will requre careful planning
+ * Below are some identified areas for change:
+ * token name: Session token key name needs to be standardised. During corpdesk development it has aquired a number of references.
+ * Eg "token", "cdToken", "cd-token", "sid". 
+ * There is need to standardise how it gets refered and identified by consistent name
+ * 
+ * Example:
+ * In the example below, the request is targeting "User" module, "User" controller and the action is "Login"
+ * The data input is based on the IUserModule at the api. In this case what is requred is userName, password
+ * The way it has been used here is an anti-pattern.
+ * consumerGuid is part of IConsumer interface.
+ * If you examine the interface EnvelopFValItem, which form part of ICdRequest, there is the option of extData
+ * So the base place for consumerGuid is extData.
+ * The object below is how it was coded before refinement of interface policy.
+ * This correction will have to be made at a later date.
+ * 
+ * {
+    "ctx": "Sys",
+    "m": "User",
+    "c": "User",
+    "a": "Login",
+    "dat": {
+        "f_vals": [
+        {
+            "data": {
+            "userName": "karl",
+            "password": "secret",
+            "consumerGuid": "B0B3DA99-1859-A499-90F6-1E3F69575DCD"
+            }
+        }
+        ],
+        "token": null
+    },
+    "args": null
+    }
+ */
+export interface ICdRequest {
+  ctx: string; // can be either "Sys" or "App"
+  m: string; // target module name. Note that at the source codes, the full name has "Module" word following the given name here.
+  c: string; // target controler name. Note that at the source codes, the full name has "Controller" word following the given name here.
+  a: string; // target action name
+  dat: EnvelopDat; // payload data
+  args: any | null; // for future or forseable extension. Was set at design time but has not been used so far. Recommended to be kept as is
+}
+
+export interface EnvelopDat {
+  f_vals: EnvelopFValItem[]; // settings for the command. The array dimension was meant to have capacity for sending multiple commands in the future
+  token: string | null; // session token.
+}
+
+export interface EnvelopFValItem {
+  query?: IQuery; // see  IQuery notes
+  data?: any; // set according to the interface of a given Corpdesk controller interface. This is synonimous with model of a given entity targeting a database table or similar
+  extData?: any; // for use in scenario where extra data is used to complete the command. For example when the target action need pre or post process. The details are set by develper at the controller action
+  /**
+   * Developer-specific objects (like cdObj, userObj, etc.)
+   * Any additional property is allowed here.
+   */
+  [key: string]: any;
+}
+
+/**
+ * for setting up query akin to sql query but can also be used against non-sql queries.
+ * At its best the syntx should not be dependent on target data store type.
+ */
+export interface IQuery {
+  select?: string[];
+  update?: object;
+  where: IQueryWhere;
+  jsonUpdate?: IJsonUpdate[] | JSDPInstruction[]; // This was developed for JSON columns. Its use can be found in the implementation of UserProfile and how CoopMemberProfile has extended UserProfile
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+  jFilters?: IJFilter[];
+  order?: any;
+  class?: string;
+  extData?: any; // any extra data
+}
+
+// Recursive support for nested 'andWhere' and 'orWhere'
+export interface IQueryWhere {
+  andWhere?: Array<IQueryWhere | { [field: string]: any }>;
+  orWhere?: Array<IQueryWhere | { [field: string]: any }>;
+
+  // legacy-compatible flat conditions
+  [field: string]: any;
+}
+
+// custom json update
+export interface IJsonUpdate {
+  modelField?: string; // name of the json column. Capacity to update multiple json columns in a given row
+  path: any; // path to a target item in JSON data
+  value: any; // value to apply to a tarteg item
+  action: string; // CRUD option
+}
+
+// json field filter
+export interface IJFilter {
+  jField: string;
+  jPath: string;
+  pathValue: any;
+}
+
+export interface IQbInput<T> {
+  select?: string[];
+  update?: object;
+  where: FindOptionsWhere<T>; // Change from IQbFilter[] to FindOptionsWhere<T>
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+}
+
+/**
+ * constraining the update attribute to specific models in different services.
+ * By using Array<keyof T> for the select attribute, you constrain the select array to valid fields of the model type T.
+ * This approach improves type safety and ensures that you don't accidentally select invalid fields.
+ * This type-safe approach helps prevent errors at compile-time, making your code more reliable and maintainable.
+ */
+export interface QueryInput {
+  select?: string[];
+  where?: any; // Already exists, but we'll use it for dynamic WHERE conditions
+  update?: Record<string, any>; // New property to specify which fields to update
+  take?: number;
+  skip?: number;
+}
+
+// query builder filter
+export interface IQbFilter {
+  field: string;
+  operator: string;
+  val: string;
+  conjType?: string;
+  dataType: string;
+  jPath?: string;
+}
+
+/**
+ * -------------------------------------------------------------------------------------------------------------------------
+ * interface ICdResponse
+ * -------------------------------------------------------------------------------------------------------------------------
+ * This is the interface for response data
+ * It has two sections.
+ * 1. app_state
+ * 2. data
+ *
+ */
+export interface ICdResponse {
+  app_state: {
+    success: boolean; // tels whether the process was successfull or not
+    info: IRespInfo; // status messages including error details if any or standard message of success
+    sess: ISessResp; // session status data
+    cache: object;
+    sConfig?: IServerConfig;
+  };
+  data: object;
+}
+
+export interface IRespInfo {
+  messages: string[]; // array of errors encountered
+  code: string; // error code. Corpdesk uses this to code the exact spot of error by controller and action
+  app_msg: any; // general response message (can be set with string, or null)
+
+  // Merged state into a single property `respState`
+  respState?: {
+    cdLevel: CdResponseState; // -1 for error, 0 for success, 1 for warning, etc.
+    cdDescription?: string; // Custom description for Corpdesk-specific state
+
+    httpCode: HttpState; // HTTP status code (e.g., 200, 400, etc.)
+    httpDescription?: string; // HTTP status description (e.g., "OK", "Bad Request")
+  };
+}
+
+```
+
+Reference:
+# Corpdesk Wire Protocol (RFC-0003)
+
+## 1. Introduction
+
+**CdWire** is the official communication protocol of the Corpdesk ecosystem. It defines how applications, modules, and services communicate with each other in a consistent, structured, and transport-agnostic manner. Unlike REST, GraphQL, or gRPC, CdWire is descriptor-driven, meaning that execution is guided by the metadata and descriptors defined in the Corpdesk architecture. This allows for seamless automation, introspection, and interoperability across frontend, backend, CLI, and in-memory workflows.
+
+This RFC supersedes ad-hoc references to CdWire in **RFC-0001** and defines it formally as a standalone protocol.
+
+---
+
+## 2. Objectives
+
+CdWire was designed to:
+
+* Enable **descriptor-centric execution** across all Corpdesk environments.
+* Provide a **transport-agnostic** mechanism (HTTP, CLI, in-memory).
+* Support **consistent return contracts** via `CdFxReturn<T>`.
+* Allow **semantic state mapping** using `CdFxStateLevel`.
+* Reduce boilerplate through declarative task invocation.
+
+---
+
+## 3. Protocol Components
+
+### 3.1 Some Key Interfaces:
+
+
+```ts
+/**
+ * This is an effort to standardize corpdesk return by a function or method.
+ * All corpdesk functions and methods are expected to implement CdFxReturn (progressively)
+ * - Consistency Across All Corpdesk Applications
+ * - Safer Type Handling
+ * - Improved Error Handling
+ * interface as a return type.
+ * Proposed: 6th Feb 2025
+ * Adoption is meant to be progressive over time.
+ * The principle if borrowed from Go's tuple returns
+ * @data: T | null;
+ * @state: boolean;
+ * @message?: string; // Optional error/success message
+ */
+export interface CdFxReturn<T> {
+  data?: T | null;
+  state: boolean | CdFxStateLevel; // Interpreted through semantic map
+  message?: string | null;
+}
+
+export enum CdFxStateLevel {
+  Error = 0,
+  Success = 1,
+  PartialSuccess = 2,
+  LogicalFailure = 3,
+  Warning = 4,
+  Recoverable = 5,
+  Info = 6,
+  Pending = 7,
+  Cancelled = 8,
+  NotFound = 9,
+  NotImplemented = 10,
+  SystemError = 11,
+  Fatal = 12,
+  Unknown = 13,
+  NetworkError = 17,
+  PermissionDenied = 18,
+}
+
+// ─── Assertion Return Type ────────────────────────
+export type CdAssertReturn = CdFxReturn<boolean>;
+
+export interface FxStateMeta {
+  key: string;
+  label: string;
+  color?: string;
+  icon?: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  category?: 'error' | 'success' | 'warning' | 'info';
+}
+
+export interface FxStateSemantics {
+  mapping: Record<keyof typeof CdFxStateLevel, FxStateMeta>;
+}
+
+// ✅ Default returns for each CdFxStateLevel
+
+export const CD_FX_SUCCESS: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Success,
+  message: 'Success!',
+};
+
+export const CD_FX_FAIL: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Error,
+  message: 'Failed!',
+};
+
+export const CD_FX_PARTIAL_SUCCESS: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.PartialSuccess,
+  message: 'Partial success.',
+};
+
+export const CD_FX_LOGICAL_FAILURE: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.LogicalFailure,
+  message: 'Logical failure.',
+};
+
+export const CD_FX_WARNING: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Warning,
+  message: 'Warning issued.',
+};
+
+export const CD_FX_RECOVERABLE: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Recoverable,
+  message: 'Recoverable state.',
+};
+
+export const CD_FX_INFO: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Info,
+  message: 'Informational message.',
+};
+
+export const CD_FX_PENDING: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Pending,
+  message: 'Pending operation.',
+};
+
+export const CD_FX_CANCELLED: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Cancelled,
+  message: 'Operation cancelled.',
+};
+
+export const CD_FX_NOT_FOUND: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.NotFound,
+  message: 'Not found.',
+};
+
+export const CD_FX_NOT_IMPLEMENTED: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.NotImplemented,
+  message: 'Not implemented yet.',
+};
+
+export const CD_FX_SYSTEM_ERROR: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.SystemError,
+  message: 'System-level error occurred.',
+};
+
+export const CD_FX_FATAL: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Fatal,
+  message: 'Fatal error.',
+};
+
+export const CD_FX_UNKNOWN: CdFxReturn<null> = {
+  data: null,
+  state: CdFxStateLevel.Unknown,
+  message: 'Unknown state or error.',
+};
+
+export interface ICdRequest {
+  ctx: string;
+  m: string;
+  c: string;
+  a: string;
+  dat: EnvelopDat;
+  args: any | null;
+}
+
+export interface EnvelopDat {
+  f_vals: EnvelopFValItem[];
+  token: string | null;
+}
+
+export interface EnvelopFValItem {
+  query?: IQuery | null;
+  data?: any;
+  extData?: any;
+  jsonUpdate?: any;
+  /**
+   * Developer-specific objects (like cdObj, userObj, etc.)
+   * Any additional property is allowed here.
+   */
+  [key: string]: any;
+}
+
+/** Fields managed by backend that must not be supplied by client */
+export const MANAGED_FIELDS = ['Guid', 'docId', 'Enabled'];
+
+export interface ICdResponse {
+  app_state: IAppState;
+  data: any;
+}
+
+export interface IAppState {
+  success: boolean;
+  info: IRespInfo | null;
+  sess: ISessResp | null;
+  cache: object | null;
+  sConfig?: IServerConfig;
+}
+
+export interface IServerConfig {
+  usePush: boolean;
+  usePolling: boolean;
+  useCacheStore: boolean;
+}
+
+export interface IRespInfo {
+  messages: string[];
+  code: string | null;
+  app_msg: string | null;
+}
+
+export interface ISessResp {
+  cd_token?: string;
+  userId?: number | string | null;
+  jwt: {
+    jwtToken: string | null;
+    checked: boolean;
+    checkTime: number | null;
+    authorized: boolean;
+    ttl: number | null;
+  } | null;
+  ttl: number;
+  initUuid?: string;
+  initTime?: string;
+}
+```
+
+* **ctx**: context (usually module scope)
+* **m**: method
+* **c**: controller
+* **a**: action
+* **dat**: encapsulated data (form values, token, etc.)
+* **args**: direct argument payload
+
+### 3.2 Response (ICdResponse)
+
+Typical HTTP-mode responses return:
+
+```ts
+export interface ICdResponse {
+  app_state: IAppState;
+  data: any;
+}
+
+export interface IAppState {
+  success: boolean;
+  info: IRespInfo | null;
+  sess: ISessResp | null;
+  cache: object | null;
+  sConfig?: IServerConfig;
+}
+```
+
+This structure provides session, configuration, and messaging information, enabling browser apps and remote clients to maintain state.
+
+### 3.3 Internal Returns (CdFxReturn)
+
+Within Corpdesk services and workflows, methods must return `CdFxReturn<T>`:
+
+```ts
+export interface CdFxReturn<T> {
+  data?: T | null;
+  state: boolean | CdFxStateLevel;
+  message?: string | null;
+}
+```
+
+#### CdFxStateLevel
+
+```ts
+export enum CdFxStateLevel {
+  Error = 0,
+  Success = 1,
+  PartialSuccess = 2,
+  LogicalFailure = 3,
+  Warning = 4,
+  Recoverable = 5,
+  Info = 6,
+  Pending = 7,
+  Cancelled = 8,
+  NotFound = 9,
+  NotImplemented = 10,
+  SystemError = 11,
+  Fatal = 12,
+  Unknown = 13,
+}
+```
+
+This enables **semantic-rich error and state handling** across the stack.
+
+---
+
+## 4. Features
+
+* **Descriptor-Centric**: Executes methods based on descriptors (modules, controllers, services).
+* **Transport-Neutral**: Works over HTTP, CLI, or in-memory.
+* **Unified Contract**: Enforces `CdFxReturn<T>`.
+* **Automation-Ready**: Aligns with CdCLI (RFC-0002) and module descriptors (RFC-0001).
+
+---
+
+## 5. Example: CLI Invocation
+
+```ts
+const request: ICdRequest = {
+  ctx: 'user',
+  m: 'user-management',
+  c: 'user',
+  a: 'createUser',
+  dat: { f_vals: [], token: null },
+  args: { name: 'George', role: 'admin' },
+};
+
+const response: CdFxReturn<User> = await executeCdRequest(request);
+
+if (response.state === CdFxStateLevel.Success) {
+  console.log('User created:', response.data);
+} else {
+  console.warn('Failed:', response.message);
+}
+```
+
+---
+
+## 6. Comparison
+
+| Feature            | REST        | GraphQL     | gRPC       | **CdWire**      |
+| ------------------ | ----------- | ----------- | ---------- | --------------- |
+| Query Format       | URL + Body  | GraphQL DSL | Protobuf   | JSON Descriptor |
+| Transport          | HTTP        | HTTP        | HTTP/2     | Any             |
+| Schema             | OpenAPI     | SDL         | Protobuf   | Descriptor JSON |
+| Return Format      | Raw JSON    | Raw JSON    | Protobuf   | `CdFxReturn<T>` |
+| Response Semantics | HTTP Status | N/A         | gRPC Codes | CdFxStateLevel  |
+| Use in CLI         | ❌           | ❌           | ❌          | ✅               |
+| Use in Workflows   | ⚠️ Partial  | ⚠️ Limited  | ❌          | ✅               |
+
+---
+
+## 7. Future Scope
+
+* SDKs for Python, Go, Rust.
+* Descriptor registry and validation tools.
+* Integration with runtime module loader (RFC-0004).
+* Inspector and debugging adapters.
+
+---
+
+## 8. Conclusion
+
+CdWire is the backbone protocol of Corpdesk, designed to unify communication across all environments. By enforcing descriptor-driven execution and semantic return contracts, it provides a robust foundation for scalable, automated, and AI-assisted development.
+
+---
+
+### Document Version: RFC-0003
+
+Status: Draft
+Published: August 17, 2025
+Updated: August 17, 2025
+Author: George Oremo
+Use Case: Documentation, Standardization, Protocol Definition
+
+
+---
+
+Let us know if you'd like to adopt **CdWire** in your system. We welcome community feedback and contributions.
+
 
 
 
