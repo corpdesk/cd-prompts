@@ -171,3 +171,81 @@ In zygote scanning,
 - is there need to detect language
 - Is there need to detect application type (cli, pwa, api, web-app etc)
 
+
+Update on subsystems:
+- change controllerData to entityData
+- change CreateIParams to IExtServiceInput
+- 
+
+//////////////////////////
+
+# 1. Standardize ALL repos to ESM
+
+## ALL:
+
+```json id="44v9sp"
+"type": "module"
+```
+
+---
+
+# 2. Standardize tsconfig
+
+## ALL:
+
+```json id="td3dx1"
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "baseUrl": "./src"
+  }
+}
+```
+/////////////////////////////////////////////////////
+
+# 3. Introduce universal aliases
+
+Example:
+
+```json id="jlwm4l"
+"paths": {
+  "@app/*": ["./app/*"],
+  "@sys/*": ["./sys/*"],
+  "@core/*": ["./core/*"],
+  "@config/*": ["./configs/*"],
+  "@bio/*": ["./bio/*"]
+}
+```
+
+/////////////////////////////////////////////////
+# 🚀 Recommended Immediate Practical Move
+
+Before any more large feature work:
+
+# Create a shared config package
+
+Example:
+
+```text id="a9s2a9"
+corpdesk-tsconfig
+```
+
+containing:
+
+* base tsconfig
+* aliases
+* NodeNext settings
+* ESM standards
+
+Then ALL repos extend it.
+
+Example:
+
+```json id="m7juyc"
+{
+  "extends": "@corpdesk/tsconfig/base.json"
+}
+```
+

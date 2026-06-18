@@ -21557,6 +21557,14681 @@ Use Case: Documentation, Standardization, Protocol Definition
 Let us know if you'd like to adopt **CdWire** in your system. We welcome community feedback and contributions.
 
 
+////////////////////////////////////////////////////
+
+Now that you have an idea how cd-api is bootstrapped, we need to work on the backend of cd-bio-engine that has the facility to pick machine readable RFCs and save to database. So when cd-cli queries backend for RFCs(DNA), upto date versions are avialbe.
+Reference for this proces. 
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/9.%20zygote-capture-and-execution-model-3.md
+
+
+////////////////////////////////////////
+
+Below are examples of controllers, models and services for cd-api.
+This will give a clear picture on how cd-bio-engine should be worked out at code level.
+
+```ts
+
+@Entity({
+  name: "user",
+  synchronize: false,
+})
+// @CdModel
+export class UserModel {
+  b?: BaseService;
+
+  @PrimaryGeneratedColumn({
+    name: "user_id",
+  })
+  userId?: number;
+
+  @Column({
+    name: "user_guid",
+    length: 36,
+    default: uuidv4(),
+  })
+  userGuid?: string;
+
+  @Column("varchar", {
+    name: "user_name",
+    length: 50,
+    nullable: true,
+  })
+  userName: string;
+
+  @Column("char", {
+    name: "password",
+    length: 60,
+    default: null,
+  })
+  password?: string;
+
+  @Column("varchar", {
+    length: 60,
+    unique: true,
+    nullable: true,
+  })
+  @IsEmail()
+  email?: string;
+
+  @Column({
+    name: "company_id",
+    default: null,
+  })
+  // @IsInt()
+  companyId?: number;
+
+  @Column({
+    name: "doc_id",
+    default: null,
+  })
+  // @IsInt()
+  docId?: number;
+
+  @Column({
+    name: "mobile",
+    default: null,
+  })
+  mobile?: string;
+
+  @Column({
+    name: "gender",
+    default: null,
+  })
+  gender?: number;
+
+  @Column({
+    name: "birth_date",
+    default: null,
+  })
+  // @IsDate()
+  birthDate?: Date;
+
+  @Column({
+    name: "postal_addr",
+    default: null,
+  })
+  postalAddr?: string;
+
+  @Column({
+    name: "f_name",
+    default: null,
+  })
+  fName?: string;
+
+  @Column({
+    name: "m_name",
+    default: null,
+  })
+  mName?: string;
+
+  @Column({
+    name: "l_name",
+    default: null,
+  })
+  lName?: string;
+
+  @Column({
+    name: "national_id",
+    default: null,
+  })
+  // @IsInt()
+  nationalId?: number;
+
+  @Column({
+    name: "passport_id",
+    default: null,
+  })
+  // @IsInt()
+  passportId?: number;
+
+  @Column({
+    name: "user_enabled",
+    default: null,
+  })
+  userEnabled?: boolean;
+
+  @Column("char", {
+    name: "zip_code",
+    length: 5,
+    default: null,
+  })
+  zipCode?: string;
+
+  @Column({
+    name: "activation_key",
+    length: 36,
+    default: uuidv4(),
+  })
+  activationKey?: string;
+
+  @Column({
+    name: "user_type_id",
+    default: null,
+  })
+  userTypeId?: number;
+
+  @Column({
+    name: "user_profile",
+    default: null,
+  })
+  // userProfile?: string | ObjectLiteral;
+  userProfile?: string;
+
+  @OneToMany((type) => DocModel, (doc) => doc.user) // note: we will create user property in the Docs class
+  docs?: DocModel[];
+
+  // HOOKS
+  @BeforeInsert()
+  @BeforeUpdate()
+  async validate?() {
+    await validateOrReject(this);
+  }
+}
+
+export interface IUserProfileAccess {
+  userPermissions: IProfileUserAccess[];
+  groupPermissions: IProfileGroupAccess[];
+}
+
+/**
+ * Improved versin should have just one interface and
+ * instead of userId or groupId, cdObjId is applied.
+ * This would then allow any object permissions to be set
+ * Automation and 'role' concept can then be used to manage permission process
+ */
+export interface IProfileUserAccess {
+  userId: number;
+  hidden: boolean;
+  field: string;
+  read: boolean;
+  write: boolean;
+  execute: boolean;
+}
+
+export interface IProfileGroupAccess {
+  groupId: number;
+  field: string;
+  hidden: boolean;
+  read: boolean;
+  write: boolean;
+  execute: boolean;
+}
+
+export interface IUserProfile {
+  fieldPermissions: IUserProfileAccess;
+  avatar?: object; //
+  userData: UserModel;
+  areasOfInterest?: string[];
+  bio?: string;
+  affiliatedInstitutions?: string[];
+  following?: string[]; // Limit to X entries (e.g., 1000) to avoid abuse
+  followers?: string[]; // Limit to X entries (e.g., 1000)
+  friends?: string[]; // Limit to X entries (e.g., 500)
+  groups?: string[]; // Limit to X entries (e.g., 100)
+  shellConfig?: IUserShellConfig;
+}
+
+export interface IUserShellConfig extends IShellConfig {
+  /** Flags that user can personalize or not */
+  personalizationEnabled?: boolean;
+
+  /**
+   * A user may optionally override UI system/theme if allowed by consumer.
+   */
+  userPreferences?: {
+    uiSystemId?: string;
+    themeId?: string;
+    formVariant?: string;
+  };
+}
+
+export const profileDefaultConfig = [
+  {
+    path: ["fieldPermissions", "userPermissions", ["userName"]],
+    value: {
+      userId: 1000,
+      field: "userName",
+      hidden: false,
+      read: true,
+      write: false,
+      execute: false,
+    },
+  },
+  {
+    path: ["fieldPermissions", "groupPermissions", ["userName"]],
+    value: {
+      groupId: 0,
+      field: "userName",
+      hidden: false,
+      read: true,
+      write: false,
+      execute: false,
+    },
+  },
+];
+
+/**
+ * the data below can be managed under with 'roles'
+ * there needs to be a function that set the default 'role' for a user
+ */
+export const userProfileDefault: IUserProfile = {
+  avatar: {
+    url: `https://${config.http.hostName}/assets/images/users/avatar-anon.jpg`,
+  },
+  fieldPermissions: {
+    /**
+     * specified permission setting for given users to specified fields
+     */
+    userPermissions: [
+      {
+        userId: 1000,
+        field: "userName",
+        hidden: false,
+        read: true,
+        write: false,
+        execute: false,
+      },
+    ],
+    groupPermissions: [
+      {
+        groupId: 0, // "_public"
+        field: "userName",
+        hidden: false,
+        read: true,
+        write: false,
+        execute: false,
+      },
+    ],
+  },
+  userData: {
+    userName: "",
+    fName: "",
+    lName: "",
+  },
+};
+```
+
+```ts
+
+export function siGet(q: IQuery) {
+  return {
+    serviceModel: CompanyViewModel,
+    docName: "CompanyModel::siGet",
+    cmd: {
+      action: "find",
+      query: q,
+    },
+    dSource: 1,
+  };
+}
+
+@Entity({
+  name: "company",
+  synchronize: false,
+})
+// @CdModel
+export class CompanyModel {
+  b: BaseService;
+
+  @PrimaryGeneratedColumn({
+    name: "company_id",
+  })
+  companyId?: number;
+
+  @Column({
+    name: "company_guid",
+  })
+  companyGuid: string;
+
+  @Column({
+    name: "company_name",
+  })
+  companyName: string;
+
+  @Column({
+    name: "company_type_guid",
+  })
+  companyTypeGuid?: string;
+
+  @Column({
+    name: "company_type_id",
+  })
+  companyTypeId?: number;
+
+  @Column({
+    name: "directory_category_guid",
+  })
+  directoryCategoryGuid: string;
+
+  @Column("int", {
+    name: "doc_id",
+  })
+  docId: number;
+
+  @Column({
+    name: "company_enabled",
+  })
+  companyEnabled?: boolean;
+
+  @Column({
+    name: "postal_address",
+  })
+  postalAddress: string;
+
+  @Column({
+    name: "phone",
+  })
+  phone: string;
+
+  @Column({
+    name: "mobile",
+  })
+  mobile: string;
+
+  @Column({
+    name: "email",
+  })
+  email: string;
+
+  @Column({
+    name: "physical_location",
+  })
+  physicalLocation: string;
+
+  @Column({
+    name: "city",
+  })
+  city: string;
+
+  @Column({
+    name: "country",
+  })
+  country: string;
+
+  @Column({
+    name: "logo",
+  })
+  logo: string;
+
+  @Column({
+    name: "city_guid",
+  })
+  cityGuid: string;
+
+  @Column({
+    name: "company_description",
+  })
+  company_description?: string;
+
+  @Column({
+    name: "parent_guid",
+  })
+  parentGuid?: string;
+
+  @Column({
+    name: "consumer_guid",
+  })
+  consumerGuid?: string;
+
+  @Column({
+    name: "search_tags",
+  })
+  searchTags: string;
+}
+```
+
+```ts
+
+export class UserService extends CdService {
+  logger: Logging;
+  cdToken: string;
+  b: BaseService;
+  userModel;
+  mail: MailService;
+  db;
+  srvSess: SessionService;
+  svModule: ModuleService;
+  svConsumer: ConsumerService;
+  requestPswd: string;
+  plData: any;
+
+  // i: IRespInfo = {
+  //     messages: null,
+  //     code: '',
+  //     app_msg: ''
+  // };
+
+  loginState = false;
+
+  /*
+   * create rules
+   */
+  cRules: any = {
+    required: ["userName", "email", "password"],
+    noDuplicate: ["userName", "email"],
+  };
+
+  constructor() {
+    super();
+    this.logger = new Logging();
+    this.b = new BaseService();
+    this.mail = new MailService();
+    this.userModel = new UserModel();
+    this.srvSess = new SessionService();
+    this.svModule = new ModuleService();
+    this.svConsumer = new ConsumerService();
+  }
+
+  async create(req, res): Promise<void> {}
+
+  async createI(
+    req,
+    res,
+    createIParams: CreateIParams<any>,
+  ): Promise<UserModel | boolean> {
+    createIParams.controllerData.userGuid = this.b.getGuid();
+    return await this.b.createI(req, res, createIParams);
+  }
+
+  async beforeCreate(req, res) {
+    this.b.setPlData(req, { key: "userGuid", value: this.b.getGuid() });
+    this.b.setPlData(req, { key: "userEnabled", value: 1 });
+    this.b.setPlData(req, { key: "activationKey", value: this.b.getGuid() });
+    this.userModel.user_guid = this.b.getGuid();
+    this.userModel.activation_key = this.b.getGuid();
+    await this.cryptPassword(req);
+  }
+
+  async cryptPassword(req) {}
+
+  async validateCreate(req, res) {}
+
+  async afterCreate(req, res, userData: UserModel) {}
+
+  async regisrationNotification(req, res, newUser) {}
+
+  async activateUser(req, res, q?: IQuery) {}
+
+  async validateActivateUser(req, res, q: IQuery): Promise<boolean> {}
+
+  async createMulti(req, res): Promise<void> {}
+
+  async createDoc(req, res, savedUser) {}
+
+  async getUserActiveCo() {
+    return {};
+  }
+
+  async getContacts(cuid) {
+    return [{}];
+  }
+
+  /**
+   * Use BaseService for simple search
+   * @param req
+   * @param res
+   */
+  async read(req, res, serviceInput: IServiceInput<any>): Promise<any> {
+    return await this.b.read(req, res, serviceInput);
+  }
+
+  async update(req, res) {
+    // this.logger.logDebug('UserService::update()/01');
+    let q = this.b.getQuery(req);
+    q = this.beforeUpdate(q);
+    const serviceInput = {
+      serviceModel: UserModel,
+      docName: "UserService::update",
+      cmd: {
+        action: "update",
+        query: q,
+      },
+      dSource: 1,
+    };
+    // this.logger.logDebug('UserService::update()/02')
+    this.b.update$(req, res, serviceInput).subscribe((ret) => {
+      this.b.cdResp.data = ret;
+      this.b.respond(req, res);
+    });
+  }
+
+  async updateI(req, res, serviceInput: IServiceInput<any>) {
+    return await this.b.update(req, res, serviceInput);
+  }
+
+  /**
+   * harmonise any data that can
+   * result in type error;
+   * @param q
+   * @returns
+   */
+  beforeUpdate(q: any) {}
+
+  /**
+     * {
+            "ctx": "Sys",
+            "m": "User",
+            "c": "User",
+            "a": "UpdatePassword",
+            "dat": {
+                "f_vals": [
+                    {
+                        "forgotPassword": true, // optional: used securely when oldPassword is not avialble (developer option...NOT end user) 
+                        "oldPassword": null, // can be set to oldPassword text or set to null by develper to use in case of forgotPassword === true;
+                        "query": {
+                            "update": {
+                                "password": "iiii"
+                            },
+                            "where": {
+                                "userId": 1003
+                            }
+                        }
+                    }
+                ],
+                "token": "08f45393-c10e-4edd-af2c-bae1746247a1"
+            },
+            "args": {}
+        }
+     * @param req 
+     * @param res 
+     */
+  async updatePassword(req, res) {}
+
+  async beforeUpdatePassword(req, res, q: IQuery) {}
+
+  async getUserI(req, res, q: IQuery = null): Promise<UserModel[]> {}
+
+  async getI(req, res, q: IQuery = null): Promise<UserModel[]> {}
+
+  remove(req, res): Promise<void> {
+    this.logger.logDebug(`starting SessionService::remove()`);
+    return null;
+  }
+
+  rbCreate(): number {
+    return 1;
+  }
+
+  rbUpdate(): number {
+    return 1;
+  }
+
+  rbRemove(): number {
+    return 1;
+  }
+
+  async auth(req, res) {}
+
+  async resolveGuest(req, res, guestArr: UserModel[]): Promise<UserModel> {}
+
+  async verifyPassword(req, res, cUser: UserModel[]) {}
+
+  /**
+   * Auth internal
+   * used when not relying on request data but internal process
+   * @param req
+   * @param res
+   */
+  async authI(req, res): Promise<SessionModel> {}
+
+  async authResponse(req, res, guest: UserModel) {}
+
+  processResponse$(req, res, guest: UserModel): Rx.Observable<any> {}
+
+  async getUserByID(req, res, uid) {
+    const serviceInput = {
+      serviceInstance: this,
+      serviceModel: UserModel,
+      docModel: DocModel,
+      docName: "UserService::getUserByID",
+      cmd: {
+        action: "find",
+        query: { where: { userId: uid } },
+      },
+      dSource: 1,
+    };
+    return await this.read(req, res, serviceInput);
+  }
+
+  validateLogin(req) {}
+
+  async getUser(req, res, q: IQuery = null) {
+    if (q == null) {
+      q = this.b.getQuery(req);
+    }
+    this.logger.logDebug("UserService::getUser/f:", q);
+    const serviceInput = {
+      serviceModel: UserModel,
+      docName: "UserService::getUser$",
+      cmd: {
+        action: "find",
+        query: q,
+      },
+      dSource: 1,
+    };
+    try {
+      this.b.read$(req, res, serviceInput).subscribe((r) => {
+        this.logger.logDebug("UserService::read$()/r:", r);
+        this.b.i.code = "UserController::Get";
+        const svSess = new SessionService();
+        svSess.sessResp.cd_token = req.post.dat.token;
+        svSess.sessResp.ttl = svSess.getTtl();
+        this.b.setAppState(true, this.b.i, svSess.sessResp);
+        this.b.cdResp.data = r;
+        this.b.respond(req, res);
+      });
+    } catch (e) {
+      this.logger.logDebug("UserService::read$()/e:", e);
+      this.b.err.push(e.toString());
+      const i = {
+        messages: this.b.err,
+        code: "BaseService:update",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      await this.b.respond(req, res);
+    }
+  }
+
+  getUserCount(req, res) {}
+
+  getUserQB(req, res) {}
+
+  delete(req, res) {
+    const q = this.b.getQuery(req);
+    this.logger.logDebug("UserService::delete()/q:", q);
+    const serviceInput = {
+      serviceModel: UserModel,
+      docName: "UserService::delete",
+      cmd: {
+        action: "delete",
+        query: q,
+      },
+      dSource: 1,
+    };
+
+    this.b.delete$(req, res, serviceInput).subscribe((ret) => {
+      this.b.cdResp.data = ret;
+      this.b.respond(req, res);
+    });
+  }
+
+  /**
+   * - remove corresponding user as cdObj
+   * - remove corresponding consumerResource for session consumer
+   * - remove membership from all groups
+   * @param req
+   * @param res
+   */
+  async purgeUser(req, res, q?: IQuery) {}
+
+  validatePurgeUser(req, res, q: IQuery): boolean {}
+
+  /**
+   * get anon user data
+   */
+  async getAnon(req, res) {
+    const serviceInput: IServiceInput<any> = {
+      serviceInstance: this,
+      serviceModel: UserModel,
+      docName: "UserService::getAnon",
+      cmd: {
+        action: "count",
+        query: { where: { userName: "anon" } },
+      },
+      dSource: 1,
+    };
+    return await this.b.read(req, res, serviceInput);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // STARTING USER PROFILE FEATURES
+  // Public method to update user profile (e.g., avatar, bio)
+  async updateUserProfile(req, res): Promise<void> {}
+
+  /////////////////////////////////////////////
+  // NEW USER PROFILE METHODS...USING COMMON CLASS ProfileServiceHelper
+  //
+
+  async existingUserProfile(req, res, cuid) {}
+
+  async modifyProfile(existingData, profileConfig) {}
+
+  async getUserProfile(req, res) {}
+
+  // Public method to get a user profile
+  async getCurrentUserProfile(req, res) {}
+
+  // Internal method to retrieve user profile
+  async getUserProfileI(
+    req,
+    res,
+    userId: number,
+  ): Promise<IUserProfile | null> {}
+
+  // Internal method to handle profile updates
+  async updateUserProfileI(
+    req,
+    res,
+    userId: string,
+    newProfileData: Partial<IUserProfile>,
+  ) {}
+
+  // Helper method to validate profile data
+  async validateProfileData(req, res, profileData: any): Promise<boolean> {}
+
+  // Internal helper method to get a user by ID
+  async getUserByIdI(uid: number): Promise<UserModel> {
+    return await this.db.user.findOne({ where: { userId: uid } });
+  }
+}
+```
+
+```ts
+
+export class CompanyService extends CdService {
+  b: any; // instance of BaseService
+  cdToken: string;
+  srvSess: SessionService;
+  srvUser: UserService;
+  user: IUser;
+  serviceModel: CompanyModel;
+  sessModel;
+  // moduleModel: ModuleModel;
+
+  /*
+   * create rules
+   */
+  cRules: any = {
+    required: ["companyName", "email", "searchTags", "companyTypeGuid"],
+    noDuplicate: ["companyName", "email"],
+  };
+  uRules: any[];
+  dRules: any[];
+
+  constructor() {
+    super();
+    this.b = new BaseService();
+    this.serviceModel = new CompanyModel();
+    // this.moduleModel = new ModuleModel();
+  }
+
+  /**
+     * {
+            "ctx": "Sys",
+            "m": "Moduleman",
+            "c": "Company",
+            "a": "Create",
+            "dat": {
+                "f_vals": [
+                    {
+                        "data": {
+                            "companyName": "/src/CdApi/sys/moduleman",
+                            "companyTypeGuid": "7ae902cd-5bc5-493b-a739-125f10ca0268",
+                            "parentModuleGuid": "00e7c6a8-83e4-40e2-bd27-51fcff9ce63b"
+                        }
+                    }
+                ],
+                "token": "3ffd785f-e885-4d37-addf-0e24379af338"
+            },
+            "args": {}
+        }
+     * @param req
+     * @param res
+     */
+  async create(req, res) {
+    
+  }
+
+  async createSL(req, res) {
+    
+  }
+
+  async createI(
+    req,
+    res,
+    createIParams: CreateIParams<any>,
+  ): Promise<CompanyModel | boolean> {
+    return await this.b.createI(req, res, createIParams);
+  }
+
+  async companyExists(req, res, params): Promise<boolean> {
+    
+  }
+
+  async beforeCreate(req, res): Promise<any> {
+    
+  }
+
+  async beforeCreateSL(req, res): Promise<any> {
+    
+  }
+
+  async read(req, res, serviceInput: IServiceInput<any>): Promise<any> {
+    //
+  }
+
+  async readSL(req, res, serviceInput: IServiceInput<any>): Promise<any> {
+    
+  }
+
+  update(req, res) {
+    // console.log('CompanyService::update()/01');
+    let q = this.b.getQuery(req);
+    q = this.beforeUpdate(q);
+    const serviceInput = {
+      serviceModel: CompanyModel,
+      docName: "CompanyService::update",
+      cmd: {
+        action: "update",
+        query: q,
+      },
+      dSource: 1,
+    };
+    // console.log('CompanyService::update()/02')
+    this.b.update$(req, res, serviceInput).subscribe((ret) => {
+      this.b.cdResp.data = ret;
+      this.b.respond(req, res);
+    });
+  }
+
+  updateSL(req, res) {
+    
+  }
+
+  /**
+   * harmonise any data that can
+   * result in type error;
+   * @param q
+   * @returns
+   */
+  beforeUpdate(q: any) {
+    
+  }
+
+  beforeUpdateSL(q: any) {
+    
+  }
+
+  async remove(req, res) {
+    //
+  }
+
+  /**
+   * methods for transaction rollback
+   */
+  rbCreate(): number {
+    return 1;
+  }
+
+  rbUpdate(): number {
+    return 1;
+  }
+
+  rbDelete(): number {
+    return 1;
+  }
+
+  async validateCreate(req, res) {}
+
+  async setCoopType(req, res) {}
+
+  async validateCreateSL(req, res) {
+    return true;
+  }
+
+  async getCompany(req, res, q: IQuery = null): Promise<any> {
+    if (q === null) {
+      q = this.b.getQuery(req);
+    }
+    console.log("CompanyService::getCompany/f:", q);
+    const serviceInput = siGet(q);
+    try {
+      const r = await this.b.read(req, res, serviceInput);
+      this.b.successResponse(req, res, r);
+    } catch (e) {
+      console.log("CompanyService::read$()/e:", e);
+      this.b.err.push(e.toString());
+      const i = {
+        messages: this.b.err,
+        code: "BaseService:update",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      await this.b.respond(req, res);
+    }
+  }
+
+  async getCompanyI(req, res, q: IQuery = null): Promise<any> {
+    if (q === null) {
+      q = this.b.getQuery(req);
+    }
+    console.log("CompanyService::getCompany/f:", q);
+    const serviceInput = siGet(q);
+    try {
+      return await this.b.read(req, res, serviceInput);
+    } catch (e) {
+      console.log("CompanyService::read$()/e:", e);
+      this.b.err.push(e.toString());
+      const i = {
+        messages: this.b.err,
+        code: "BaseService:update",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      return [];
+    }
+  }
+
+  async getCompanySL(req, res) {}
+
+  getCompanyType(req, res) {}
+
+  getCompanyTypeI(req, res, q: IQuery = null): CompanyTypeModel[] {}
+
+  getCompanyCount(req, res) {}
+
+  getCompanyQB(req, res) {}
+
+  getPagedSL(req, res) {}
+
+  getCompanyTypeCount(req, res) {}
+
+  delete(req, res) {}
+
+  deleteSL(req, res) {}
+}
+```
+
+/////////////////////////////////////////////
+In the method activateUser(), in the line:
+if (retUpdate.affected > 0)
+There is an issue:
+"'retUpdate.affected' is possibly 'undefined'."
+
+I thought the previous block was defensive against this error.
+Assist to fix.
+
+```ts
+async activateUser(req: Request, res: Response, q?: IQuery) {
+    try {
+      this.logger.logDebug("UserService::activateUser()/01");
+      if (!q) {
+        q = this.b.getQuery(req as any);
+        this.logger.logDebug("UserService::activateUser()/02");
+        this.logger.logDebug(
+          `UserService::activateUser()/q:${JSON.stringify(q)}`,
+        );
+      }
+      const qUser: IQuery = q!;
+      this.logger.logDebug("UserService::activateUser()/qUser:", qUser);
+      if (await this.validateActivateUser(req, res, qUser)) {
+        this.logger.logDebug("UserService::activateUser()/03");
+        this.logger.logDebug("UserService::activateUser()/validation passed:");
+        /**
+         * update the user to active state
+         */
+        const qUpdateUser = {
+          update: {
+            userEnabled: true,
+          },
+          where: qUser.where,
+        };
+        const serviceInput = {
+          serviceModel: UserModel,
+          docName: "Activate User",
+          cmd: {
+            action: "update",
+            query: qUpdateUser,
+          },
+          dSource: 1,
+        };
+        this.logger.logDebug("UserService::activateUser()/04");
+        this.logger.logDebug(
+          `UserService::activateUser()/serviceInput:${JSON.stringify(
+            serviceInput,
+          )}`,
+        );
+
+        const serviceInputExt: IExtServiceInput<UserModel> = {
+          serviceInput: serviceInput,
+          entityData: qUpdateUser.update,
+        };
+
+        const retUpdate = (await this.updateI(
+          req,
+          res,
+          serviceInputExt,
+        )) as UpdateResult;
+        this.logger.logDebug("UserService::activateUser()/05");
+        this.logger.logDebug(
+          "UserService::activateUser()/retUpdate:",
+          retUpdate,
+        );
+
+        if (!retUpdate || retUpdate.affected === 0) {
+          /**
+           * respond with server error message
+           */
+          this.b.err.push("Failed to activate the user account");
+          const i = {
+            messages: this.b.err,
+            code: "UserService:create",
+            app_msg: "There was an error activating your account",
+          };
+          await this.b.setAppState(false, i, null);
+          const r = await this.b.respond(req, res);
+        }
+        /**
+         * if update of records is succesfull, get user data'
+         */
+        if (retUpdate.affected > 0) {
+          this.logger.logDebug("UserService::activateUser()/06");
+          // construct service input
+          const siUser = this.b.siGet(
+            qUser,
+            "UserService:activateUser",
+            UserModel,
+          );
+          this.logger.logDebug("UserService::activateUser()/07");
+          this.logger.logDebug(
+            `UserService::activateUser()/siUser:${JSON.stringify(siUser)}`,
+          );
+          // get user data data
+          const userData: UserModel[] = await this.read(req, res, siUser);
+          this.logger.logDebug("UserService::activateUser()/08");
+          this.logger.logDebug(
+            "UserService::activateUser()/userData:",
+            userData,
+          );
+          /**
+           * create a valid session for the user
+           */
+          const svSess = new SessionService();
+          // get consumer payload
+          const pl: ConsumerModel = this.b.getPlData(req as any, "consumer");
+          this.logger.logDebug("UserService::activateUser()/pl:", pl);
+          this.logger.logDebug("UserService::activateUser()/pl.consumerGuid:", {
+            consumerGuid: pl.consumerGuid,
+          });
+          if (!pl.consumerGuid) {
+            const i = {
+              messages: this.b.err,
+              code: "UserService:activateUser",
+              app_msg: "Consumer GUID is missing",
+            };
+            await this.b.setAppState(false, i, null);
+            const r = await this.b.respond(req, res);
+            return;
+          }
+          svSess.sessData.consumerGuid = pl.consumerGuid;
+          (req as any).post.dat.f_vals[0].data = {
+            consumerGuid: pl.consumerGuid,
+          };
+          const sessData = await svSess.create(req, res, userData[0]);
+          if (!sessData || !sessData.cdToken) {
+            const i = {
+              messages: this.b.err,
+              code: "UserService:activateUser",
+              app_msg: "Failed to create a valid session",
+            };
+            await this.b.setAppState(false, i, null);
+            const r = await this.b.respond(req, res);
+            return;
+          }
+          (req as any).post.dat.token = sessData.cdToken;
+          /**
+           * Todo:
+           * - if pl.consumerGuid is not available or invalid, abort and respond
+           */
+
+          // if(!pl.consumerGuid){
+          //   return;
+          // }
+
+          /**
+           * Post activation process:
+           * - create a corresponding user as cdObj
+           *
+           */
+
+          const svCdObj = new CdObjService();
+          const sessionDataExt = await svSess.getSessionDataExt(req, res, true);
+          this.logger.logDebug("UserService::activateUser()/09");
+          this.logger.logDebug(
+            `UserService::activateUser()/sessionDataExt:${JSON.stringify(
+              sessionDataExt,
+            )}`,
+          );
+          /**
+           * Create corresponding cd-obj of the activated user
+           */
+          const cdObjData: CdObjModel = {
+            cdObjName: userData[0].userGuid!,
+            objGuid: userData[0].userGuid!,
+            cdObjTypeGuid: "a237cc2b-e895-4596-a963-9b6e74d0f7b2", // user
+            parentModuleGuid: "00e7c6a8-83e4-40e2-bd27-51fcff9ce63b", // user module
+          };
+          this.logger.logDebug(
+            `UserService::purgeUser()/cdObjData:${JSON.stringify(cdObjData)}`,
+          );
+          const si = {
+            serviceInstance: svCdObj,
+            serviceModel: CdObjModel,
+            serviceModelInstance: svCdObj.serviceModel,
+            docName: "CdObjService::CreateI",
+            dSource: 1,
+          };
+          const createIParams: IExtServiceInput<any> = {
+            serviceInput: si,
+            entityData: cdObjData,
+          };
+          let respCreateCdObj: CdObjModel = (await svCdObj.createI(
+            req,
+            res,
+            createIParams,
+          )) as CdObjModel;
+          this.logger.logDebug("UserService::activateUser()/10");
+          this.logger.logDebug("UserService::activateUser()/respCreateCdObj:", {
+            resp: respCreateCdObj,
+          });
+
+          /*
+           * - create a corresponding consumerResource (user) for session consumer
+           *
+           */
+          const svConsumerResource = new ConsumerResourceService();
+          const consumerResourceData: ConsumerResourceModel = {
+            cdObjTypeGuid: "a237cc2b-e895-4596-a963-9b6e74d0f7b2", // user
+            consumerGuid: sessionDataExt?.currentConsumer.consumerGuid, // consumer by session
+            consumerId: sessionDataExt?.currentConsumer.consumerId,
+            cdObjGuid: respCreateCdObj.cdObjGuid, // cdObjGuid of the just created cdObj above
+            cdObjId: respCreateCdObj.cdObjId,
+            consumerResourceTypeId: 6, // consumer user
+            consumerResourceName: userData[0].userGuid,
+            objId: userData[0].userId,
+            consumerResourceEnabled: true,
+          };
+          this.logger.logDebug(
+            `UserService::activateUser()/consumerResourceData:${JSON.stringify(
+              consumerResourceData,
+            )}`,
+          );
+          const siConsRes = {
+            serviceInstance: svConsumerResource,
+            serviceModel: ConsumerResourceModel,
+            serviceModelInstance: svConsumerResource.serviceModel,
+            docName: "CdObjService::activateUser",
+            dSource: 1,
+          };
+          const createIParamsConsRes: IExtServiceInput<any> = {
+            serviceInput: siConsRes,
+            entityData: consumerResourceData,
+          };
+          this.logger.logDebug("UserService::activateUser()/13");
+          let respCreateConsRes = await svConsumerResource.createI(
+            req,
+            res,
+            createIParamsConsRes,
+          );
+          this.logger.logDebug("UserService::activateUser()/14");
+          this.logger.logDebug(
+            "UserService::activateUser()/respCreateConsRes:",
+            { resp: respCreateConsRes },
+          );
+          this.logger.logDebug("UserService::activateUser()/14-1");
+          /*
+           * - join personal group member
+           * - Note: all consumers should have the module 'personal' as a resource
+           */
+          const svGroupMember = new GroupMemberService();
+          const groupData: GroupMemberModel = {
+            groupMemberGuid: this.b.getGuid(),
+            userIdMember: userData[0].userId,
+            memberGuid: userData[0].userGuid,
+            groupGuidParent: "d5270988-cb1a-427b-977f-4a78e709fda9", // guid for 'personal' group
+            cdObjTypeId: 9, // user
+            groupMemberEnabled: true,
+          };
+          this.logger.logDebug(
+            `UserService::purgeUser()/groupData:${JSON.stringify(groupData)}`,
+          );
+          this.logger.logDebug("UserService::activateUser()/14-2");
+          const siGroupMember = {
+            serviceInstance: svGroupMember,
+            serviceModel: GroupMemberModel,
+            serviceModelInstance: svGroupMember.serviceModel,
+            docName: "CdObjService::activateUser",
+            dSource: 1,
+          };
+          this.logger.logDebug("UserService::activateUser()/14-3");
+          const createIParamsGroupMember: IExtServiceInput<any> = {
+            serviceInput: siGroupMember,
+            entityData: groupData,
+          };
+          this.logger.logDebug("UserService::activateUser()/14-4");
+          this.logger.logDebug("UserService::activateUser()/15");
+          let respCreateGroupMember = await this.createI(
+            req,
+            res,
+            createIParamsGroupMember,
+          );
+          this.logger.logDebug("UserService::activateUser()/16");
+          this.logger.logDebug(
+            "UserService::activateUser()/respCreateGroupMember:",
+            { resp: respCreateGroupMember },
+          );
+          this.b.cdResp.data = userData;
+          this.b.cdResp.app_state.success = true;
+          this.b.i.app_msg = `Your account is activated!`;
+          const r = await this.b.respond(req, res);
+        } else {
+          const i = {
+            messages: this.b.err,
+            code: "UserService:create",
+            app_msg: "There was an error activating your account",
+          };
+          await this.b.setAppState(false, i, null);
+          const r = await this.b.respond(req, res);
+        }
+      } else {
+        /**
+         * respond with invalid key message
+         */
+        const i = {
+          messages: this.b.err,
+          code: "UserService:create",
+          app_msg: "The key provided is invalid",
+        };
+        await this.b.setAppState(false, i, null);
+        const r = await this.b.respond(req, res);
+      }
+    } catch (e: any) {
+      /**
+       * respond with server error message
+       */
+      this.b.err.push((e as Error).message);
+      const i = {
+        messages: this.b.err,
+        code: "UserService:create",
+        app_msg: "There was an error activating your account",
+      };
+      await this.b.setAppState(false, i, null);
+      const r = await this.b.respond(req, res);
+    }
+  }
+```
+
+/////////////////////////////////////
+In the line:
+this.sessData.deviceNetId = await this.getDeviceNetId(req); // returns JSON data
+There is an issue:
+Type 'JSON' is not assignable to type 'null'.
+
+Which is the best way of resolving this problem.
+
+```ts
+export class SessionService {
+    sessData = {
+        cuid: 1000,
+        cdToken: '',
+        consumerGuid: '',
+        deviceNetId: null,
+        userData: null,
+    };
+async setSession(req: Request, res: Response, guest: UserModel) {
+        try{
+            this.sessData.cuid = guest.userId as number;
+            this.sessData.cdToken = this.b.getGuid();
+            this.sessData.consumerGuid = (req as any).post.dat.f_vals[0].data.consumerGuid;
+            this.sessData.deviceNetId = await this.getDeviceNetId(req);
+            this.sessData.userData = guest;
+            this.sessModel.startTime = await this.b.mysqlNow();
+            this.sessModel.cdToken = this.sessData.cdToken;
+            this.sessModel.currentUserId = guest.userId;
+            this.sessModel.accTime = await this.b.mysqlNow();
+            this.sessModel.ttl = this.getTtl();
+            this.sessModel.active = true;
+            this.sessModel.deviceNetId = this.sessData.deviceNetId;
+            this.sessModel.consumerGuid = this.sessData.consumerGuid;
+            (req as any).post.sessData = this.sessData;
+            this.sessIsSet = true;
+            this.logger.logInfo('SessionService::setSession()/this.sessModel:', this.sessModel)
+        }catch(e){
+            await this.b.serviceErr(req, res, e, 'SessionService:setSession');
+        }
+    }
+}
+```
+
+///////////////////////////////////////////////
+On the line:
+serviceInput.cmd?.query = this.beforeUpdate(serviceInput.cmd?.query as IQuery);
+We have the following issue:
+The left-hand side of an assignment expression may not be an optional property access.
+
+```ts
+export class CdObjService extends GenericService<CdObjModel> {
+async updateI(req: Request, res: Response, serviceInput: IServiceInput<CdObjModel>): Promise<any> {
+    console.log("CdObjService::updateI()/01");
+    // let q = this.b.getQuery(req);
+    serviceInput.cmd?.query = this.beforeUpdate(serviceInput.cmd?.query as IQuery);
+    serviceInput = {
+      serviceModel: CdObjModel,
+      docName: "CdObjService::updateI",
+      cmd: {
+        action: "update",
+        query: q,
+      },
+      dSource: 1,
+    };
+    console.log("CdObjService::update()/02");
+    return this.b.update(req as any, res as any, serviceInput);
+  }
+
+  beforeUpdate(q: IQuery): IQuery {
+    if ((q.update as any).cdObjEnabled === "") {
+      (q.update as any).cdObjEnabled = null;
+    }
+    if ((q.update as any).showIcon === "") {
+      (q.update as any).showIcon = null;
+    }
+    return q;
+  }
+}
+```
+
+
+////////////////////////////////////////////
+
+All the services for cd-api are structured like the UserController shown below.
+
+We need an abstract GenericController structured like the GenericService shared below.
+Note that GenericService extends CdService. So, we neen GenericController should also extend CdController.
+
+The aim should be that most of controller methods are shared at the GenericController.
+
+```ts
+// src/CdApi/sys/user/controllers/user.controller.ts
+import { Request, Response } from "express";
+import { Request, Response } from "express";
+import { BaseService } from '../../base/base.service';
+import { CdController } from '../../base/cd.controller';
+import { Logging } from '../../base/winston.log';
+import { UserService } from '../services/user.service';
+
+export class UserController {
+    logger: Logging;
+    b: BaseService;
+    service: UserService;
+    constructor() {
+        super();
+
+        this.b = new BaseService();
+        this.service = new UserService();
+        this.logger = new Logging();
+    }
+
+    async Login(req: Request, res: Response) {
+        this.logger.logInfo('starting Login()')
+        try {
+            await this.service.auth(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserService:Login');
+        }
+    }
+
+    async Register(req: Request, res: Response) {
+        try {
+            await this.service.create(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserService:Register');
+        }
+    }
+
+    async ActivateUser(req: Request, res: Response) {
+        try {
+            await this.service.activateUser(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserService:Register');
+        }
+    }
+
+
+    async Get(req: Request, res: Response) {
+        try {
+            await this.service.getUser(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserController:Get');
+        }
+    }
+
+    async GetCount(req: Request, res: Response) {
+        try {
+            // await this.service.getUserCount(req, res);
+            await this.service.getUserQB(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserController:GetCount');
+        }
+    }
+
+
+    async GetUserProfile(req: Request, res: Response) {
+        try {
+            await this.service.getUserProfile(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserController:getUserProfile');
+        }
+    }
+
+    async Update(req: Request, res: Response) {
+        console.log('UserController::Update()/01');
+        try {
+            console.log('UserController::Update()/02');
+            await this.service.update(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserController:Update');
+        }
+    }
+
+    async UpdatePassword(req: Request, res: Response) {
+        console.log('UserController::UpdatePassword()/01');
+        try {
+            console.log('UserController::UpdatePassword()/02');
+            await this.service.updatePassword(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserController:UpdatePassword');
+        }
+    }
+
+    async Delete(req: Request, res: Response) {
+        try {
+            await this.service.delete(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserController:Update');
+        }
+    }
+
+
+    async PugeUser(req: Request, res: Response) {
+        try {
+            await this.service.purgeUser(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserController:Update');
+        }
+    }
+
+    async UpdateUserProfile(req: Request, res: Response) {
+        console.log('UserController::UpdateUserProfile()/01');
+        try {
+            console.log('UserController::UpdateUserProfile()/02');
+            await this.service.updateUserProfile(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'UserController::UpdateUserProfile');
+        }
+    }
+}
+```
+
+```ts
+// src/CdApi/sys/base/generic-service.ts
+import { EntityTarget, ObjectLiteral, UpdateResult } from "typeorm";
+import { Request, Response } from "express";
+import { BaseService } from "./base.service.js";
+import config from "../../../config.js";
+import {
+  CD_FX_FAIL,
+  CdFxReturn,
+  IExtServiceInput,
+  ICdResponse,
+  IQuery,
+  IServiceInput,
+} from "./i-base.js";
+import { Logging } from "./winston.log.js";
+import { UserModel } from "../user/models/user.model.js";
+import { CdService } from "./cd.service.js";
+
+export abstract class GenericService<T extends ObjectLiteral> extends CdService<T> {
+  // These properties should be defined in the specific service
+  abstract serviceModel: new () => T;
+  abstract docName: string;
+  b: BaseService<T>;
+  logger: Logging;
+  protected defaultDs = config.ds.sqlite;
+
+  constructor(private model: new () => T) {
+    super();
+    this.b = new BaseService<T>();
+    this.logger = new Logging();
+  }
+
+  /**
+   * The Template Method for Create
+   */
+  async create(req: Request, res: Response): Promise<void> {
+    try {
+      // 1. Validation Hook
+      const isValid = await this.validateCreate(req, res);
+      if (!isValid) {
+        return await this.handleError(req, res, "validateCreate");
+      }
+
+      // 2. Before Create Hook (Mutations, GUIDs, Hashing)
+      await this.beforeCreate(req, res);
+
+      // 3. Prepare Service Input
+      const serviceInput: IServiceInput<T> = {
+        serviceInstance: this,
+        serviceModel: this.serviceModel,
+        docName: this.docName,
+        dSource: 1,
+        data: this.b.getPlData(req as any), // Assuming plData is populated
+      };
+
+      // 4. Execution via BaseService
+      const result: T = await this.b.create(
+        req,
+        res,
+        serviceInput,
+      );
+
+      // 5. After Create Hook (Notifications, Side Effects)
+      await this.afterCreate(req, res, result);
+
+      // 6. Final Response
+      this.b.cdResp.data = result;
+      this.b.cdResp.app_state.success = true;
+      await this.b.respond(req, res);
+    } catch (e: any) {
+      await this.handleError(req, res, `${this.docName}:create`, e);
+    }
+  }
+
+  /**
+   * Default Hooks - Overridden by specific services as needed
+   */
+  async validateCreate(req: Request, res: Response): Promise<boolean> {
+    return true;
+  }
+
+  async beforeCreate(req: Request, res: Response): Promise<void> {
+    return;
+  }
+
+  async afterCreate(req: Request, res: Response, data: T): Promise<any> {
+    return data;
+  }
+
+  /**
+   * Centralized Error Handler for the lifecycle
+   */
+  async handleError(
+    req: Request,
+    res: Response,
+    code: string,
+    err?: any,
+  ): Promise<void> {
+    const i = {
+      messages: this.b.err,
+      code: code,
+      app_msg: err ? err.toString() : "",
+    };
+    await this.b.setAppState(false, i, null);
+    await this.b.respond(req as any, res as any);
+  }
+
+  async createI(
+    req: Request,
+    res: Response,
+    createIParams: IExtServiceInput<T>,
+  ): Promise<T | boolean> {
+    return await this.b.createI(req as any, res as any, createIParams);
+  }
+
+  async read(
+    req: Request,
+    res: Response,
+    serviceInput: IServiceInput<T>,
+  ): Promise<void> {
+    // const serviceInput = {
+    //   serviceModel: this.model,
+    //   docName: `Read ${this.model.name}`,
+    //   cmd: { action: 'find', query: q },
+    //   dSource: this.defaultDs,
+    // };
+
+    const result = await this.b.read(req as any, req as any, serviceInput);
+
+    // return "state" in result ? result : CD_FX_FAIL;
+  }
+
+  async update(
+    req: Request,
+    res: Response,
+    // serviceInput?: any,
+  ): Promise<void> {
+    // const serviceInput = {
+    //   serviceModel: this.model,
+    //   docName: `Update ${this.model.name}`,
+    //   cmd: { action: 'update', query: q },
+    //   dSource: this.defaultDs,
+    // };
+
+    // const result = await this.b.update(req, res, serviceInput);
+    // return "state" in result ? result : CD_FX_FAIL;
+  }
+
+  // async updateI(req: Request, res: Response, createIParams: IExtServiceInput<T>): Promise<CdFxReturn<UpdateResult> | UpdateResult | ICdResponse>  {
+  //   return this.b.updateI(req, res, createIParams);
+  // }
+
+  async updateI(req: Request, res: Response, serviceInput: IServiceInput<T>): Promise<any> {
+    return this.b.updateI(req, res, serviceInput);
+  }
+
+  async delete(
+    req: Request,
+    res: Response,
+    // serviceInput: IServiceInput<T>,
+  ): Promise<void> {
+    // const serviceInput = {
+    //   serviceModel: this.model,
+    //   docName: `Delete ${this.model.name}`,
+    //   cmd: { action: 'delete', query: q },
+    //   dSource: this.defaultDs,
+    // };
+
+    // const result = await this.b.delete(req, res, serviceInput);
+    // return "state" in result ? result : CD_FX_FAIL;
+  }
+}
+
+```
+
+/////////////////////////////////////////////
+
+Below is an extract from design document with the strategy of how to integrate rfc in git repository with the corpdesk database.
+Just to clarify some missing component is:
+cd-cli will be the orchestrator.
+1. There will be an isolated process for updating database as follows:
+- iniciate cd-cli (initially from terminal but later from ai agent)
+- cd-cli will use the module auto-git to fetch `cd-rfc` block (machine readable version of rfc) from a given rfc.
+- extracted content will be used to relay to db via http to cd-api to process storage to corpdesk database.
+
+2. This lets the process for utilizing rfcs from database by cd-cli to ensure that there is always the capacity to auto-updated as per requrement.
+This process for utilization is seperate which involved the following:
+- Whenever there is need to create new codes, the rfcs will be queriable based on need.
+- rfc's will be utilized to generate mathematical grammars that act as templates together with standard configuration to generate reusable prompts. 
+
+For some time, we will just focus on 1.
+
+`auto-git` is a corpdesk module for integration with github repository. Contextualize these so I can send you implementation of corpdesk auto-git controller and service.
+You will later adopt the coding patterns to integrate new methods to allow extraction of `cd-rfc` from git repository.
+
+
+
+# ✅ PROPOSAL: Corpdesk RFC Dual-Layer Format
+
+Every RFC will now have **two layers**:
+
+| Layer         | Purpose                                  |
+| ------------- | ---------------------------------------- |
+| Human Layer   | Rich explanation (what you already have) |
+| Machine Layer | Strict, parseable, deterministic block   |
+
+---
+
+# 🧬 1. Add a Mandatory “Machine Block”
+
+This is the **only part CdRfcService reads**.
+
+### 🔒 Rule
+
+> Every RFC MUST contain a `CD-RFC` block
+
+---
+
+## ✅ Example (Add to RFC-0001)
+
+Place this near the top or bottom (recommended: after Introduction)
+
+````md
+---
+
+## 🔬 CD-RFC (Machine Readable Block)
+
+```cd-rfc
+{
+  "ref": "CD_CODES_STD",
+  "rfcId": "corpdesk-rfc-0001",
+  "version": "1.0.0",
+  "name": "Corpdesk Standard Development Architecture",
+
+  "rules": [
+    {
+      "id": "FILE_STRUCTURE_ROOT",
+      "type": "structure",
+      "target": "directory",
+      "pattern": "src/<AppName-PascalCase>/",
+      "required": true
+    },
+    {
+      "id": "MODULE_NAMING",
+      "type": "naming",
+      "target": "module",
+      "pattern": "kebab-case",
+      "required": true
+    },
+    {
+      "id": "CONTROLLER_FILE_SUFFIX",
+      "type": "naming",
+      "target": "file",
+      "pattern": "*.controller.ts",
+      "required": true
+    },
+    {
+      "id": "SERVICE_FILE_SUFFIX",
+      "type": "naming",
+      "target": "file",
+      "pattern": "*.service.ts",
+      "required": true
+    },
+    {
+      "id": "MODEL_FILE_SUFFIX",
+      "type": "naming",
+      "target": "file",
+      "pattern": "*.model.ts",
+      "required": true
+    }
+  ],
+
+  "expressions": [
+    {
+      "id": "VALID_CONTROLLER_CLASS",
+      "type": "regex",
+      "value": "^[A-Z][a-zA-Z0-9]+Controller$"
+    },
+    {
+      "id": "VALID_SERVICE_CLASS",
+      "type": "regex",
+      "value": "^[A-Z][a-zA-Z0-9]+Service$"
+    },
+    {
+      "id": "VALID_MODEL_CLASS",
+      "type": "regex",
+      "value": "^[A-Z][a-zA-Z0-9]+Model$"
+    }
+  ]
+}
+````
+
+````
+
+---
+
+# ⚙️ 2. Define the Interface (CRITICAL)
+
+This becomes your **contract for all RFCs going forward**
+
+```ts
+export interface ICdRfc {
+  ref: string;
+  rfcId: string;
+  version: string;
+  name: string;
+
+  rules: ICdRfcRule[];
+  expressions: ICdRfcExpression[];
+}
+
+export interface ICdRfcRule {
+  id: string;
+  type: 'naming' | 'structure' | 'constraint' | 'semantic';
+  target: string; // file, directory, class, db_table, etc.
+  pattern?: string;
+  required: boolean;
+  description?: string;
+}
+
+export interface ICdRfcExpression {
+  id: string;
+  type: 'regex' | 'formula' | 'logic';
+  value: string;
+}
+````
+
+---
+
+# 🔁 3. CdRfcService Processing Pipeline
+
+Now your pipeline becomes **trivial and deterministic**:
+
+````text
+Git RFC (Markdown)
+        ↓
+Extract ```cd-rfc``` block
+        ↓
+JSON.parse()
+        ↓
+Validate against ICdRfc
+        ↓
+Store in DB
+````
+
+
+//////////////////////////////////////////////
+
+This is the CdAutoGitController. CdAutoGit is a module which just focuses on git processes.
+We need to introduce something like ReadDocBlock(). This shuld be usable by any external module in corpdesk.
+So when bio-engine calls it, it is upto bio-engine to contextualize why it is calling. The name of the calling method at bio-engine can even be interpreted in terms of the biological process of fetching information required to create whatever being in the dna process. But that we will deal with later.
+The strucuring is still at its infant stage but focussing on POC context.
+I am sending the service document after this.
+```ts
+// src/CdCli/app/cd-auto-git/controllers/cd-auto-git.controller.ts
+
+export class CdAutoGitController {
+  private b = new BaseService<DocModel>();
+  private svCdAutoGit: CdAutoGitService;
+
+  cdToken = '';
+  svCdCliProfile = new CdCliProfileService();
+
+  constructor() {
+    this.svCdAutoGit = new CdAutoGitService();
+    this.svCdAutoGit.init();
+  }
+
+  async GetGitHubProfile(): Promise<ProfileData | null> {
+    return this.svCdAutoGit.getGitHubProfile();
+  }
+
+  async CreateGitHubRepo(
+    repoName: string,
+    descript: string,
+    isPrivate: boolean,
+    repoHost: string,
+  ): Promise<CdFxReturn<void>> {
+    return this.svCdAutoGit.createGitHubRepo(repoName, descript, isPrivate, repoHost);
+  }
+
+  async CreateGitHubRepoOctokit(
+    repoName: string,
+    descript: string,
+    isPrivate: boolean,
+    repoHost: string,
+  ): Promise<CdFxReturn<void>> {
+    return this.svCdAutoGit.createGitHubRepoOctokit(repoName, descript, isPrivate, repoHost);
+  }
+
+  /**
+   * Checks if a repository with the given name exists within a specified GitHub organization.
+   * If it exists, it returns the repository details. Otherwise, it returns null.
+   *
+   * @param octokit An authenticated Octokit instance.
+   * @param organizationName The name of the GitHub organization.
+   * @param repoName The name of the repository to check.
+   * @returns A Promise that resolves to RepositoryDetails if the repository exists, or null otherwise.
+   * @throws An error if there's a problem with the GitHub API that's not a 404 (e.g., authentication, rate limit).
+   */
+  async CheckRepositoryExists(
+    octokit: Octokit,
+    organizationName: string,
+    repoName: string,
+  ): Promise<RepositoryDetails | null> {
+    return this.svCdAutoGit.checkRepositoryExists(octokit, organizationName, repoName);
+  }
+
+  async PerformPostRepoCreationActions(
+    repoName: string,
+    repoUrl: string,
+    moduleType: string,
+    path?: string,
+    appType?: AppType,
+  ): Promise<CdFxReturn<null>> {
+    return this.svCdAutoGit.performPostRepoCreationActions(
+      repoName,
+      repoUrl,
+      moduleType,
+      path,
+      appType,
+    );
+  }
+
+  async EnsureClonedOrInitialized(
+    moduleName: string,
+    moduleType: string,
+    repoUrl: string,
+    appType?: AppType,
+  ): Promise<CdFxReturn<null>> {
+    return this.svCdAutoGit.ensureClonedOrInitialized(moduleName, moduleType, repoUrl, appType);
+  }
+
+  async HandleCdApiScaffold(
+    repoPath: string,
+    repoName: string,
+    repoUrl: string,
+  ): Promise<CdFxReturn<null>> {
+    return this.svCdAutoGit.handleCdApiScaffold(repoPath, repoName, repoUrl);
+  }
+
+  async HandleCdPwaScaffold(
+    repoPath: string,
+    repoName: string,
+    repoUrl: string,
+  ): Promise<CdFxReturn<null>> {
+    // TODO: Implement PWA-specific scaffolding
+    return cdFx(CdFxStateLevel.Success, 'PWA scaffold not yet implemented');
+  }
+
+  async HandleGenericScaffold(
+    repoPath: string,
+    repoName: string,
+    repoUrl: string,
+  ): Promise<CdFxReturn<null>> {
+    try {
+      const filepath = join(repoPath, 'README.md');
+      await fs.writeFile(filepath, `# ${repoName}\n\nRepo: ${repoUrl}`);
+      // return CD_FX_SUCCESS();
+      return cdFx(CdFxStateLevel.Success, '');
+    } catch (e: any) {
+      return cdFx(CdFxStateLevel.Error, `Generic scaffold failed:  ${e.message}`);
+    }
+  }
+
+  async ApplyGitignoreFromTemplate(
+    templateBase: string,
+    repoPath: string,
+  ): Promise<CdFxReturn<null>> {
+    return this.svCdAutoGit.applyGitignoreFromTemplate(templateBase, repoPath);
+  }
+
+  async CreateReadmeFile(
+    repoPath: string,
+    filename: string,
+    repoName: string,
+    moduleType: string,
+  ): Promise<CdFxReturn<null>> {
+    return this.svCdAutoGit.createReadmeFile(repoPath, filename, repoName, moduleType);
+  }
+
+  /**
+   * Commits and pushes pending changes in a Git repository.
+   *
+   * POLICY:
+   * - This method checks for uncommitted changes in the given repo path.
+   * - It then stages, commits, and pushes the changes to the remote origin.
+   * - A commit message must be provided explicitly or derived from the `VersionControlDescriptor`.
+   *   If neither is available, the process aborts with a `LogicalFailure`.
+   *
+   * @param repoPath - Absolute path to the local Git repository.
+   * @param versionControl - (Optional) Metadata descriptor used to generate commit message.
+   * @param commitMsg - (Optional) Direct commit message. Overrides auto-generated message if provided.
+   *
+   * @returns CdFxReturn<null> indicating success, error, or logical failure.
+   */
+  async CommitAndPushIfChanges(
+    repoPath: string,
+    versionControl?: VersionControlDescriptor,
+    commitMsg?: string,
+    devModeAction?: DevModeAction,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug(`CdAutoGitController:commitAndPushIfChanges()/01`);
+
+    return this.svCdAutoGit.commitAndPushIfChanges(
+      repoPath,
+      versionControl,
+      commitMsg,
+      devModeAction,
+    );
+  }
+
+  async CloneRepoToLocal(
+    repoName: string,
+    repoDirectory: string,
+    repoHost: string /** This can be a Git username or organization */,
+  ): Promise<void> {
+    return this.svCdAutoGit.cloneRepoToLocal(repoName, repoDirectory, repoHost);
+  }
+
+  async InitiateGitHubProject(repoHost: string): Promise<void> {
+    return this.svCdAutoGit.initiateGitHubProject(repoHost);
+  }
+
+  async CloneToTestBed(versionControl: VersionControlDescriptor): Promise<CdFxReturn<null>> {
+    return this.svCdAutoGit.cloneToTestBed(versionControl);
+  }
+
+  async GitPull(repoDir: RepoDirectoryDescriptor): Promise<CdFxReturn<null>> {
+    return this.svCdAutoGit.gitPull(repoDir);
+  }
+
+  async GitPush(repoDir: RepoDirectoryDescriptor, comment?: string): Promise<CdFxReturn<null>> {
+    return this.svCdAutoGit.gitPush(repoDir, comment);
+  }
+}
+
+```
+
+I have attached the service file. You can adopt same coding pattern as you implement processRfcTranscription(). You will find some reusable facilities especially of initiating connection and reusing existing profiles. I would like to clarify that It is the bio-engine that has the perspective of biological process. `CdAutoGit` is oblivious of the biological process. For example the CdAutoGitService may have readDocBlock(blockName). This will be called from the bio-engine module inside ProcessRfcTranscription()...the name can even be biological term as had represented earlier. So for now we need a working readDocBlock(blockName) which can work for any client module or method besides the bio-engine. We can visualize corpdesk as an operating system with several applications installed each with specific mission but can rely on others for specialized processes.
+
+```ts
+export class CdAutoGitService {
+  private b = new BaseService<DocModel>();
+
+  cdToken = '';
+  svCdCliProfile = new CdCliProfileService();
+
+  constructor() {
+    this.init();
+  }
+
+  async init() {
+    const ctlSession = new SessonController();
+    const ctlCdCliProfile = new CdCliProfileController();
+    const profileRet = await ctlCdCliProfile.loadProfiles();
+    if (!profileRet.state) {
+      CdLog.error(`Failed to load profiles: ${profileRet.message}`);
+      return null; // Handle the failure case properly
+    }
+
+    const r = await ctlSession.getSession(config.cdApiLocal);
+    if (r && r.cd_token) {
+      this.cdToken = r.cd_token;
+      CdLog.info('cdToken has been set');
+    } else {
+      CdLog.error('There is a problem setting cdToken');
+    }
+  }
+
+  async getGitHubProfile(): Promise<ProfileData | null> {
+    // CdLog.debug('starting getGitHubProfile()');
+    const ctlCdCliProfile = new CdCliProfileController();
+    const ret = await ctlCdCliProfile.loadProfiles();
+
+    if (!ret.state || !ret.data) {
+      CdLog.debug('could not load profiles');
+      return null;
+    }
+
+    const cdCliProfile: ProfileContainer = ret.data;
+    const gitProfile = cdCliProfile.items.find(
+      (item: ProfileModel) => item.cdCliProfileName === config.cdGitConfig,
+    );
+
+    if (!gitProfile?.cdCliProfileData) {
+      CdLog.error('GitHub profile not found in configuration.');
+      return null;
+    }
+
+    const profileData: ProfileData = gitProfile.cdCliProfileData;
+
+    try {
+      const resolvedDetails = await resolveVaultPlaceholders(
+        profileData.details,
+        profileData.cdVault || [],
+      );
+
+      return {
+        ...profileData,
+        details: resolvedDetails,
+        type: 'api',
+        typeId: 3,
+      };
+    } catch (err: any) {
+      CdLog.error(`getGitHubProfile(): ${err.message}`);
+      await this.handleMissingToken();
+      return null;
+    }
+  }
+
+  
+
+  async getRepoStatus(repoPath: string): Promise<CdFxReturn<RepoState>> {
+    try {
+      const statusOutput = await executeCommand('git status --porcelain', repoPath);
+      const isClean = !statusOutput.trim();
+
+      const branch = await executeCommand('git rev-parse --abbrev-ref HEAD', repoPath);
+      const lastCommit = await executeCommand('git rev-parse HEAD', repoPath);
+
+      return {
+        state: true,
+        data: {
+          isClean,
+          currentBranch: branch.trim(),
+          lastCommitHash: lastCommit.trim(),
+        },
+      };
+    } catch (err: any) {
+      return { state: false, message: `getRepoStatus() failed: ${err.message}` };
+    }
+  }
+
+
+  /**
+   * Usage:
+   * cd-cli auto-git create --name abcXyz --desc "project for testing auto-git" --priv false --repoHost corpdesk --debug 4
+   * @param repoName
+   * @param description
+   * @param isPrivate
+   * @param repoHost // git organizatin or account name
+   */
+  async createGitHubRepo(
+    repoName: string,
+    descript: string,
+    isPrivate: boolean,
+    repoHost: string,
+  ): Promise<CdFxReturn<void>> {
+    CdLog.debug(
+      `CdAutoGitController::createGitHubRepo()/start: ${inspect(
+        { repoName, descript, isPrivate, repoHost },
+        { depth: 2 },
+      )}`,
+    );
+    try {
+      if (!repoName?.trim()) {
+        throw new Error('Repository name is missing or invalid.');
+      }
+      descript =
+        typeof descript === 'string' && descript.trim()
+          ? descript
+          : 'A new repo created via cd-auto-git.';
+      if (typeof isPrivate !== 'boolean') {
+        isPrivate = false;
+      }
+
+      const gitProfileData = await this.getGitHubProfile();
+      if (!gitProfileData?.details?.gitAccess) {
+        throw new Error('GitHub profile gitAccess data could not be loaded.');
+      }
+
+      // const { baseRepoUrl: endpoint, gitHubToken } =
+      //   gitProfileData.details.gitAccess;
+      const endpoint = gitProfileData.details.gitAccess.baseRepoUrl;
+      const gitHubToken = gitProfileData.details.gitAccess.gitHubToken;
+
+      CdLog.debug(
+        `CdAutoGitController::createGitHubRepo()/gitProfileData: ${inspect(gitProfileData, {
+          depth: 3,
+        })}`,
+      );
+      CdLog.debug(`CdAutoGitController::createGitHubRepo()/endpoint: ${endpoint}`);
+      // CdLog.debug(`CdAutoGitController::createGitHubRepo()/gitHubToken: ${gitHubToken}`);
+      if (!endpoint || !gitHubToken) {
+        CdLog.error(
+          `GitHub profile missing endpoint/token:${inspect(gitProfileData.details.gitAccess, {
+            depth: 2,
+          })}`,
+        );
+        return {
+          state: false,
+          message: 'GitHub endpoint or token is missing.',
+        };
+      }
+
+      CdLog.debug(`GitHub profile loaded successfully:${inspect({ endpoint }, { depth: 1 })}`);
+
+      const payload = {
+        name: repoName.trim(),
+        private: isPrivate,
+        description: descript,
+      };
+      CdLog.debug(`Payload prepared:${inspect(payload, { depth: 2 })}`);
+
+      // Init HTTP client
+      const httpService = new HttpService(true);
+      if (!(await httpService.init(config.cdGitConfig))) {
+        throw new Error('HttpService init failed for gitHubApi.');
+      }
+
+      const responseResult = await httpService.request<any>(
+        {
+          method: 'POST',
+          url: `/orgs/${repoHost}/repos`,
+          headers: {
+            Authorization: `Bearer ${gitHubToken}`,
+            Accept: 'application/vnd.github+json',
+          },
+          data: payload,
+        },
+        config.cdGitConfig,
+      );
+
+      CdLog.debug(
+        `CdAutoGitController::createGitHubRepo()/responseResult:${inspect(
+          { responseResult },
+          { depth: 3 },
+        )}`,
+      );
+
+      if (!responseResult.state || !responseResult.data) {
+        throw new Error(`GitHub API error: ${responseResult.message || 'no data returned'}`);
+      }
+
+      const htmlUrl = responseResult.data.html_url;
+      if (!htmlUrl) {
+        throw new Error('GitHub response missing html_url.');
+      }
+
+      CdLog.success(`Repository Created: ${htmlUrl}`);
+      const repoUrl =
+        endpoint.replace('https://api.github.com', 'https://github.com') +
+        `/${repoHost}/${repoName}.git`;
+      await this.initializeLocalRepo(repoName, repoUrl);
+
+      return {
+        state: true,
+        message: 'GitHub repository created successfully.',
+      };
+    } catch (err: any) {
+      CdLog.error(`❌ Error creating GitHub repository: ${err.message}`);
+      if (process.env.DEBUG === 'true' || process.env.DEBUG_LEVEL === 'debug') {
+        CdLog.debug('Stack trace:', err.stack);
+      }
+      return {
+        state: false,
+        message: `Failed to create GitHub repo: ${err.message}`,
+      };
+    }
+  }
+
+  async createGitHubRepoOctokit(
+    repoName: string,
+    descript: string,
+    isPrivate: boolean,
+    repoHost: string,
+  ): Promise<CdFxReturn<void>> {
+    CdLog.debug(
+      `CdAutoGitController::createGitHubRepo()/start: ${inspect(
+        { repoName, descript, isPrivate, repoHost },
+        { depth: 2 },
+      )}`,
+    );
+    try {
+      if (!repoName?.trim()) {
+        throw new Error('Repository name is missing or invalid.');
+      }
+      descript =
+        typeof descript === 'string' && descript.trim()
+          ? descript
+          : 'A new repo created via cd-auto-git.';
+      if (typeof isPrivate !== 'boolean') {
+        isPrivate = false;
+      }
+
+      const gitProfileData = await this.getGitHubProfile();
+      if (!gitProfileData?.details?.gitAccess) {
+        throw new Error('GitHub profile gitAccess data could not be loaded.');
+      }
+
+      // const { baseRepoUrl: endpoint, gitHubToken } =
+      //   gitProfileData.details.gitAccess;
+      const endpoint = gitProfileData.details.gitAccess.baseRepoUrl;
+      const gitHubToken = gitProfileData.details.gitAccess.gitHubToken;
+
+      CdLog.debug(
+        `CdAutoGitController::createGitHubRepo()/gitProfileData: ${inspect(gitProfileData, {
+          depth: 3,
+        })}`,
+      );
+      CdLog.debug(`CdAutoGitController::createGitHubRepo()/endpoint: ${endpoint}`);
+      // CdLog.debug(`CdAutoGitController::createGitHubRepo()/gitHubToken: ${gitHubToken}`);
+      if (!endpoint || !gitHubToken) {
+        CdLog.error(
+          `GitHub profile missing endpoint/token:${inspect(gitProfileData.details.gitAccess, {
+            depth: 2,
+          })}`,
+        );
+        return {
+          state: false,
+          message: 'GitHub endpoint or token is missing.',
+        };
+      }
+
+      CdLog.debug(`GitHub profile loaded successfully:${inspect({ endpoint }, { depth: 1 })}`);
+
+      const payload = {
+        name: repoName.trim(),
+        private: isPrivate,
+        description: descript,
+      };
+      CdLog.debug(`Payload prepared:${inspect(payload, { depth: 2 })}`);
+
+      const GITHUB_ACCESS_TOKEN = gitHubToken;
+      const ORGANIZATION_NAME = repoHost; // The GitHub organization name
+      const REPO_NAME = payload.name; // The name for the new repository
+      const REPO_DESCRIPTION = payload.description;
+      const REPO_PRIVATE = payload.private; // Set to true for a private repository, false for public
+
+      if (!GITHUB_ACCESS_TOKEN) {
+        CdLog.error('Error: GITHUB_TOKEN environment variable is not set.');
+        CdLog.error(
+          'Please set it with your GitHub Personal Access Token (PAT) with `repo` scope.',
+        );
+        // process.exit(1);
+      }
+
+      const octokit = new Octokit({
+        auth: GITHUB_ACCESS_TOKEN,
+      });
+
+      try {
+        CdLog.debug(
+          `Attempting to create repository '${REPO_NAME}' in organization '${ORGANIZATION_NAME}'...`,
+        );
+
+        // Step 1: Validate if the repository already exists and get its details
+        const existingRepoDetails = await this.checkRepositoryExists(
+          octokit,
+          ORGANIZATION_NAME,
+          REPO_NAME,
+        );
+
+        if (existingRepoDetails) {
+          CdLog.debug(`Repository creation aborted: '${REPO_NAME}' already exists.`);
+          CdLog.debug(`Details of existing repository:`);
+          CdLog.debug(`  Name: ${existingRepoDetails.name}`);
+          CdLog.debug(`  URL: ${existingRepoDetails.html_url}`);
+          CdLog.debug(`  Created At: ${existingRepoDetails.created_at}`); // Access the created_at property
+          CdLog.debug(`  Last Updated At: ${existingRepoDetails.updated_at}`);
+          CdLog.debug(`  Description: ${existingRepoDetails.description || 'N/A'}`);
+          // You can log any other property from existingRepoDetails as needed
+          return {
+            state: CdFxStateLevel.PartialSuccess,
+            message: `Repository creation aborted: '${REPO_NAME}' already exists.`,
+          };
+        }
+
+        const response = await octokit.rest.repos.createInOrg({
+          org: ORGANIZATION_NAME,
+          name: REPO_NAME,
+          description: REPO_DESCRIPTION,
+          private: REPO_PRIVATE,
+          // You can add more options here, e.g.:
+          // homepage: 'https://example.com',
+          // has_issues: true,
+          // has_projects: true,
+          // has_wiki: true,
+          // auto_init: true, // Creates an initial commit with a README.md
+          // license_template: 'mit', // Adds a MIT license
+        });
+
+        if (response.status === 201) {
+          CdLog.debug(`Successfully created repository: ${response.data.html_url}`);
+          CdLog.debug('Repository details:', {
+            name: response.data.name,
+            url: response.data.html_url,
+            private: response.data.private,
+            owner: response.data.owner?.login,
+          });
+          return {
+            state: true,
+            message: 'GitHub repository created successfully.',
+          };
+        } else {
+          CdLog.error(`Failed to create repository. Status: ${response.status}`);
+          CdLog.error('Response data:', response.data);
+          return {
+            state: false,
+            message: `Failed to create repository. Status: ${response.status}`,
+          };
+        }
+      } catch (error: any) {
+        if (
+          error.status === 422 &&
+          error.response.data.errors?.[0]?.message === 'name already exists on this account'
+        ) {
+          console.warn(
+            `Repository '${REPO_NAME}' already exists in organization '${ORGANIZATION_NAME}'.`,
+          );
+          return {
+            state: false,
+            message: `Repository '${REPO_NAME}' already exists in organization '${ORGANIZATION_NAME}'.`,
+          };
+        } else {
+          CdLog.error('An unexpected error occurred:');
+          CdLog.error(error.message);
+          if (error.response) {
+            CdLog.error(
+              'GitHub API Error Details:',
+              error.response.data.errors || error.response.data,
+            );
+          }
+          return {
+            state: false,
+            message: `Error: ${error.message}`,
+          };
+        }
+        // process.exit(1);
+      }
+    } catch (err: any) {
+      CdLog.error(`❌ Error creating GitHub repository: ${err.message}`);
+      if (process.env.DEBUG === 'true' || process.env.DEBUG_LEVEL === 'debug') {
+        CdLog.debug('Stack trace:', err.stack);
+      }
+      return {
+        state: false,
+        message: `Failed to create GitHub repo: ${err.message}`,
+      };
+    }
+  }
+
+  /**
+   * Checks if a repository with the given name exists within a specified GitHub organization.
+   * If it exists, it returns the repository details. Otherwise, it returns null.
+   *
+   * @param octokit An authenticated Octokit instance.
+   * @param organizationName The name of the GitHub organization.
+   * @param repoName The name of the repository to check.
+   * @returns A Promise that resolves to RepositoryDetails if the repository exists, or null otherwise.
+   * @throws An error if there's a problem with the GitHub API that's not a 404 (e.g., authentication, rate limit).
+   */
+  async checkRepositoryExists(
+    octokit: Octokit,
+    organizationName: string,
+    repoName: string,
+  ): Promise<RepositoryDetails | null> {
+    // CdLog.debug(
+    //   `Checking if repository '${repoName}' exists in organization '${organizationName}'...`,
+    // );
+    try {
+      const response = await octokit.rest.repos.get({
+        owner: organizationName,
+        repo: repoName,
+      });
+      CdLog.debug(`Repository '${repoName}' already exists.`);
+      return response.data; // Return the full repository data
+    } catch (e: any) {
+      if (e.status === 404) {
+        // Repository does not exist
+        CdLog.debug(
+          `Repository '${repoName}' does not exist in organization '${organizationName}'.`,
+        );
+        return null; // Return null to indicate non-existence
+      }
+      // For any other error (e.g., 401 Unauthorized, 403 Forbidden, network issues)
+      CdLog.error('An unexpected error occurred while checking repository existence:');
+      CdLog.error(e.message);
+      if (e.response && e.response.data) {
+        CdLog.error('GitHub API Error Details:', e.response.data.message || e.response.data.errors);
+      }
+      // Re-throw the error to indicate a critical failure in checking
+      throw new Error(`Failed to check repository existence: ${e.message}`);
+    }
+  }
+
+  async performPostRepoCreationActions(
+    repoName: string,
+    repoUrl: string,
+    moduleType: string,
+    path?: string,
+    appType?: AppType,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug('CdAutoGitController::performPostRepoCreationActions()/01');
+    // const repoLocalPath = path ?? join(homedir(), repoName);
+    const repoLocalPath = resolveUserPath(path ?? `~/${repoName}`);
+    CdLog.debug('CdAutoGitController::performPostRepoCreationActions()/path: ' + path);
+    CdLog.debug(
+      'CdAutoGitController::performPostRepoCreationActions()/repoLocalPath: ' + repoLocalPath,
+    );
+
+    const originalCwd = process.cwd();
+
+    CdLog.debug(`\n--- Starting Git Post-Creation Actions for '${repoName}' [${moduleType}] ---`);
+
+    try {
+      CdLog.debug('CdAutoGitController::performPostRepoCreationActions()/02');
+      const cloneResult = await this.ensureClonedOrInitialized(
+        repoName,
+        moduleType,
+        repoUrl,
+        appType,
+      );
+      CdLog.debug(
+        `CdAutoGitController::performPostRepoCreationActions()/cloneResult: ${inspect(cloneResult, { depth: 2 })}`,
+      );
+      CdLog.debug('CdAutoGitController::performPostRepoCreationActions()/03');
+      if (!cloneResult.state) return cloneResult;
+
+      let scaffoldResult: CdFxReturn<null>;
+      CdLog.debug('CdAutoGitController::performPostRepoCreationActions()/04');
+      switch (moduleType) {
+        case 'cd-api':
+          scaffoldResult = await this.handleCdApiScaffold(repoLocalPath, repoName, repoUrl);
+          break;
+        case 'cd-pwa':
+          scaffoldResult = await this.handleCdPwaScaffold(repoLocalPath, repoName, repoUrl);
+          break;
+        default:
+          CdLog.warning(`Unknown moduleType '${moduleType}' — using generic setup`);
+          scaffoldResult = await this.handleGenericScaffold(repoLocalPath, repoName, repoUrl);
+          break;
+      }
+
+      if (!scaffoldResult.state) return scaffoldResult;
+
+      const commitResult = await this.commitAndPushIfChanges(
+        repoLocalPath,
+        undefined,
+        `post repo creation setup for ${repoName} , ${moduleType}`,
+        DevModeAction.CREATE,
+      );
+      if (!commitResult.state) return commitResult;
+
+      CdLog.debug(`\n--- Completed Post-Repo Setup for '${repoName}' [${moduleType}] ---`);
+      // return CD_FX_SUCCESS();
+      return cdFx(
+        CdFxStateLevel.Success,
+        `Post-creation actions completed for '${repoName}' (${moduleType})`,
+      );
+    } catch (error: any) {
+      CdLog.error(`Error during post-creation for '${repoName}' [${moduleType}]:`);
+      CdLog.error('stderr:', error.stderr || 'N/A');
+      CdLog.error('message:', error.message);
+      // return CD_FX_FAIL(`Failed Git actions for '${repoName}' (${moduleType}): ${error.message}`);
+      return cdFx(
+        CdFxStateLevel.Error,
+        `Failed Git actions for '${repoName}' (${moduleType}): ${error.message}`,
+      );
+    } finally {
+      $.cwd = originalCwd;
+      CdLog.debug(`Restored working directory: ${$.cwd}`);
+    }
+  }
+
+  async ensureClonedOrInitialized(
+    moduleName: string,
+    moduleType: string,
+    repoUrl: string,
+    appType?: AppType,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug('CdAutoGitController::ensureClonedOrInitialized()');
+
+    try {
+      const baseOutputDir = getModCraftOutputDir(appType ?? AppType.CdApiModule);
+      CdLog.debug(
+        'CdAutoGitController::ensureClonedOrInitialized()/baseOutputDir: ' + baseOutputDir,
+      );
+      const expectedPath = join(baseOutputDir, moduleName);
+      CdLog.debug('CdAutoGitController::ensureClonedOrInitialized()/expectedPath: ' + expectedPath);
+
+      // Validate the expected output directory exists
+      try {
+        const stats = await stat(baseOutputDir);
+        if (!stats.isDirectory()) {
+          throw new Error(`Expected output base directory is not a directory: ${baseOutputDir}`);
+        }
+      } catch (e) {
+        return cdFx(
+          CdFxStateLevel.Error,
+          `Invalid output directory base: '${baseOutputDir}' does not exist`,
+        );
+      }
+
+      // Extra safety: Make sure the final clone path is within allowed root
+      const normalizedExpected = normalize(expectedPath);
+      const normalizedRoot = normalize(baseOutputDir);
+      CdLog.debug('CdAutoGitController::ensureClonedOrInitialized()/02');
+      if (!normalizedExpected.startsWith(normalizedRoot)) {
+        CdLog.debug('CdAutoGitController::ensureClonedOrInitialized()/03');
+        return cdFx(
+          CdFxStateLevel.Error,
+          `Resolved path '${normalizedExpected}' is outside allowed root '${normalizedRoot}'`,
+        );
+      }
+      CdLog.debug('CdAutoGitController::ensureClonedOrInitialized()/04');
+      const gitDir = join(expectedPath, '.git');
+      const exists = await fs
+        .access(gitDir)
+        .then(() => true)
+        .catch(() => false);
+
+      if (!exists) {
+        CdLog.debug('CdAutoGitController::ensureClonedOrInitialized()/05');
+        CdLog.debug(`Cloning repo into ${expectedPath}`);
+        await run(`git clone ${repoUrl} ${expectedPath}`);
+      }
+      CdLog.debug('CdAutoGitController::ensureClonedOrInitialized()/06');
+      return cdFx(CdFxStateLevel.Success, '');
+    } catch (e: any) {
+      CdLog.debug('CdAutoGitController::ensureClonedOrInitialized()/07');
+      return cdFx(CdFxStateLevel.Error, `Failed to clone or initialize repo: ${e.message}`);
+    }
+  }
+
+  async handleCdApiScaffold(
+    repoPath: string,
+    repoName: string,
+    repoUrl: string,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug('CdAutoGitController::handleCdApiScaffold()/01');
+
+    const templateBase = join(
+      process.cwd(),
+      'src/CdCli/app/app-craft/workshop/cd-api/template/abcd',
+    );
+
+    const gitignoreResult = await this.applyGitignoreFromTemplate(templateBase, repoPath);
+
+    if (gitignoreResult.state === undefined || gitignoreResult.state === CdFxStateLevel.Fatal) {
+      CdLog.error('Critical: .gitignore setup failed. Aborting module scaffold.');
+      return gitignoreResult;
+    }
+
+    const fileResult = await this.createReadmeFile(repoPath, 'README.md', repoName, 'cd-api');
+    return fileResult;
+  }
+
+  async handleCdPwaScaffold(
+    repoPath: string,
+    repoName: string,
+    repoUrl: string,
+  ): Promise<CdFxReturn<null>> {
+    // TODO: Implement PWA-specific scaffolding
+    return cdFx(CdFxStateLevel.Success, 'PWA scaffold not yet implemented');
+  }
+
+  async handleGenericScaffold(
+    repoPath: string,
+    repoName: string,
+    repoUrl: string,
+  ): Promise<CdFxReturn<null>> {
+    try {
+      const filepath = join(repoPath, 'README.md');
+      await fs.writeFile(filepath, `# ${repoName}\n\nRepo: ${repoUrl}`);
+      // return CD_FX_SUCCESS();
+      return cdFx(CdFxStateLevel.Success, '');
+    } catch (e: any) {
+      return cdFx(CdFxStateLevel.Error, `Generic scaffold failed:  ${e.message}`);
+    }
+  }
+
+  async applyGitignoreFromTemplate(
+    templateBase: string,
+    repoPath: string,
+  ): Promise<CdFxReturn<null>> {
+    try {
+      const source = join(templateBase, '.gitignore');
+      const target = join(repoPath, '.gitignore');
+
+      // Check if .gitignore exists before trying to copy
+      await fs.access(source, fs.constants.F_OK);
+
+      // Proceed with copy
+      await fs.copyFile(source, target);
+
+      return cdFx(CdFxStateLevel.Success, '.gitignore copied successfully.');
+    } catch (e: any) {
+      const message = `Failed to apply .gitignore: ${e.message}`;
+
+      // If the error is due to missing file
+      if (e.code === 'ENOENT') {
+        return cdFx(CdFxStateLevel.Fatal, message);
+      }
+
+      return cdFx(CdFxStateLevel.Error, message);
+    }
+  }
+
+  async createReadmeFile(
+    repoPath: string,
+    filename: string,
+    repoName: string,
+    moduleType: string,
+  ): Promise<CdFxReturn<null>> {
+    try {
+      CdLog.debug(
+        `CdAutoGitController::createReadmeFile()/repoPath: ${repoPath}, filename: ${filename}`,
+      );
+      const fullPath = join(repoPath, filename);
+      const content = `Hello ${repoName} (${moduleType})\nCreated: ${new Date().toISOString()}\n`;
+      await fs.writeFile(fullPath, content, 'utf-8');
+      return cdFx(CdFxStateLevel.Success, '');
+    } catch (e: any) {
+      return cdFx(CdFxStateLevel.Error, `Failed to create test file '${filename}':  ${e.message}`);
+    }
+  }
+
+  // Helper: Detect if repo has any commits
+  private async hasCommits(): Promise<boolean> {
+    try {
+      await run('git rev-parse --verify HEAD');
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Commits and pushes pending changes in a Git repository.
+   *
+   * POLICY:
+   * - This method checks for uncommitted changes in the given repo path.
+   * - It then stages, commits, and pushes the changes to the remote origin.
+   * - A commit message must be provided explicitly or derived from the `VersionControlDescriptor`.
+   *   If neither is available, the process aborts with a `LogicalFailure`.
+   *
+   * @param repoPath - Absolute path to the local Git repository.
+   * @param versionControl - (Optional) Metadata descriptor used to generate commit message.
+   * @param commitMsg - (Optional) Direct commit message. Overrides auto-generated message if provided.
+   *
+   * @returns CdFxReturn<null> indicating success, error, or logical failure.
+   */
+  async commitAndPushIfChanges(
+    repoPath: string,
+    versionControl?: VersionControlDescriptor,
+    commitMsg?: string,
+    devModeAction?: DevModeAction,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug(`CdAutoGitController:commitAndPushIfChanges()/START`);
+    $.cwd = repoPath;
+
+    try {
+      // --- Step 0: Ensure valid git repo (or initialize if necessary) ---
+      const repoCheck = await this.ensureGitRepository(repoPath);
+      this.b.logWithContext(this.constructor.name, 'commitAndPushIfChanges:repoCheck', {
+        repoCheck,
+      });
+      if (!repoCheck.state) return repoCheck;
+
+      await this.logRepoState(repoPath);
+
+      // --- Step 1: Stage changes ---
+      const stageCheck = await this.stageChanges(devModeAction);
+      this.b.logWithContext(this.constructor.name, 'commitAndPushIfChanges:stageCheck', {
+        stageCheck,
+      });
+      if (!stageCheck.state) return stageCheck;
+
+      // --- Step 2: Check if there is anything to commit ---
+      const hasChanges = await this.hasChangesToCommit();
+      this.b.logWithContext(this.constructor.name, 'commitAndPushIfChanges:hasChanges', {
+        hasChanges,
+      });
+      if (!hasChanges.state) return hasChanges;
+
+      // --- Step 3: Commit changes ---
+      const commitCheck = await this.commitChanges(commitMsg, versionControl);
+      this.b.logWithContext(this.constructor.name, 'commitAndPushIfChanges:commitCheck', {
+        commitCheck,
+      });
+      if (!commitCheck.state) return commitCheck;
+
+      // --- Step 4: Ensure remote is configured ---
+      const remoteCheck = await this.ensureRemoteConfigured();
+      this.b.logWithContext(this.constructor.name, 'commitAndPushIfChanges:remoteCheck', {
+        remoteCheck,
+      });
+      if (!remoteCheck.state) return remoteCheck;
+
+      // --- Step 5: Ensure branch ready before pushing ---
+      const branchCheck = await this.ensureBranchReady(repoPath, 'main');
+      this.b.logWithContext(this.constructor.name, 'commitAndPushIfChanges:branchCheck', {
+        branchCheck,
+      });
+      if (!branchCheck.state) return branchCheck;
+
+      // --- Step 6: Push changes ---
+      const pushCheck = await this.pushChanges();
+      this.b.logWithContext(this.constructor.name, 'commitAndPushIfChanges:pushCheck', {
+        pushCheck,
+      });
+      if (!pushCheck.state) return pushCheck;
+
+      // --- Step 7: Verify push state (best effort) ---
+      await this.verifyPushState();
+
+      return cdFx(CdFxStateLevel.Success, 'Changes committed and pushed successfully.', null);
+    } catch (e: any) {
+      return cdFx(
+        CdFxStateLevel.Error,
+        `Unexpected error during commit and push: ${e.message}`,
+        null,
+      );
+    }
+  }
+
+  /* ----------------- HELPERS ------------------- */
+
+  /**
+   * Ensure branch exists and is properly set before pushing.
+   * - If no commits exist, create branch.
+   * - If branch name mismatches, rename to expected.
+   */
+  private async ensureBranchReady(repoPath: string, branch = 'main'): Promise<CdFxReturn<null>> {
+    this.b.logWithContext(this, 'ensureBranchReady:repoPath', {
+      repoPath,
+      branch,
+    });
+    try {
+      const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: repoPath })
+        .toString()
+        .trim();
+
+      this.b.logWithContext(this, 'ensureBranchReady:currentBranch', {
+        currentBranch,
+      });
+
+      if (currentBranch !== branch) {
+        if (currentBranch === 'HEAD') {
+          // Fresh repo, no branch yet
+          execSync(`git checkout -b ${branch}`, { cwd: repoPath });
+        } else {
+          // Rename existing branch
+          execSync(`git branch -M ${branch}`, { cwd: repoPath });
+        }
+      }
+
+      return cdFx(CdFxStateLevel.Success, `Branch '${branch}' ready.`, null);
+    } catch (err: any) {
+      return cdFx(CdFxStateLevel.Error, `Branch setup failed: ${err.message}`, null);
+    }
+  }
+
+  private async ensureGitRepository(repoPath: string): Promise<CdFxReturn<null>> {
+    this.b.logWithContext(this, 'ensureGitRepository:repoPath', {
+      repoPath,
+    });
+    try {
+      await run('git rev-parse --is-inside-work-tree');
+      return cdFx(CdFxStateLevel.Success, 'Valid git repository.', null);
+    } catch {
+      // Try initializing as fallback
+      try {
+        await run('git init');
+        CdLog.warning(`Initialized new git repository at ${repoPath}`);
+        return cdFx(CdFxStateLevel.Success, 'Initialized new git repository.', null);
+      } catch (err) {
+        return this.formatGitError('git init', err);
+      }
+    }
+  }
+
+  private async stageChanges(devModeAction?: DevModeAction): Promise<CdFxReturn<null>> {
+    this.b.logWithContext(this, 'stageChanges:stageChanges', {
+      devModeAction,
+    });
+    try {
+      if (devModeAction === DevModeAction.CREATE) {
+        CdLog.warning(`Using 'git add -f .' to force-add ignored files.`);
+        await run('git add -f .');
+      } else {
+        await run('git add .');
+      }
+      return cdFx(CdFxStateLevel.Success, 'Changes staged.', null);
+    } catch (err) {
+      return this.formatGitError('git add', err);
+    }
+  }
+
+  private async hasChangesToCommit(): Promise<CdFxReturn<null>> {
+    this.b.logWithContext(this, 'hasChangesToCommit:', '01');
+    try {
+      const status = await run('git status --porcelain');
+      if (status.trim().length === 0) {
+        return cdFx(CdFxStateLevel.Info, 'No changes to commit.', null);
+      }
+      return cdFx(CdFxStateLevel.Success, 'Changes detected.', null);
+    } catch (err) {
+      return this.formatGitError('git status', err);
+    }
+  }
+
+  private async commitChanges(
+    commitMsg?: string,
+    versionControl?: VersionControlDescriptor,
+  ): Promise<CdFxReturn<null>> {
+    // this.b.logWithContext(this, 'commitChanges:', {
+    //   commitMsg,
+    //   versionControl,
+    // });
+    let finalCommitMsg = commitMsg?.trim();
+
+    if (!finalCommitMsg && versionControl) {
+      const repoName = versionControl.repository?.name || 'unknown';
+      const patch = versionControl.patchLevel ?? 0;
+      finalCommitMsg = `chore(${repoName}): auto commit v0.0.${patch}`;
+    }
+
+    if (!finalCommitMsg) {
+      return cdFx(CdFxStateLevel.LogicalFailure, 'Commit message could not be determined.', null);
+    }
+
+    try {
+      await run(`git commit -m "${finalCommitMsg}"`);
+      return cdFx(CdFxStateLevel.Success, 'Changes committed.', null);
+    } catch (err: any) {
+      if (err.message?.includes('nothing to commit')) {
+        return cdFx(CdFxStateLevel.Info, 'No changes detected after staging.', null);
+      }
+      return this.formatGitError('git commit', err);
+    }
+  }
+
+  private async ensureRemoteConfigured(): Promise<CdFxReturn<null>> {
+    this.b.logWithContext(this, 'ensureRemoteConfigured:', '01');
+    try {
+      await run('git remote -v');
+      return cdFx(CdFxStateLevel.Success, 'Remote configured.', null);
+    } catch {
+      return cdFx(CdFxStateLevel.Error, 'No git remote configured for this repo.', null);
+    }
+  }
+
+  private async pushChanges(): Promise<CdFxReturn<null>> {
+    this.b.logWithContext(this, 'pushChanges:', '01');
+    try {
+      await run('git push origin main');
+      return cdFx(CdFxStateLevel.Success, 'Changes pushed.', null);
+    } catch (err: any) {
+      if (err.message?.includes('authentication')) {
+        return cdFx(CdFxStateLevel.Error, 'Authentication to remote failed.', null);
+      }
+      if (err.message?.includes('could not read from remote')) {
+        return cdFx(CdFxStateLevel.Error, 'Remote repository unreachable.', null);
+      }
+      if (err.message?.includes('non-fast-forward')) {
+        return cdFx(CdFxStateLevel.Error, 'Push rejected: non-fast-forward.', null);
+      }
+      return this.formatGitError('git push', err);
+    }
+  }
+
+  private async verifyPushState(): Promise<void> {
+    this.b.logWithContext(this, 'verifyPushState:', '01');
+    try {
+      const files = await executeCommand("git ls-tree -r HEAD --name-only | sed 's|[^/]*/|  |g'");
+      CdLog.debug(`Repo files after push:\n${files}`);
+    } catch {
+      CdLog.warning('Could not verify push state, but push was attempted.');
+    }
+  }
+
+  ///////////////////////////////////////////////////////
+
+  // Helper to log repo path and structure
+  async logRepoState(repoPath: string) {
+    CdLog.debug(`CdAutoGitController:commitAndPushIfChanges()/Current Directory:\n${repoPath}`);
+    CdLog.debug(`\n${await run('pwd', repoPath)}`);
+    CdLog.debug(`Directory Structure before git push:\n${await run('tree', repoPath)}`);
+  }
+
+  formatGitError(step: string, err: any): CdFxReturn<null> {
+    const message = [
+      `❌ Git step failed: ${step}`,
+      err?.code !== undefined ? `Exit code: ${err.code}` : '',
+      err?.stderr ? `\nSTDERR:\n${err.stderr}` : '',
+      err?.message ? `\nMessage:\n${err.message}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    CdLog.error(message); // Immediate log for visibility
+    return cdFx(CdFxStateLevel.Error, message);
+  }
+
+  async commitAndTag(
+    repoPath: string,
+    commitMessage: string,
+    tagName: string,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug(`CdAutoGitController:commitAndTag()/repoPath: ${repoPath}`);
+    CdLog.debug(`CdAutoGitController:commitAndTag()/commitMessage: ${commitMessage}`);
+    CdLog.debug(`CdAutoGitController:commitAndTag()/tagName: ${tagName}`);
+
+    try {
+      $.cwd = repoPath;
+
+      // Safer directory listing (replacing tree)
+      try {
+        const dirList = await executeCommand('ls -al --color=never');
+        CdLog.debug(`CdAutoGitController:commitAndTag()/Directory Listing:\n${dirList}`);
+      } catch (e: any) {
+        CdLog.debug(`CdAutoGitController:commitAndTag()/Directory listing skipped: ${e.message}`);
+      }
+
+      // Stage all changes
+      await run('git add .');
+
+      // Check for changes
+      const status = await run('git status --porcelain');
+      CdLog.debug(`CdAutoGitController:commitAndTag()/git status:\n${status}`);
+
+      if (status.trim().length > 0) {
+        // Commit changes
+        await run(`git commit -m "${commitMessage}"`);
+        CdLog.debug(`CdAutoGitController:commitAndTag()/Committed changes.`);
+
+        // Tag the commit
+        await run(`git tag ${tagName}`);
+        CdLog.debug(`CdAutoGitController:commitAndTag()/Tagged commit with ${tagName}.`);
+
+        // Push commit and tag
+        await run('git push origin main');
+        await run('git push origin --tags');
+        CdLog.debug(`CdAutoGitController:commitAndTag()/Pushed commits and tags.`);
+      } else {
+        CdLog.debug(`CdAutoGitController:commitAndTag()/No changes to commit or tag.`);
+      }
+
+      return cdFx(CdFxStateLevel.Success, `✅ Commit and tag operation completed successfully.`);
+    } catch (e: any) {
+      return cdFx(
+        CdFxStateLevel.Error,
+        `❗ CdAutoGitController:commitAndTag()/Failed to commit and tag: ${e.message}`,
+      );
+    }
+  }
+
+  async handleMissingToken(): Promise<void> {
+    try {
+      // const inquirer: any = await import('inquirer');
+      const answers = await inquirer.prompt([
+        {
+          type: 'password',
+          name: 'gitHubToken',
+          message: 'Enter your GitHub personal access token (PAT):',
+          mask: '*',
+          validate: (input) => !!input || 'Token cannot be empty.',
+        },
+        {
+          type: 'confirm',
+          name: 'encryptToken',
+          message: 'Do you want to encrypt the token?',
+          default: true,
+        },
+      ]);
+
+      let encryptedValue: string | null = null;
+      let encryptionMeta: EncryptionMeta | undefined;
+
+      if (answers.encryptToken) {
+        const encryptionResult = await CdCliVaultController.encrypt(answers.gitHubToken, 'default');
+
+        if (encryptionResult && encryptionResult.encryptedValue) {
+          encryptedValue = encryptionResult.encryptedValue;
+          encryptionMeta = encryptionResult.encryptionMeta; // Use dynamically generated meta
+        } else {
+          CdLog.error('Failed to encrypt the GitHub token.');
+          return;
+        }
+      }
+
+      const tokenData: CdVaultItem = {
+        name: 'gitHubToken',
+        value: answers.encryptToken ? null : answers.gitHubToken,
+        isEncrypted: answers.encryptToken,
+        encryptedValue,
+        encryptionMeta, // Include the full encryption metadata
+        description: 'GitHub access token',
+      };
+
+      const updated = await this.updateCdVault(tokenData);
+
+      if (updated) {
+        CdLog.success('GitHub token saved successfully.');
+      } else {
+        CdLog.error('Failed to save GitHub token.');
+      }
+    } catch (error) {
+      CdLog.error(`Error handling missing GitHub token: ${(error as Error).message}`);
+    }
+  }
+
+  private async checkEncryptionPreference(): Promise<boolean> {
+    // Example: Check a config or prompt the user
+    return true; // Assume encryption is preferred
+  }
+
+  private async setupEncryptedToken(): Promise<string | null> {
+    const token = await this.promptForToken();
+    if (!token) return null;
+
+    // Encrypt the token
+    const encryptedToken = await CdCliVaultController.encryptValue(
+      { name: 'gitHubToken', value: token } as CdVaultItem,
+      'default',
+    );
+
+    if (!encryptedToken || !encryptedToken.encryptedValue) {
+      CdLog.error('Failed to encrypt GitHub token.');
+      return null;
+    }
+
+    const ret = await this.updateCdVault(encryptedToken);
+
+    return encryptedToken.encryptedValue; // Guaranteed to be non-null
+  }
+
+  private async promptForPlainToken(): Promise<string | null> {
+    const plainToken = await this.promptForToken();
+    if (!plainToken) return null;
+
+    // Save the plain token
+    await this.updateCdVault({
+      name: 'gitHubToken',
+      value: plainToken,
+      encryptedValue: null,
+      isEncrypted: false,
+    });
+    return plainToken;
+  }
+
+  private async promptForToken(): Promise<string | null> {
+    const { token } = await inquirer.prompt([
+      {
+        type: 'password',
+        name: 'token',
+        message: 'Enter your GitHub personal access token:',
+        mask: '*',
+      },
+    ]);
+
+    return token || null;
+  }
+
+  private async updateCdVault(tokenData: CdVaultItem | null): Promise<ICdResponse | null> {
+    CdLog.debug('starting CdAutoGitController::updateCdVault()');
+    CdLog.debug('CdAutoGitController::updateCdVault()/tokenData:', {
+      t: tokenData,
+    });
+    let ret: any = null;
+    const ctlCdCliProfile = new CdCliProfileController();
+    try {
+      if (!tokenData) {
+        const error = 'tokenData is not valid';
+        this.b.err.push(error);
+        throw new Error(error);
+      }
+      // Load the configuration file
+      const profileRet: CdFxReturn<ProfileContainer> = await ctlCdCliProfile.loadProfiles();
+      if (!profileRet.state || !profileRet.data) {
+        CdLog.error(`Failed to load profiles: ${profileRet.message}`);
+        return null; // Handle the failure case properly
+      }
+
+      // const cdCliProfile = ctlCdCliProfile.loadProfiles();
+      const gitProfile = profileRet.data.items.find(
+        (item: ProfileModel) => item.cdCliProfileName === config.cdGitConfig,
+      );
+      CdLog.debug('CdAutoGitController::updateCdVault()/gitProfile:', gitProfile);
+
+      // Validate profile existence
+      if (!gitProfile || !gitProfile.cdCliProfileData) {
+        const error = 'GitHub profile not found in configuration.';
+        this.b.err.push(error);
+        throw new Error(error);
+      }
+
+      // Initialize or append to the cdVault array
+      gitProfile.cdCliProfileData.cdVault = gitProfile.cdCliProfileData.cdVault || [];
+      gitProfile.cdCliProfileData.cdVault.push(tokenData);
+
+      // Prepare the query and JSON update details
+      const q: IQuery = {
+        update: null,
+        where: {
+          userId: 1010,
+          cdCliProfileId: 2,
+        },
+      };
+
+      const jsonUpdate: IJsonUpdate[] = [
+        {
+          modelField: 'cdCliProfileData',
+          path: ['cdVault', '[0]', 'encryptedValue'],
+          value: tokenData.encryptedValue,
+        },
+        {
+          modelField: 'cdCliProfileData',
+          path: ['cdVault', '[0]', 'encryptionMeta'],
+          value: tokenData.encryptionMeta,
+        },
+      ];
+
+      // Validate the updates
+      const result = this.b.validateJsonUpdate(jsonUpdate, gitProfile.cdCliProfileData);
+
+      if (!result.valid) {
+        const e = `Validation of jsonUpdate data failed with errors: ${result.errors}`;
+        CdLog.error(e);
+        this.b.err.push(e);
+        throw new Error(e);
+      } else {
+        CdLog.success('Validation of jsonUpdate data successful!');
+      }
+
+      // Ensure cdToken is present before proceeding
+      if (!this.cdToken) {
+        const error = 'Missing authentication token for updating cdVault.';
+        this.b.err.push(error);
+        throw new Error(error);
+      }
+
+      // Perform the database update
+      const apiRes: CdFxReturn<ICdResponse> = await this.svCdCliProfile.updateCdCliProfileData(
+        q,
+        jsonUpdate,
+        this.cdToken,
+      );
+
+      if (apiRes.state && apiRes.data && apiRes.data.app_state && apiRes.data.app_state.success) {
+        // Synchronize local configuration with the updated database profile
+        // Use the updated gitProfile object since apiRes.data does not have newProfile
+        const updatedProfile = gitProfile;
+        const configIndex = profileRet.data.items.findIndex(
+          (item: ProfileModel) => item.cdCliProfileName === config.cdGitConfig,
+        );
+
+        if (configIndex !== -1) {
+          profileRet.data.items[configIndex] = updatedProfile;
+          // saveCdCliProfileLocal(cdCliProfile);
+
+          ret = await ctlCdCliProfile.saveCdCliProfileLocal(updatedProfile, config.cdGitConfig);
+          if (ret) {
+            CdLog.success('Token saved to GitHub profile and local configuration synchronized.');
+            return ret;
+          } else {
+            CdLog.error('Error while saving to local');
+            return ret;
+          }
+        } else {
+          const error = 'Failed to update local configuration: Profile not found in config.';
+          this.b.err.push(error);
+          CdLog.error(error);
+          return ret;
+        }
+      } else {
+        const error = 'cdVault data could not be saved to the database.';
+        this.b.err.push(error);
+        CdLog.error(error);
+        return ret;
+      }
+    } catch (e: any) {
+      const error = (e as Error).toString();
+      this.b.err.push(error);
+      CdLog.error(`Error in updateCdVault: ${error}`);
+      return ret;
+    }
+  }
+
+  async initializeLocalRepo(repoName: string, repoUrl: string): Promise<void> {
+    try {
+      // Extract org and repo name from the URL
+      const match = repoUrl.match(/https:\/\/github\.com\/([^/]+)\/([^/]+)\.git/);
+      if (!match) {
+        throw new Error('Invalid repository URL.');
+      }
+      const [, org, repo] = match;
+
+      // Execute the script from ~/.cd-cli/scripts
+      const scriptPath = path.resolve(os.homedir(), '.cd-cli/scripts/init_repo.sh');
+      const command = `${scriptPath} ${org} ${repo}`;
+      CdLog.debug(`Running script: ${command}`);
+      const { stdout, stderr } = await execAsync(command);
+      if (stdout) CdLog.info(`Script output: ${stdout}`);
+      if (stderr) CdLog.warning(`Script warning: ${stderr}`);
+
+      CdLog.success(`Repository ${repoName} initialized and pushed to ${repoUrl}`);
+    } catch (error) {
+      CdLog.error(`Error initializing local repository: ${(error as Error).message}`);
+    }
+  }
+
+  async cloneRepoToLocal(
+    repoName: string,
+    repoDirectory: string,
+    repoHost: string /** This can be a Git username or organization */,
+  ): Promise<void> {
+    try {
+      // Experimental overrides
+      repoName = 'testAutoGit';
+      repoHost = 'corpdesk';
+      repoDirectory = '~';
+
+      // Fetch the GitHub profile
+      const gitProfileData = await this.getGitHubProfile();
+      if (!gitProfileData) {
+        throw new Error('GitHub profile could not be loaded.');
+      }
+
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/gitProfileData:', gitProfileData);
+
+      // Extract the endpoint and token from the GitHub profile
+      let endpoint = gitProfileData.details.endpoint;
+      let gitHubToken = gitProfileData.details.gitAccess?.gitHubToken;
+
+      CdLog.debug(`CdAutoGitController::cloneRepoToLocal()/endpoint: ${endpoint}`);
+
+      // Experimental overrides
+      endpoint = 'https://github.com';
+
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/endpoint:', {
+        url: endpoint,
+      });
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/gitHubToken:', {
+        token: gitHubToken,
+      });
+
+      // Decrypt and resolve all vault references in details
+      const resolved: IProfileDetails = await CdCliVaultController.resolveVaultReferencesInObject(
+        gitProfileData.details,
+        gitProfileData.cdVault,
+      );
+
+      // Extract from resolved details after vault substitution
+      // const { baseUrl, gitAccess } = resolved;
+      CdLog.debug(`CdAutoGitController::cloneRepoToLocal()/resolved:${JSON.stringify(resolved)}`);
+      endpoint = resolved.endpoint;
+      CdLog.debug(`CdAutoGitController::cloneRepoToLocal()/endpoint:${endpoint}`);
+      gitHubToken = resolved.gitAccess?.gitHubToken;
+      CdLog.debug(`CdAutoGitController::cloneRepoToLocal()/gitHubToken:${gitHubToken}`);
+      if (!endpoint || !gitHubToken) {
+        throw new Error(
+          'Missing GitHub endpoint or token. Ensure GitHub profile is configured correctly.',
+        );
+      }
+
+      // Construct the full repository URL with authentication
+      const authRepoUrl = endpoint.replace('https://', `https://${gitHubToken}@`);
+      const repoUrl = `${authRepoUrl}/${repoHost}/${repoName}.git`;
+
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/repoUrl:', {
+        url: repoUrl,
+      });
+
+      // Construct the git clone command
+      const gitCommand = `git clone ${repoUrl} ${repoDirectory}/${repoName}`;
+
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/gitCommand:', {
+        cmd: gitCommand,
+      });
+
+      // Execute the git clone command
+      await this.runCommand(gitCommand);
+
+      // Log success message
+      CdLog.success(`Repository cloned into ${repoDirectory}/${repoName}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        CdLog.error(`Error cloning repository: ${error.message}`);
+      } else {
+        CdLog.error(`Error cloning repository: Unexpected error format: ${JSON.stringify(error)}`);
+      }
+    }
+  }
+
+  private runCommand(command: string, cwd?: string): Promise<string> {
+    CdLog.debug(`CdAutoGitController::runCommand()/01`);
+    CdLog.debug(`CdAutoGitController::runCommand() → command: ${command}`);
+    return new Promise((resolve, reject) => {
+      CdLog.debug(`CdAutoGitController::runCommand()/02`);
+      exec(command, { cwd, shell: '/bin/bash' }, (error, stdout, stderr) => {
+        CdLog.debug(`CdAutoGitController::runCommand()/03`);
+        if (stdout) CdLog.debug(`stdout:\n${stdout.trim()}`);
+        if (stderr) CdLog.debug(`stderr:\n${stderr.trim()}`);
+        CdLog.debug(`CdAutoGitController::runCommand()/04`);
+        if (error) {
+          CdLog.debug(`CdAutoGitController::runCommand()/05`);
+          CdLog.error(`❌ Command failed → ${error.message}`);
+          reject(error.message);
+        } else {
+          resolve(stdout.trim());
+        }
+      });
+    });
+  }
+
+  // Main method to initiate the GitHub project setup
+  async initiateGitHubProject(repoHost: string /** This can be git user name or git company */) {
+    const gitProfileData: ProfileData = (await this.getGitHubProfile()) as ProfileData;
+    if (!gitProfileData) {
+      CdLog.error('GitHub profile could not be loaded.');
+      return;
+    }
+
+    const { gitHubUser: gitHubUser, gitHubToken: gitHubToken, endpoint } = gitProfileData.details;
+
+    if (!gitHubToken || !gitHubUser || !endpoint) {
+      CdLog.error('GitHub profile is incomplete. Ensure username, token, and endpoint are set.');
+      return;
+    }
+
+    const repoDirectory = '~/cd-projects'; // Default directory for cloning
+    const { repoName, repoDescription, isPrivate } = await inquirer.prompt(
+      GitHubRepoCreatePromptData,
+    );
+
+    // Create and clone the repository
+    await this.createGitHubRepo(repoName, repoDescription, isPrivate, repoHost);
+    await this.cloneRepoToLocal(repoName, repoDirectory, repoHost);
+  }
+
+  async cloneToTestBed(versionControl: VersionControlDescriptor): Promise<CdFxReturn<null>> {
+    CdLog.debug(`CdAutoGitController::cloneToTestBed() 01`);
+    const testBedDir = versionControl?.repository.directories?.find(
+      (d) => d.environment.name === CdEnvName.TEST_BED,
+    );
+    try {
+      if (!testBedDir?.path) {
+        throw new Error('Invalid testBedDir or missing path.');
+      }
+
+      const projName = versionControl?.repository.name;
+      const dir = testBedDir.path;
+
+      // Remove only if it ends with `/${projName}`
+      const moduleRoot = dir.endsWith(`/${projName}`) ? dir.slice(0, -`/${projName}`.length) : dir;
+
+      CdLog.debug(`CdAutoGitController::gitClone()/03`);
+      let gitCommand = `cd ${moduleRoot}`;
+      await this.runCommand(gitCommand);
+      gitCommand = `git clone ${versionControl.repository.url}`;
+      await this.runCommand(gitCommand);
+
+      return {
+        state: true,
+        message: `Repository pulled successfully from ${testBedDir.path}`,
+      };
+    } catch (error: any) {
+      CdLog.error(`❌ git pull failed: ${error.message}`);
+      return {
+        state: false,
+        message: `Failed to pull repository: ${error.message}`,
+      };
+    }
+  }
+
+  async gitPull(repoDir: RepoDirectoryDescriptor): Promise<CdFxReturn<null>> {
+    CdLog.debug(`CdAutoGitController::gitPull() — target path: ${repoDir.path}`);
+
+    try {
+      if (!repoDir?.path) {
+        throw new Error('Invalid repoDir or missing path.');
+      }
+
+      CdLog.debug(`CdAutoGitController::gitPush()/03`);
+      let gitCommand = `cd ${repoDir.path}`;
+      await this.runCommand(gitCommand);
+      // const { stdout, stderr } = await execAsync('git pull', { cwd: repoDir.path });
+      gitCommand = `git pull ${repoDir.path}`;
+      await this.runCommand(gitCommand);
+
+      return {
+        state: true,
+        message: `Repository pulled successfully from ${repoDir.path}`,
+      };
+    } catch (error: any) {
+      CdLog.error(`❌ git pull failed: ${error.message}`);
+      return {
+        state: false,
+        message: `Failed to pull repository: ${error.message}`,
+      };
+    }
+  }
+
+  async gitPush(repoDir: RepoDirectoryDescriptor, comment?: string): Promise<CdFxReturn<null>> {
+    CdLog.debug(`CdAutoGitController::gitPush()/01`);
+    CdLog.debug(`CdAutoGitController::gitPush() — target path: ${repoDir.path}`);
+
+    try {
+      if (!repoDir?.path) throw new Error('Invalid repoDir or missing path.');
+
+      CdLog.debug(`CdAutoGitController::gitPush()/02`);
+      // Git add
+      await this.runCommand('git add -A', repoDir.path);
+
+      // Default commit message
+      if (!comment) comment = 'Automated push via cd-auto-git';
+
+      try {
+        CdLog.debug(`CdAutoGitController::gitPush()/03`);
+        await this.runCommand(`git commit -m "${comment}"`, repoDir.path);
+      } catch (commitErr: any) {
+        CdLog.debug(`CdAutoGitController::gitPush()/04`);
+        if (typeof commitErr === 'string' && commitErr.includes('nothing to commit')) {
+          CdLog.warning('⚠ No changes detected (nothing to commit). Skipping push.');
+          return {
+            state: CdFxStateLevel.PartialSuccess,
+            message: 'No changes to push (nothing to commit).',
+          };
+        }
+        throw new Error(commitErr);
+      }
+
+      // Git push
+      const pushResult = await this.runCommand('git push', repoDir.path);
+      CdLog.debug(`✔ git push output:\n${pushResult}`);
+
+      return {
+        state: true,
+        message: `Repository pushed successfully from ${repoDir.path}`,
+      };
+    } catch (error: any) {
+      CdLog.error(`❌ git push failed: ${error.message}`);
+      return {
+        state: false,
+        message: `Failed to push repository: ${error.message}`,
+      };
+    }
+  }
+
+  async getCurrentVersionTag(repoPath: string): Promise<CdFxReturn<string | null>> {
+    try {
+      const tag = await executeCommand('git describe --tags --abbrev=0', repoPath);
+      return cdFx(CdFxStateLevel.Success, '✅ Latest tag retrieved.', tag?.trim() || null);
+    } catch (err: any) {
+      const stderr: string = err?.stderr || '';
+
+      // Detect specific case: no tags yet
+      if (stderr.includes('fatal: No names found, cannot describe anything')) {
+        return cdFx(
+          CdFxStateLevel.Recoverable,
+          'ℹ️ No tags found in repository. This is expected for new projects.',
+          null,
+        );
+      }
+
+      // All other unexpected errors
+      return cdFx(CdFxStateLevel.SystemError, `getCurrentVersionTag() failed: ${err.message}`);
+    }
+  }
+
+  async getAllTags(repoPath: string): Promise<CdFxReturn<VersionControlTag[]>> {
+    try {
+      const rawTags = await executeCommand('git tag --list', repoPath);
+      const tagNames = rawTags
+        .split('\n')
+        .map((tag) => tag.trim())
+        .filter((tag) => !!tag);
+
+      const versionControlTags: VersionControlTag[] = [];
+
+      for (const name of tagNames) {
+        try {
+          const commitHash = await executeCommand(`git rev-list -n 1 ${name}`, repoPath);
+          versionControlTags.push({
+            // id: name,
+            name,
+            commitHash: commitHash.trim(),
+          });
+        } catch {
+          versionControlTags.push({ name });
+        }
+      }
+
+      return { state: true, data: versionControlTags };
+    } catch (err: any) {
+      return {
+        state: false,
+        data: [],
+        message: `getAllTags() failed: ${err.message}`,
+      };
+    }
+  }
+
+  async determineNextVersion(
+    // currentVersion: string | null,
+    roadmap: string,
+    milestone: string,
+  ): Promise<CdFxReturn<string>> {
+    try {
+      const nextVersion = `${roadmap}-${milestone}`;
+      return { state: true, data: nextVersion };
+    } catch (err: any) {
+      return { state: false, message: `Failed to determine next version: ${err.message}` };
+    }
+  }
+
+  async verifyRoadmap(roadmap: string): Promise<CdFxReturn<boolean>> {
+    try {
+      const exists = Boolean(roadmap?.trim()); // Placeholder for real validation
+      return { state: true, data: exists };
+    } catch (err: any) {
+      return { state: false, message: `verifyRoadmap() failed: ${err.message}` };
+    }
+  }
+
+  async verifyMilestoneInRoadmap(roadmap: string, milestone: string): Promise<CdFxReturn<boolean>> {
+    try {
+      const valid = Boolean(roadmap && milestone); // Placeholder for validation logic
+      return { state: true, data: valid };
+    } catch (err: any) {
+      return { state: false, message: `verifyMilestoneInRoadmap() failed: ${err.message}` };
+    }
+  }
+
+  async performUpgrade(repoPath: string): Promise<CdFxReturn<null>> {
+    CdLog.debug(`CdAutoGitService::performUpgrade()/01: Starting upgrade operation`);
+    CdLog.debug(`CdAutoGitService::performUpgrade()/02: Repo path set to: ${repoPath}`);
+
+    try {
+      // Simulated upgrade logic
+      await executeCommand('touch upgraded.txt', repoPath);
+      CdLog.debug(`CdAutoGitService::performUpgrade()/03: Created placeholder upgrade file`);
+
+      await executeCommand('git add .', repoPath);
+      CdLog.debug(`CdAutoGitService::performUpgrade()/04: Staged all changes`);
+
+      const status = await executeCommand('git status --porcelain', repoPath);
+      CdLog.debug(`CdAutoGitService::performUpgrade()/05: Git status output: ${status.trim()}`);
+
+      if (!status.trim()) {
+        CdLog.debug(`CdAutoGitService::performUpgrade()/06: No changes to commit`);
+        return cdFx(CdFxStateLevel.Info, '🔄 No changes to commit for upgrade.');
+      }
+
+      await executeCommand('git commit -m "chore: auto upgrade applied"', repoPath);
+      CdLog.debug(`CdAutoGitService::performUpgrade()/07: Committed upgrade changes`);
+
+      return cdFx(CdFxStateLevel.Success, '✅ Upgrade applied and committed successfully.');
+    } catch (err: any) {
+      CdLog.debug(`CdAutoGitService::performUpgrade()/99: Exception: ${err.message}`);
+      return cdFx(CdFxStateLevel.SystemError, `❗ performUpgrade() failed: ${err.message}`);
+    }
+  }
+
+  async tagProject(repoPath: string, tagName: string): Promise<CdFxReturn<null>> {
+    CdLog.debug(`CdAutoGitService::tagProject()/01: Preparing to tag ${tagName} at ${repoPath}`);
+
+    try {
+      const existingTag = await executeCommand(`git tag --list "${tagName}"`, repoPath);
+      CdLog.debug(
+        `CdAutoGitService::tagProject()/02: Existing tag check result: ${existingTag.trim()}`,
+      );
+
+      if (existingTag.trim() === tagName) {
+        CdLog.debug(
+          `CdAutoGitService::tagProject()/03: Tag "${tagName}" already exists. Skipping tag creation.`,
+        );
+        return cdFx(CdFxStateLevel.Info, `🔄 Tag "${tagName}" already exists. Skipping creation.`);
+      }
+
+      await executeCommand(`git tag ${tagName}`, repoPath);
+      CdLog.debug(`CdAutoGitService::tagProject()/04: Tag "${tagName}" created.`);
+
+      return cdFx(CdFxStateLevel.Success, `✅ Tag "${tagName}" created.`);
+    } catch (err: any) {
+      CdLog.debug(`CdAutoGitService::tagProject()/99: Failed to tag "${tagName}": ${err.message}`);
+      return cdFx(CdFxStateLevel.SystemError, `tagProject() failed: ${err.message}`);
+    }
+  }
+
+  async pushChangesWithTags(repoPath: string): Promise<CdFxReturn<null>> {
+    try {
+      await executeCommand('git push', repoPath);
+      await executeCommand('git push --tags', repoPath);
+      return { state: true, message: 'Pushed commits and tags successfully.' };
+    } catch (err: any) {
+      return { state: false, message: `pushChangesWithTags() failed: ${err.message}` };
+    }
+  }
+}
+
+```
+
+////////////////////////////////
+
+We have CICdRunnerService.run() that is in charge of processing pipeline.
+Beneth the class, I have a sample pipeline that I am woking on currently.
+Earlier, we were to have just one task 'updateRfcData' where fetching and updating would be done by the same method.
+But I am considering seperating tasks so we have fetchRfcData, which fetch cd-rfc from git then followed by updateRfcData which would then update the database via cd-api (a subsystem of corpdesk. The pipeline is run from cd-cli subsystem).
+For this to happen, I needed to improve how the pipeline is processed, se we can pass results from fetchRfcData to updateRfcData.
+This needs to be generic so that any task can pass resulting data to the next task.
+Examine the process and share your thoughts on how this can be effected in a simple and elegant way.
+```ts
+/** Runner responsible for executing CICdTask logic */
+export class CICdRunnerService {
+  
+
+  async run(
+    descriptor: any,
+    workflowData: CiCdDescriptor,
+    extraParams?: any,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug('Starting CICdRunnerService::run()');
+
+    const pipeline = workflowData?.cICdPipeline;
+    this.currentPipelineName = pipeline?.name ?? '';
+
+    if (!pipeline?.stages?.length) {
+      return { state: false, message: 'No pipeline stages defined.' };
+    }
+
+    const taskMap = new Map<string, CICdTask>();
+    for (const stage of pipeline.stages) {
+      for (const task of stage.tasks) {
+        const key = `${stage.name}/${task.name}`;
+        taskMap.set(key, task);
+      }
+    }
+
+    let currentStage = pipeline.stages[0];
+    let currentTask = currentStage.tasks[0];
+    this.currentStageName = currentStage.name;
+
+    const visited = new Set<string>();
+    const taskResults: { stage: string; task: string; state: CdFxStateLevel; message: string }[] =
+      [];
+
+    while (currentTask) {
+      const taskKey = `${this.currentStageName}/${currentTask.name}`;
+      if (visited.has(taskKey)) {
+        return {
+          state: false,
+          message: `Loop detected at task: ${currentTask.name}`,
+        };
+      }
+      visited.add(taskKey);
+
+      currentTask.status = 'running';
+      const result = await this.executeTaskWithPolicies(currentTask, descriptor);
+      CdLog.debug('CICdRunnerService::run()/result:' + inspect(result, { depth: 2 }));
+
+      taskResults.push({
+        stage: this.currentStageName,
+        task: currentTask.name,
+        state: result.state as CdFxStateLevel,
+        message: result.message ?? '',
+      });
+
+      currentTask.status = result.state ? 'completed' : 'failed';
+
+      const nextRef = this.resolveNextTask(currentTask, result.state as CdFxStateLevel);
+      if (!nextRef) break;
+
+      if ((nextRef.pipelineName ?? this.currentPipelineName) !== this.currentPipelineName) {
+        return {
+          state: false,
+          message: `Cross-pipeline transition not supported: ${nextRef.pipelineName}`,
+        };
+      }
+
+      const nextKey = `${nextRef.stageName ?? this.currentStageName}/${nextRef.taskName}`;
+      const nextTask = taskMap.get(nextKey);
+
+      if (!nextTask) {
+        return {
+          state: false,
+          message: `Next task "${nextRef.taskName}" not found in stage "${nextRef.stageName}"`,
+        };
+      }
+
+      this.currentStageName = nextRef.stageName ?? this.currentStageName;
+      currentTask = nextTask;
+    }
+
+    // 🔍 Summary logging
+    CdLog.debug('CICdRunnerService::run() — Task Summary:');
+    taskResults.forEach((r) => {
+      CdLog.debug(`Stage: ${r.stage}, Task: ${r.task}, State: ${r.state}, Message: ${r.message}`);
+    });
+
+    const hasFailure = taskResults.some((r) => r.state !== CdFxStateLevel.Success);
+    if (hasFailure) {
+      return {
+        state: CdFxStateLevel.LogicalFailure,
+        message: 'One or more tasks failed.',
+        data: taskResults,
+      };
+    }
+
+    return {
+      state: true,
+      message: 'Pipeline executed successfully.',
+      data: taskResults,
+    };
+  }
+
+  private async executeTaskWithPolicies(
+    task: CICdTask,
+    moduleDescriptor: CdModuleDescriptor,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug('▶️ Starting CICdRunnerService::executeTaskWithPolicies()');
+    let attempts = 0;
+    const maxAttempts = task.retryCount ?? 1;
+    const timeout = task.timeout ?? 60000;
+
+    while (attempts < maxAttempts) {
+      const spinner = ora(
+        `⏳ Running task '${task.name}' (Attempt ${attempts + 1}/${maxAttempts})...`,
+      ).start();
+      try {
+        const result = await Promise.race([
+          this.executeTask(task, moduleDescriptor),
+          new Promise<CdFxReturn<null>>((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout: Task exceeded allowed time')), timeout),
+          ),
+        ]);
+
+        CdLog.debug(
+          `CICdRunnerService::executeTaskWithPolicies()/result:${inspect(result, { depth: 2 })}`,
+        );
+
+        const stateCode =
+          result.state === true
+            ? CdFxStateLevel.Success
+            : result.state === false
+              ? CdFxStateLevel.Error
+              : result.state; // already a number (enum)
+
+        if (stateCode === CdFxStateLevel.Success) {
+          spinner.succeed(`✅ Task '${task.name}' succeeded.`);
+        } else if (stateCode === CdFxStateLevel.Error) {
+          spinner.fail(`❌ Task '${task.name}' failed`);
+          return {
+            state: false,
+            message: result.message || `Task '${task.name}' failed.`,
+          };
+        } else {
+          spinner.info(`🔁 Task '${task.name}' processed.`);
+        }
+
+        if (result.state as CdFxStateLevel) return result;
+
+        attempts++;
+        if (attempts < maxAttempts && task.retryDelay) {
+          spinner.info(`🔁 Retrying task '${task.name}' in ${task.retryDelay}ms...`);
+          await this.sleep(task.retryDelay);
+        }
+      } catch (e) {
+        spinner.fail(`❌ Task '${task.name}' failed: ${(e as Error).message}`);
+        CdLog.error(
+          `Task '${task.name}' failed on attempt ${attempts + 1}: ${(e as Error).message}`,
+        );
+        attempts++;
+
+        if (attempts < maxAttempts && task.retryDelay) {
+          CdLog.debug(`Waiting ${task.retryDelay}ms before next attempt...`);
+          await this.sleep(task.retryDelay);
+        }
+      }
+    }
+
+    const errorMessage = `🚫 Task '${task.name}' failed after ${maxAttempts} attempt(s).`;
+    CdLog.error(errorMessage);
+    return {
+      state: CdFxStateLevel.LogicalFailure,
+      message: errorMessage,
+    };
+  }
+
+  private resolveNextTask(task: CICdTask, success: CdFxStateLevel): WFNext | null {
+    const resultKey: CdFxStateLevel = success ? CdFxStateLevel.Success : CdFxStateLevel.Error;
+
+    if (!task.onResult || !Array.isArray(task.onResult)) return null;
+
+    // 1. Try exact match: check single or array match
+    for (const rule of task.onResult) {
+      const match = Array.isArray(rule.ifState)
+        ? rule.ifState.includes(resultKey)
+        : rule.ifState === resultKey;
+
+      if (match) {
+        return this.normalizeWFNext(rule.toTask, {
+          currentPipeline: this.currentPipelineName,
+          currentStage: this.currentStageName,
+        });
+      }
+    }
+
+    // 2. Fallback: no ifState means always
+    const alwaysRule = task.onResult.find((r) => r.ifState === undefined);
+    return alwaysRule
+      ? this.normalizeWFNext(alwaysRule.toTask, {
+          currentPipeline: this.currentPipelineName,
+          currentStage: this.currentStageName,
+        })
+      : null;
+  }
+
+  normalizeWFNext(
+    next: WFNextRef,
+    context: { currentPipeline: string; currentStage: string },
+  ): WFNext {
+    if (typeof next === 'string') {
+      return {
+        pipelineName: context.currentPipeline,
+        stageName: context.currentStage,
+        taskName: next,
+      };
+    }
+    return {
+      pipelineName: next.pipelineName ?? context.currentPipeline,
+      stageName: next.stageName ?? context.currentStage,
+      taskName: next.taskName,
+    };
+  }
+
+  /**
+   * Executes a single CICdTask based on its type.
+   * @param task - The task to execute.
+   * @param descriptor - The module descriptor for context.
+   * @returns A promise resolving to the result of the task execution.
+   */
+  async executeTask(task: CICdTask, descriptor: CdModuleDescriptor): Promise<CdFxReturn<null>> {
+    CdLog.debug('Starting CICdRunnerService::executeTask()');
+    CdLog.debug(`CICdRunnerService::executeTask()/task:${inspect(task, { depth: 3 })}`);
+    CdLog.debug(`CICdRunnerService::executeTask()/task.type:${task.type}`);
+    try {
+      switch (task.type) {
+        case 'script-inline':
+          CdLog.debug('Running case: script-inline');
+          return await this.runScript(task.executor, task.script);
+        case 'script-file':
+          CdLog.debug('Running case: script-file');
+          return await this.runScriptFromFile(task.executor, task.scriptFile);
+        case 'method':
+          CdLog.debug('Running case: method');
+          if (!task.cdRequest) {
+            return {
+              state: false,
+              message: 'cdRequest is undefined for method task.',
+            };
+          }
+          return await this.callMethodFromCdRequest(task.cdRequest);
+        case 'cdRequest':
+          CdLog.debug('Running case: cdRequest');
+          const b = new BaseService();
+          return await b.invokeCdRequest(task.cdRequest);
+        default:
+          return { state: false, message: `Unknown task type: ${task.type}` };
+      }
+    } catch (err) {
+      return {
+        state: false,
+        message: `Exception in task: ${task.name}. Error: ${(err as Error).message}`,
+      };
+    }
+  }
+
+  private async runScript(
+    executor: ExecutionEnvironmentType,
+    script?: string,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug('Starting CICdRunnerService::runScript()');
+    if (!script) return { state: false, message: 'No inline script provided.' };
+    // Placeholder: implement real script runner
+    console.log(`[${executor}] Running script: ${script}`);
+    return { state: true, message: 'Script executed.' };
+  }
+
+  private async runScriptFromFile(
+    executor: ExecutionEnvironmentType,
+    scriptFile?: string,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug('Starting CICdRunnerService::runScriptFromFile()');
+    if (!scriptFile) return { state: false, message: 'No script file path provided.' };
+    // Placeholder: simulate reading and running the script
+    console.log(`[${executor}] Executing script file: ${scriptFile}`);
+    return { state: true, message: 'Script file executed.' };
+  }
+
+  async callMethod(
+    className?: string,
+    methodName?: string,
+    input?: any,
+  ): Promise<CdFxReturn<null>> {
+    CdLog.debug('Starting CICdRunnerService::callMethod()');
+    CdLog.debug(`CICdRunnerService::callMethod()/01`);
+    if (!className || !methodName) CdLog.debug(`CICdRunnerService::callMethod()/02`);
+    return { state: false, message: 'Missing class or method name.' };
+  }
+
+  async callMethodFromCdRequest<T = any>(cdRequest: ICdRequest): Promise<CdFxReturn<T>> {
+    CdLog.debug('Starting CICdRunnerService::callMethodFromCdRequest()');
+    let { ctx, m, c, a, args, dat } = cdRequest;
+
+    if (!ctx || !m || !c || !a) {
+      return {
+        state: false,
+        message: 'Incomplete cdRequest — requires ctx, m, c, and a',
+        data: null,
+      };
+    }
+
+    try {
+      const ctlDashedName = toDashedFileName(c, 'controller');
+      const controllerPath = `../../../${ctx}/${m}/controllers/${ctlDashedName}`;
+
+      // Dynamic ESM import (MUST include .js in helper-generated name)
+      const controllerModule = await import(controllerPath);
+
+      c = `${c}Controller`;
+      if (!controllerModule || !controllerModule[c]) {
+        return {
+          state: false,
+          message: `Controller class '${c}' not found in '${controllerPath}'`,
+          data: null,
+        };
+      }
+
+      const ControllerClass = controllerModule[c];
+      const controllerInstance = new ControllerClass();
+
+      // 🔹 Run optional init()
+      if (typeof controllerInstance.init === 'function') {
+        try {
+          this.b.logWithContext(this, `callMethodFromCdRequest:trying init()`, {}, 'debug');
+          await controllerInstance.init();
+        } catch (initErr: any) {
+          CdLog.error(`Init failed in '${c}': ${(initErr as Error).message}`);
+          return {
+            state: false,
+            message: `Initialization failed in controller '${c}'`,
+            data: null,
+          };
+        }
+      } else {
+        // this.b.logWithContext(this, `callMethodFromCdRequest:No init() method detected`, {}, 'debug');
+        // this.b.logWithContext(this, `callMethodFromCdRequest:controllerInstance`, inspect(controllerInstance, {depth:2}), 'debug');
+      }
+
+      // 🔹 Ensure target method exists
+      if (typeof controllerInstance[a] !== 'function') {
+        return {
+          state: false,
+          message: `Method '${a}' not found on controller '${c}'`,
+          data: null,
+        };
+      }
+
+      // 🔹 Invoke target method
+      const argValues = args ? Object.values(args) : [];
+      const resultControllerInstance: CdFxReturn<T> = await controllerInstance[a](
+        ...argValues,
+        dat,
+      );
+      this.b.logWithContext(this, 'resultControllerInstance', resultControllerInstance, 'debug');
+
+      return resultControllerInstance;
+    } catch (e: any) {
+      CdLog.error(`CICdRunnerService::callMethodFromCdRequest error: ${(e as Error).message}`);
+      return {
+        state: false,
+        message: `Failed to invoke method from cdRequest:${(e as Error).message}`,
+        data: null,
+      };
+    }
+  }
+}
+```
+
+```ts
+export class CdRfcWorkFlow {
+/**
+   * This method generates a CI/CD workflow descriptor for updating an existing rfc data.
+   * This involves extracting `cd-rfc` block from a given documentation hosted in a git repository, 
+   * then pushing it to update database via cd-cli.
+   * @param cdModule 
+   * @param moduleType 
+   * @param extraParam 
+   * @returns 
+   */
+  updateWorkFlow(
+    cdModule: CdModuleDescriptor,
+    moduleType: string,
+    extraParam: any,
+  ): CiCdDescriptor {
+    CdLog.debug('Starting CdRfcWorkFlow::updateWorkFlow()');
+    CdLog.debug(
+      `CdRfcWorkFlow:: updateWorkFlow()/cdModule: ${inspect(cdModule, {
+        depth: 2,
+      })}, type: ${moduleType}, extraParam: ${inspect(extraParam, { depth: 2 })}`,
+    );
+    return {
+      cICdPipeline: {
+        name: 'CdRfc Update Pipeline',
+        type: 'dev-env-setup',
+        stages: [
+          {
+            name: 'Update RFC Data',
+            description: 'Extract and Update RFC Data from documentation repository',
+            tasks: [
+              {
+                name: 'fetchRfcData',
+                type: 'method',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'app',
+                  m: 'cd-auto-git',
+                  c: 'CdAutoGit',
+                  a: 'ReadDocBlock',
+                  dat: {
+                    f_vals: [
+                      {
+                        data: null,
+                      },
+                    ],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    identifier: extraParam.srcPath, // git path to rfc documentation, e.g. 'owner/repo/path/to/doc.md'. Extracted from the command argument src-path
+                    blockType: cdModule.versionControl?.repository.name, // 'cd-rfc' | 'cd-seed' | 'cd-expression' | 'all' = 'all',
+                  },
+                },
+                onResult: [
+                  {
+                    ifState: [
+                      CdFxStateLevel.Success,
+                      CdFxStateLevel.PartialSuccess,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: 'updateRfcData',
+                  },
+                  {
+                    ifState: [CdFxStateLevel.Fatal, CdFxStateLevel.SystemError],
+                    toTask: 'notifyFailure',
+                  },
+                ],
+              },
+              {
+                name: 'updateRfcData',
+                type: 'method',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'app',
+                  m: 'app-craft',
+                  c: 'CdModel',
+                  a: 'Update',
+                  dat: {
+                    f_vals: [
+                      {
+                        data: null,
+                      },
+                    ],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    ?: ?, // input data built from a git repository cd-rfc block
+                  },
+                },
+                onResult: [
+                  {
+                    ifState: [
+                      CdFxStateLevel.Success,
+                      CdFxStateLevel.PartialSuccess,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: 'updateRfcData',
+                  },
+                  {
+                    ifState: [CdFxStateLevel.Fatal, CdFxStateLevel.SystemError],
+                    toTask: 'notifyFailure',
+                  },
+                ],
+              },
+              {
+                name: 'notifyFailure',
+                type: 'method',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'sys',
+                  m: 'dev-descriptor',
+                  c: 'CICdRunner',
+                  a: 'SendFailureAlert',
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    message: `Failed during repository creation for module: ${cdModule.name}`,
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    };
+  }
+}
+```
+
+Reference interfacess:
+```ts
+export interface CiCdDescriptor extends BaseDescriptor {
+  dsFormart?: 'json' | 'csv' | 'sql-db';
+  cICdPipeline?: CICdPipeline;
+  cICdTriggers?: CICdTrigger;
+  cICdEnvironment?: CICdEnvironment;
+  cICdNotifications?: CICdNotification;
+  cICdMetadata?: CICdMetadata;
+}
+
+// ─── Pipeline ───────────────────────────────────────────────
+export interface CICdPipeline extends BaseDescriptor {
+  name: string;
+  type:
+    | 'integration'
+    | 'delivery'
+    | 'deployment'
+    | 'dev-env-setup'
+    | 'cd-module-development'
+    | 'dev-roadmap';
+  stages: CICdStage[];
+  versionTag?: number; // e.g., "1.2"
+  completionRef?: string; // e.g., "abc123" for the last commit hash
+  mergePolicy?: 'merge' | 'rebase' | 'squash' | 'converge'; // ← NEW
+  changelog?: CdChangeLogDescriptor;  
+  devDoc?: CdDocDescriptor[]; 
+  fileMeta?: CdFileDescriptor
+}
+
+export type CdRoadmapDescriptor = CICdPipeline & { type: 'dev-roadmap' };
+
+
+export interface CICdHistory extends BaseDescriptor {
+  changelogs?: CICdHistory[];
+  contributors?: SourceContributor[];
+  events?: CICdHistoryEvent[];
+  fileMeta?: CdFileDescriptor;
+}
+
+export type CdChangeLogDescriptor = CICdHistory;
+
+// export interface CICdHistory extends BaseDescriptor {
+//   changelogs?: CICdHistory[];
+//   contributors?: SourceContributor[];
+//   events?: CICdHistoryEvent[];
+// }
+
+export interface CICdHistoryEvent extends BaseDescriptor {
+  type: 'commit' | 'merge' | 'tag' | 'release';
+  actor: string;
+  description?: string;
+  date: string;
+  ref?: string;
+}
+
+// ─── Stage ──────────────────────────────────────────────────
+export interface CICdStage extends BaseDescriptor {
+  name: string;
+  description?: string;
+  tasks: CICdTask[];
+  orderId?: number; // represent minor version e.g., 1 for the first stage, 2 for the second
+  completionRef?: string; // e.g., "abc123" for the last commit hash
+}
+
+// ─── Task Interface ─────────────────────────────────────────
+export interface CICdTask<T = any> extends CdSchedulerTask<T> {
+  type: 'script-inline' | 'script-file' | 'method' | 'cdRequest';
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  completionRef?: string
+}
+
+export interface CiCdTaskResult {
+  stage: string;
+  task: string;
+  state: number | boolean; // numeric enum or boolean
+  message: string;
+}
+
+// ─── Triggers ───────────────────────────────────────────────
+export interface CICdTrigger extends BaseDescriptor {
+  type: 'push' | 'pull_request' | 'schedule' | 'manual' | 'other';
+  schedule?: string;
+  branchFilters?: string[];
+  conditions?: CICdTriggerConditions;
+}
+
+```
+
+///////////////////////////////////////////
+
+
+```log
+[2026-04-28 21:19:34] 🛠️ HttpService::proc()/profileDetails:{
+  session: {
+    jwt: null,
+    ttl: 600,
+    userId: 1010,
+    cd_token: "#cdVault['cd_token']"
+  },
+  cdEndpoint: 'http://localhost:3001/api',
+  permissions: {
+    userPermissions: [
+      {
+        read: true,
+        field: 'cdCliProfileData',
+        write: true,
+        hidden: false,
+        userId: 1000,
+        execute: false
+      }
+    ],
+    groupPermissions: [
+      {
+        read: true,
+        field: 'cdCliProfileData',
+        write: false,
+        hidden: false,
+        execute: false,
+        groupId: 0
+      }
+    ]
+  },
+  consumerToken: "#cdVault['consumerToken']"
+}
+```
+
+```ts
+export class HttpService{
+async proc(params: ICdRequest, profileName = 'cd-api-local'): Promise<CdFxReturn<ICdResponse>> {
+    if (!this.instances.has(profileName)) {
+      const initialized = await this.init(profileName);
+      if (!initialized) {
+        throw new Error(`Profile '${profileName}' could not be initialized.`);
+      }
+    }
+
+    const result = await this.ctlCdCliProfile.loadProfiles();
+
+    if (!result.state || !result.data) {
+      throw new Error('Unable to load profiles.');
+    }
+
+    const profile = result.data.items.find((item: any) => item.cdCliProfileName === profileName);
+
+    const details: IProfileDetails = profile?.cdCliProfileData?.details || {};
+    let config: AxiosRequestConfig;
+
+    CdLog.debug(`HttpService::proc()/profileName:${profileName}`);
+    CdLog.debug(
+      `HttpService::proc()/profile:${inspect(profile, {
+        depth: 3,
+      })}`,
+    );
+    CdLog.debug(
+      `HttpService::proc()/profileDetails:${inspect(details, {
+        depth: 3,
+      })}`,
+    );
+
+    if (details.httpConfig) {
+      config = JSON.parse(JSON.stringify(details.httpConfig));
+      config.data = params;
+
+      // 🔐 Decrypt crypt fields (e.g. apiKey) before using them
+      const decryptedFields = await this.decryptProfileFields(details);
+
+      // 🔁 Replace placeholders like #apiKey in all headers
+      if (config.headers && typeof config.headers === 'object') {
+        for (const [key, val] of Object.entries(config.headers)) {
+          if (typeof val === 'string') {
+            config.headers[key] = val.replace(
+              /#(\w+)/g,
+              (_, token) => decryptedFields[token] || '',
+            );
+          }
+        }
+      }
+    } else {
+      if (!this.cdApiAxiosConfig) {
+        throw new Error('cdApiAxiosConfig is not initialized.');
+      }
+      config = { ...this.cdApiAxiosConfig, data: params };
+    }
+
+    return this.request<ICdResponse>(config, profileName);
+  }
+}
+```
+
+/////////////////////////////////////////////////////
+
+
+Below are the links to: 
+
+1. Foundational development convention:
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md
+
+2. documents that describes an automated software development where the system is analogus to biological generation cycle.
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/10.%20biological_engine_rfc.md
+
+3. And this is how the 'DNA' in form of machine readable block in RFC documents is used as the source of the development designs and conventions.
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/11.%20rfc-processing-patent-draft_v3.md
+
+Now we have the cd-cli where the source of command can come from terminal or ai agent.
+We are currently working on how to fetch a given rfc then update or create persistent storage behind the cd-api.
+At this stage we can process logics at cd-cli and send ICdRequest to back end.
+But the back end needs to be developed to update the database.
+We need a 'cd-bio-engine' for backend to process the http request.
+We do not need the whole cd-bio-engine but just the facility to process(update and read access) the request as a POC for now.
+
+Below are example of controller, model and service for 'company' module.
+Only selected methods have been shared as example. 
+The standard is usually a CRUD plus a few optional methods.
+
+```ts
+import { Request, Response } from "express";
+import { BaseService } from '../../base/base.service';
+import { CompanyService } from '../services/company.service';
+import { CompanyModel } from "../models/company.model";
+import { GenericController } from "../../base/generic-controller";
+
+export class CompanyController extends GenericController<CompanyModel> {
+
+    b: BaseService<CompanyModel>;
+    service: CompanyService;
+
+    constructor() {
+        super()
+        this.b = new BaseService();
+        this.service = new CompanyService();
+    }
+
+    
+
+    /**
+     * Sample request
+     * {
+            "ctx": "Sys",
+            "m": "Moduleman",
+            "c": "Company",
+            "a": "Get",
+            "dat": {
+                "f_vals": [
+                    {
+                        "query": {
+                            "where": {"companyId": 45763}
+                        }
+                    }
+                ],
+                "token": "08f45393-c10e-4edd-af2c-bae1746247a1"
+            },
+            "args": null
+        }
+     * @param req
+     * @param res
+     */
+    async Get(req: Request, res: Response) {
+        try {
+            await this.service.getCompany(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'CompanyController:Get');
+        }
+    }
+
+    async GetSL(req: Request, res: Response) {
+        try {
+            await this.service.getCompanySL(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'CompanyController:GetSL');
+        }
+    }
+
+    
+
+    /** 
+     * Pageable request:
+     * {
+            "ctx": "Sys",
+            "m": "Moduleman",
+            "c": "Module",
+            "a": "GetCount",
+            "dat": {
+                "f_vals": [
+                    {
+                        "query": {
+                            "select":["moduleId","moduleGuid"],
+                            "where": {},
+                            "take": 5,
+                            "skip": 1
+                            }
+                    }
+                ],
+                "token": "29947F3F-FF52-9659-F24C-90D716BC77B2"
+            },
+            "args": null
+        }
+     * @param req
+     * @param res
+     */
+    async GetCount(req: Request, res: Response) {
+        try {
+            // await this.service.getCompanyCount(req, res);
+            await this.service.getCompanyQB(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'ModuleController:Get');
+        }
+    }
+
+    /** Pageable request:
+     * {
+            "ctx": "Sys",
+            "m": "Moduleman",
+            "c": "Module",
+            "a": "GetPaged",
+            "dat": {
+                "f_vals": [
+                    {
+                        "query": {
+                            "select":["moduleId","moduleGuid"],
+                            "where": {},
+                            "take": 5,
+                            "skip": 1
+                            }
+                    }
+                ],
+                "token": "29947F3F-FF52-9659-F24C-90D716BC77B2"
+            },
+            "args": null
+        }
+     * @param req
+     * @param res
+     */
+    async GetPaged(req: Request, res: Response) {
+        try {
+            await this.service.getCompanyCount(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'ModuleController:Get');
+        }
+    }
+
+    /**
+     * {
+            "ctx": "Sys",
+            "m": "Moduleman",
+            "c": "Company",
+            "a": "Update",
+            "dat": {
+                "f_vals": [
+                    {
+                        "query": {
+                            "update": {
+                                "companyName": "/corp-deskv1.2.1.2/system/modules/comm/controllers"
+                            },
+                            "where": {
+                                "companyId": 45762
+                            }
+                        }
+                    }
+                ],
+                "token": "08f45393-c10e-4edd-af2c-bae1746247a1"
+            },
+            "args": {}
+        }
+     * @param req
+     * @param res
+     */
+    async Update(req: Request, res: Response) {
+        console.log('CompanyController::Update()/01');
+        try {
+            console.log('CompanyController::Update()/02');
+            await this.service.update(req, res);
+        } catch (e: any) {
+            await this.b.serviceErr(req, res, e, 'ModuleController:Update');
+        }
+    }
+
+}
+
+```
+
+```ts
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    BeforeInsert,
+    BeforeUpdate,
+    OneToMany
+} from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
+import {
+    validateOrReject,
+} from 'class-validator';
+import { BaseService } from '../../base/base.service';
+import { DocModel } from './doc.model';
+import { IQuery } from '../../base/i-base';
+import { CompanyViewModel } from './company-view.model';
+
+
+@Entity(
+    {
+        name: 'company',
+        synchronize: false
+    }
+)
+// @CdModel
+export class CompanyModel {
+
+    @PrimaryGeneratedColumn(
+        {
+            name: 'company_id'
+        }
+    )
+    companyId?: number;
+
+    @Column({
+        name: 'company_guid',
+    })
+    companyGuid!: string;
+
+    @Column(
+        {
+            name: 'company_name',
+        }
+    )
+    companyName!: string;
+
+    @Column(
+        {
+            name: 'company_type_guid',
+        }
+    )
+    companyTypeGuid?: string;
+
+    @Column(
+        {
+            name: 'company_type_id',
+        }
+    )
+    companyTypeId?: number;
+
+    @Column(
+        {
+            name: 'directory_category_guid',
+        }
+    )
+    directoryCategoryGuid!: string;
+
+    @Column(
+        'int',
+        {
+            name: 'doc_id',
+        }
+    )
+    docId!: number;
+
+    @Column(
+        {
+            name: 'company_enabled',
+        }
+    )
+    companyEnabled?: boolean;
+
+    @Column(
+        {
+            name: 'postal_address',
+        }
+    )
+    postalAddress!: string;
+
+    @Column(
+        {
+            name: 'phone',
+        }
+    )
+    phone!: string;
+    
+
+    @Column(
+        {
+            name: 'mobile',
+        }
+    )
+    mobile!: string;
+
+    @Column(
+        {
+            name: 'email',
+        }
+    )
+    email!: string;
+
+    @Column(
+        {
+            name: 'physical_location',
+        }
+    )
+    physicalLocation!: string;
+
+    @Column(
+        {
+            name: 'city',
+        }
+    )
+    city!: string;
+
+    @Column(
+        {
+            name: 'country',
+        }
+    )
+    country!: string;
+
+    @Column(
+        {
+            name: 'logo',
+        }
+    )
+    logo!: string;
+
+    @Column(
+        {
+            name: 'city_guid',
+        }
+    )
+    cityGuid!: string;
+
+    @Column({
+        name: 'company_description',
+    })
+    company_description?: string;
+
+    @Column({
+        name: 'parent_guid',
+    })
+    parentGuid?: string;
+
+    @Column({
+        name: 'consumer_guid',
+    })
+    consumerGuid?: string;
+
+    @Column({
+        name: 'search_tags',
+    })
+    searchTags!: string;
+}
+
+```
+
+```ts
+import { BaseService } from "../../base/base.service";
+import { Request, Response } from "express";
+import { CdService } from "../../base/cd.service";
+import { SessionService } from "../../user/services/session.service";
+import { UserService } from "../../user/services/user.service";
+import {
+  IExtServiceInput,
+  IQuery,
+  IServiceInput,
+  IUser,
+} from "../../base/i-base";
+import { CompanyModel } from "../models/company.model";
+import { CompanyViewModel } from "../models/company-view.model";
+import { CompanyTypeModel } from "../models/company-type.model";
+import { safeStringify } from "../../utils/safe-stringify";
+import { SessionModel } from "../../user/models/session.model";
+import { GenericService } from "../../base/generic-service";
+import { siGet } from "../../base/base.model";
+
+export class CompanyService extends GenericService<CompanyModel> {
+  b: any; // instance of BaseService
+  cdToken: string = "";
+  srvSess!: SessionService;
+  srvUser!: UserService;
+  user!: IUser;
+  serviceModel = CompanyModel;
+  docName: string = "";
+  sessModel!: SessionModel;
+  // moduleModel: ModuleModel;
+
+  /*
+   * create rules
+   */
+  cRules: any = {
+    required: ["companyName", "email", "searchTags", "companyTypeGuid"],
+    noDuplicate: ["companyName", "email"],
+  };
+  uRules: any[] = [];
+  dRules: any[] = [];
+
+  constructor() {
+    super(CompanyModel);
+    this.b = new BaseService();
+  }
+
+  async update(req: Request, res: Response): Promise<void> {
+    // this.logger.logDebug('CompanyService::update()/01');
+    let q = this.b.getQuery(req as any);
+    q = this.beforeUpdate(q);
+    const serviceInput = {
+      serviceModel: CompanyModel,
+      docName: "CompanyService::update",
+      cmd: {
+        action: "update",
+        query: q,
+      },
+      dSource: 1,
+    };
+    // this.logger.logDebug('CompanyService::update()/02')
+    this.b.update$(req, res, serviceInput).subscribe((ret: any) => {
+      this.b.cdResp.data = ret;
+      this.b.respond(req, res);
+    });
+  }
+
+  /**
+   * harmonise any data that can
+   * result in type error;
+   * @param q
+   * @returns
+   */
+  beforeUpdate(q: any) {
+    if (q.update.companyEnabled === "") {
+      q.update.companyEnabled = null;
+    }
+    return q;
+  }
+
+  async getCompany(
+    req: Request,
+    res: Response,
+    q: IQuery | null = null,
+  ): Promise<any> {
+    const serviceInput: IServiceInput<CompanyModel> = {
+      serviceModel: CompanyModel,
+      modelName: "CompanyModel",
+      docName: "CompanyService::get",
+      cmd: {
+        action: "find",
+        query: {} as IQuery,
+      },
+      dSource: 1,
+    };
+    if (q === null) {
+      q = this.b.getQuery(req);
+    }
+    console.log("CompanyService::getCompany/f:", q);
+    (serviceInput.cmd as any).query = q;
+
+    try {
+      const r = await this.b.read(req, res, serviceInput);
+      this.b.successResponse(req, res, r);
+    } catch (e: any) {
+      console.log("CompanyService::read$()/e:", e);
+      this.b.err.push((e as Error).toString());
+      const i = {
+        messages: this.b.err,
+        code: "BaseService:update",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      await this.b.respond(req, res);
+    }
+  }
+
+/**
+ * This is used for internal as opposed to http request from remote clients
+ */
+  async getCompanyI(
+    req: Request,
+    res: Response,
+    q: IQuery | null = null,
+  ): Promise<any> {
+    const serviceInput: IServiceInput<CompanyModel> = {
+      serviceModel: CompanyModel,
+      modelName: "CompanyModel",
+      docName: "CompanyService::get",
+      cmd: {
+        action: "find",
+        query: {} as IQuery,
+      },
+      dSource: 1,
+    };
+    if (q === null) {
+      q = this.b.getQuery(req);
+    }
+    console.log("CompanyService::getCompany/f:", q);
+    (serviceInput.cmd as any).query = q;
+    try {
+      return await this.b.read(req, res, serviceInput);
+    } catch (e: any) {
+      console.log("CompanyService::read$()/e:", e);
+      this.b.err.push((e as Error).toString());
+      const i = {
+        messages: this.b.err,
+        code: "BaseService:update",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      return [];
+    }
+  }
+
+  
+/**
+ * This return paged data with count information
+ */
+  getCompanyCount(req: Request, res: Response) {
+    const q = this.b.getQuery(req);
+    console.log("CompanyService::getCompanyCount/q:", q);
+    const serviceInput = {
+      serviceModel: CompanyViewModel,
+      docName: "CompanyService::getCompanyCount$",
+      cmd: {
+        action: "find",
+        query: q,
+      },
+      dSource: 1,
+    };
+    this.b
+      .readCount$(req, res, serviceInput)
+      .subscribe((r: number) => {
+        this.b.i.code = "CompanyController::Get";
+        const svSess = new SessionService();
+        svSess.sessResp.cd_token = (req as any).post.dat.token;
+        svSess.sessResp.ttl = svSess.getTtl();
+        this.b.setAppState(true, this.b.i, svSess.sessResp);
+        this.b.cdResp.data = r;
+        this.b.respond(req, res);
+      });
+  }
+
+  /**
+   * This uses typeorm query builder to return paged data
+   */
+  getCompanyQB(req: Request, res: Response) {
+    console.log("CompanyService::getCompanyQB()/1");
+    this.b.entityAdapter.registerMappingFromEntity(CompanyViewModel);
+    const q = this.b.getQuery(req);
+    // console.log('MenuService::getModuleCount/q:', q);
+    const serviceInput = {
+      serviceModel: CompanyViewModel,
+      docName: "CompanyService::getCompanyQB",
+      cmd: {
+        action: "find",
+        query: q,
+      },
+      dSource: 1,
+    };
+
+    this.b
+      .readQB$(req, res, serviceInput)
+      .subscribe((r: CompanyViewModel) => {
+        this.b.i.code = serviceInput.docName;
+        const svSess = new SessionService();
+        svSess.sessResp.cd_token = (req as any).post.dat.token;
+        svSess.sessResp.ttl = svSess.getTtl();
+        this.b.setAppState(true, this.b.i, svSess.sessResp);
+        this.b.cdResp.data = r;
+        this.b.respond(req, res);
+      });
+  }
+}
+
+```
+
+///////////////////////////////////////////////
+
+```ts
+{
+                name: 'UpdateRfcData',
+                type: 'method',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'app',
+                  m: 'cd-bio-engine',
+                  c: 'CdBioEngineDna',
+                  a: 'Update',
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    query: {
+                      update: {
+                        cdBioEngineDnaData: '$outputs.FetchRfcData.blocks', // assuming the output of FetchRfcData task has a property 'blocks' which contains the extracted cd-rfc block data
+                      },
+                      where: {
+                        cdBioEngineDnaSrc: { srcType: 'github', url: extraParam.srcPath}, // An interface needs to be defined for this data to allow optional sources with defined parameters
+                      },
+                    },
+
+                    // optional additional context
+                    source: extraParam.srcPath,
+                    module: cdModule.name,
+                  },
+                },
+                onResult: [
+                  // {
+                  //   ifState: [CdFxStateLevel.Success, CdFxStateLevel.PartialSuccess],
+                  //   toTask: null, // end
+                  // },
+                  {
+                    ifState: [
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: 'NotifyFailure',
+                  },
+                ],
+              }
+```
+
+```ts
+{
+                name: 'UpdateRfcData',
+                type: 'method',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'app',
+                  m: 'cd-bio-engine',
+                  c: 'CdBioEngineDna',
+                  a: 'Update',
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    query: {
+                      update: {
+                        cdBioEngineDnaData: '$outputs.FetchRfcData.blocks', // assuming the output of FetchRfcData task has a property 'blocks' which contains the extracted cd-rfc block data
+                      },
+                      where: {
+                        cdBioEngineDnaSrc: { srcType: 'github', url: extraParam.srcPath}, // An interface needs to be defined for this data to allow optional sources with defined parameters
+                      },
+                    },
+
+                    // optional additional context
+                    source: extraParam.srcPath,
+                    module: cdModule.name,
+                  },
+                },
+                onResult: [
+                  // {
+                  //   ifState: [CdFxStateLevel.Success, CdFxStateLevel.PartialSuccess],
+                  //   toTask: null, // end
+                  // },
+                  {
+                    ifState: [
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: 'NotifyFailure',
+                  },
+                ],
+              }
+```
+
+Reference interfaces
+```ts
+  export interface IQuery {
+  select?: string[];
+  update?: ObjectLiteral | null;
+  where: IQueryWhere;
+  jsonUpdate?: IJsonUpdate[];
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+  jFilters?: IJFilter[];
+  order?: any;
+  class?: string;
+  extData?: any; // any extra data
+}
+
+// Recursive support for nested 'andWhere' and 'orWhere'
+export interface IQueryWhere {
+  andWhere?: Array<IQueryWhere | { [field: string]: any }>;
+  orWhere?: Array<IQueryWhere | { [field: string]: any }>;
+
+  // legacy-compatible flat conditions
+  [field: string]: any;
+}
+
+// custom json update
+export interface IJsonUpdate {
+  modelField?; // name of the json column. Capacity to update multiple json columns in a given row
+  path: any; // path to a target item in JSON data
+  value: any; // value to apply to a tarteg item
+}
+```
+Example of IJsonUpdate based data
+```ts
+  const jsonUpdate: IJsonUpdate[] = [
+        {
+          modelField: 'cdCliProfileData',
+          path: ['cdVault', '[0]', 'encryptedValue'],
+          value: tokenData.encryptedValue,
+        },
+        {
+          modelField: 'cdCliProfileData',
+          path: ['cdVault', '[0]', 'encryptionMeta'],
+          value: tokenData.encryptionMeta,
+        },
+      ];
+```
+Example Usage: Sending request to cd-api to update data
+```sh
+curl -k -X POST -H 'Content-Type: application/json' -d '{
+  "ctx": "app",
+  "m": "cd-bio-engine",
+  "c": "CdBioEngineDna",
+  "a": "UpdateCdDevProject",
+  "dat": {
+    "f_vals": [
+      {
+        "query": {
+          "update": null,
+          "where": {
+            "userId": 1010,
+            "cdDevProjectId": 2
+          }
+        },
+        "jsonUpdate": [
+          {
+            "modelField": "cdDevProjectData",
+            "path": [
+              "cdVault",
+              "[0]",
+              "encryptedVaue"
+            ],
+            "value": "123456abcdefgABC"
+          },
+          {
+            "modelField": "cdDevProjectData",
+            "path": [
+              "cdVault",
+              "[0]",
+              "EncryptionMeta"
+            ],
+            "value": {
+              "iv": "1a94d8c6b7e8...sample..901f",
+              "encoding": "hex",
+              "algorithm": "aes-256-cbc",
+              "encryptedToken": "3a94d8c6b7...e04a"
+            }
+          }
+        ]
+      }
+    ],
+    "token": "08f45393-c10e-4edd-af2c-bae1746247a1"
+  },
+  "args": {}
+}' https://localhost:3001/api -v | jq '.'
+
+```
+
+/////////////////////////////////////////////
+
+Below are the key tools that manage json in corpdesk at the backend.
+I did them sometime back.
+I noted that we need a special facility for reading. 
+What we have were focusing on editing/updating.
+CdBioEngineDnaModel.cdBioEngineDnaSrc will be hosting rfc data source.
+The datatype will be a json data defined by an interface that lets one to set different types of sources.
+
+```json
+{
+  "url": "https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md", 
+  "type": "git"
+}
+```
+
+This allows one to set ICdRequest at the pipeline in a flexible way.
+For in the example we are currently dealing with, we need to use the git url as the key.
+But the key is a field in json. 
+We need to use corpdesk JSON Semantic Delta Protocol (JSDP) as integrated in ICdRequest. 
+I need you to look at the codes shared to work out how the read can be integrated in JSDP then suggest how the ICdRequest should be set to allow updating and reading of a given row based on git url
+```ts
+{
+                name: 'UpdateRfcData',
+                type: 'method',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'app',
+                  m: 'cd-bio-engine',
+                  c: 'CdBioEngineDna',
+                  a: 'Update',
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    query: {
+                      update: {
+                        cdBioEngineDnaData: '$outputs.FetchRfcData.blocks', // assuming the output of FetchRfcData task has a property 'blocks' which contains the extracted cd-rfc block data
+                      },
+                      where: {
+                        cdBioEngineDnaSrc: { srcType: 'github', url: extraParam.srcPath}, // An interface needs to be defined for this data to allow optional sources with defined parameters
+                      },
+                    },
+
+                    // optional additional context
+                    source: extraParam.srcPath,
+                    module: cdModule.name,
+                  },
+                },
+                onResult: [
+                  // {
+                  //   ifState: [CdFxStateLevel.Success, CdFxStateLevel.PartialSuccess],
+                  //   toTask: null, // end
+                  // },
+                  {
+                    ifState: [
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: 'NotifyFailure',
+                  },
+                ],
+              }
+```
+
+```ts
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+
+@Entity({
+  name: "cd_bio_engine_dna",
+  synchronize: false,
+})
+export class CdBioEngineDnaModel {
+  @PrimaryGeneratedColumn({
+    name: "cd_bio_engine_dna_id",
+  })
+  cdBioEngineDnaId?: number;
+
+  @Column({
+    name: "cd_bio_engine_dna_guid",
+  })
+  cdBioEngineDnaGuid!: string;
+
+  @Column({
+    name: "cd_bio_engine_dna_name",
+  })
+  cdBioEngineDnaName!: string;
+
+  @Column({
+    name: "cd_bio_engine_dna_description",
+    nullable: true,
+  })
+  cdBioEngineDnaDescription?: string;
+
+  @Column({
+    name: "cd_bio_engine_dna_enabled",
+    default: true,
+  })
+  cdBioEngineDnaEnabled?: boolean;
+
+  @Column({
+    name: "doc_id",
+  })
+  docId!: number;
+
+  // 🔥 DNA Payload (RFC Blocks)
+  @Column({
+    name: "cd_bio_engine_dna_data",
+    type: "json",
+    nullable: true,
+  })
+  cdBioEngineDnaData?: any;
+
+  @Column({
+    name: "cd_bio_engine_dna_src",
+    type: "json",
+    nullable: true,
+  })
+  cdBioEngineDnaSrc?: any;
+}
+
+```
+
+```ts
+export interface ICdRequest {
+  ctx: string; // can be either "Sys" or "App"
+  m: string; // target module name. Note that at the source codes, the full name has "Module" word following the given name here.
+  c: string; // target controler name. Note that at the source codes, the full name has "Controller" word following the given name here.
+  a: string; // target action name
+  dat: EnvelopDat; // payload data
+  args: any | null; // for future or forseable extension. Was set at design time but has not been used so far. Recommended to be kept as is
+}
+
+export interface EnvelopDat {
+  f_vals: EnvelopFValItem[]; // settings for the command. The array dimension was meant to have capacity for sending multiple commands in the future
+  token: string | null; // session token.
+}
+
+export interface EnvelopFValItem {
+  query?: IQuery; // see  IQuery notes
+  data?: any; // set according to the interface of a given Corpdesk controller interface. This is synonimous with model of a given entity targeting a database table or similar
+  extData?: any; // for use in scenario where extra data is used to complete the command. For example when the target action need pre or post process. The details are set by develper at the controller action
+  /**
+   * Developer-specific objects (like cdObj, userObj, etc.)
+   * Any additional property is allowed here.
+   */
+  [key: string]: any;
+}
+
+export interface IQuery {
+  select?: string[];
+  update?: object;
+  where: IQueryWhere;
+  jsonUpdate?: IJsonUpdate[] | JSDPInstruction[]; // This was developed for JSON columns. Its use can be found in the implementation of UserProfile and how CoopMemberProfile has extended UserProfile
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+  jFilters?: IJFilter[];
+  order?: any;
+  class?: string;
+  extData?: any; // any extra data
+}
+
+/**
+ * JSON Semantic Delta Protocol (JSDP)
+ */
+
+/**
+ * JSDP - Semantic Path Query
+ * The core of 'Identity-based Pathing'
+ */
+export interface JPathQuery {
+  field: string;         // The unique attribute (e.g., 'consumerName', 'id', 'guid')
+  value: any;           // The target value to match
+  op?: 'eq' | 'contains'; // Optional: Extensibility for the RFC/Patent
+}
+
+export type JPathSegment = string | number | JPathQuery;
+
+/**
+ * The JSDP Instruction (The upgrade from JUpdateInstruction)
+ */
+export interface JSDPInstruction {
+  v: "1.0";              // Protocol versioning for forward-compatibility
+  path: JPathSegment[];
+  value: any;
+  action: 'create' | 'update' | 'delete' | 'upsert'; 
+  conditions?: any;      // Space for 'Logic-gated' updates (R&D focus)
+}
+
+```
+
+
+Example: updating json field
+```json
+{
+            "ctx": "Sys",
+            "m": "Coops",
+            "c": "CoopMember",
+            "a": "UpdateCoopMemberProfile",
+            "dat": {
+                "f_vals": [
+                    {
+                        "query": {
+                            "update": null,
+                            "where": {
+                                "userId": 1010
+                            }
+                        },
+                        "jsonUpdate": [
+                            {
+                                "path": [
+                                    "fieldPermissions",
+                                    "userPermissions",
+                                    [
+                                        "userName"
+                                    ]
+                                ],
+                                "value": {
+                                    "userId": 1010,
+                                    "field": "userName",
+                                    "hidden": false,
+                                    "read": true,
+                                    "write": false,
+                                    "execute": false
+                                }
+                            },
+                            {
+                                "path": [
+                                    "fieldPermissions",
+                                    "groupPermissions",
+                                    [
+                                        "userName"
+                                    ]
+                                ],
+                                "value": {
+                                    "groupId": 0,
+                                    "field": "userName",
+                                    "hidden": false,
+                                    "read": true,
+                                    "write": false,
+                                    "execute": false
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "token": "08f45393-c10e-4edd-af2c-bae1746247a1"
+            },
+            "args": {}
+        }
+```
+
+```ts
+// src/CdApi/sys/utils/j-morph.ts
+/**
+ * Author G. Oremo
+ * 3rd April 2025
+ *
+ * JMorph - JSON Modification Utility
+ *
+ * This class provides a universal way to apply structured modification instructions to JSON data.
+ * It supports the following operations:
+ * - Create: Adds new data to a JSON structure.
+ * - Read: Retrieves data based on a given path.
+ * - Update: Modifies existing data.
+ * - Delete: Removes data.
+ *
+ * The path field in JUpdateInstruction defines where the modification should occur.
+ * Special rules apply for handling arrays:
+ * - If modifying an array, a key must be specified using the ["<key>"] notation.
+ * - If no key is provided, it is treated as a replacement request for the entire array.
+ * - If an update operation is performed on an array without a key, an error will be thrown.
+ *
+ * Example usage:
+ * const jsonData = { <JSON data as provided > };
+ * const jsonUpdate: JUpdateInstruction[] = [ <JSON updates as provided> ];
+ * const updatedData = JMorph.applyUpdates(jsonData, jsonUpdate);
+ * this.logger.logDebug(updatedData);
+ */
+
+import { Logging } from "../base/winston.log";
+import { safeStringify } from "./safe-stringify";
+
+export interface JUpdateInstruction {
+  path: any[];
+  value: any;
+  action: "create" | "read" | "update" | "delete";
+}
+
+export class JMorph {
+  static logger: Logging = new Logging();
+  /**
+   * Applies a list of update instructions to the given JSON data.
+   * @param jsonData - The JSON object to be modified.
+   * @param jsonUpdate - An array of update instructions.
+   * @returns The modified JSON data.
+   */
+  static applyUpdates(jsonData: any, jsonUpdate: JUpdateInstruction[]): any {
+    for (const instruction of jsonUpdate) {
+      this.applyUpdate(jsonData, instruction);
+    }
+    return jsonData;
+  }
+
+  /**
+   * Applies a single update instruction to the JSON data.
+   * @param jsonData - The JSON object to be modified.
+   * @param instruction - The update instruction.
+   */
+  private static applyUpdate(
+    jsonData: any,
+    instruction: JUpdateInstruction
+  ): void {
+    this.logger.logDebug("JMorph::applyUpdate()/01");
+    this.logger.logDebug("JMorph::applyUpdate()/jsonData:", JSON.stringify(jsonData));
+    this.logger.logDebug(
+      "JMorph::applyUpdate()/instruction:",
+      JSON.stringify(instruction)
+    );
+
+    const { path, value, action } = instruction;
+    this.logger.logDebug("JMorph::applyUpdate()/02");
+
+    let target = jsonData;
+
+    for (let i = 0; i < path.length - 1; i++) {
+      this.logger.logDebug(`JMorph::applyUpdate()/03/${i}`);
+      let key = path[i];
+
+      if (Array.isArray(key)) {
+        this.logger.logDebug(
+          `JMorph::applyUpdate()/Error: Array Detected at ${i}:`,
+          key
+        );
+        throw new Error(
+          `Invalid path at ${i}: Arrays cannot be used as keys directly.`
+        );
+      }
+
+      if (!(key in target)) {
+        this.logger.logDebug(
+          `JMorph::applyUpdate()/Key missing: Creating ${key} at level ${i}`
+        );
+        target[key] = typeof path[i + 1] === "number" ? [] : {};
+      }
+
+      target = target[key]; // Move deeper into the object
+
+      if (target === undefined) {
+        this.logger.logDebug(`JMorph::applyUpdate()/Undefined target at level ${i}`);
+        throw new Error(
+          `Path error: ${key} does not exist in the provided JSON structure.`
+        );
+      }
+    }
+
+    const lastKey = path[path.length - 1];
+    this.logger.logDebug("JMorph::applyUpdate()/target:", target);
+    this.logger.logDebug("JMorph::applyUpdate()/lastKey:", lastKey);
+
+    if (Array.isArray(target) && !Array.isArray(lastKey)) {
+      this.logger.logDebug(
+        "JMorph::applyUpdate()/Error: Attempting to modify an array without key reference"
+      );
+      throw new Error(
+        `Cannot update array at '${path.join(
+          "."
+        )}' without specifying a unique identifier.`
+      );
+    }
+
+    // Delegate actions to separate methods
+    switch (action) {
+      case "create":
+        JMorph.createEntry(target, lastKey, value);
+        break;
+      case "update":
+        JMorph.updateEntry(target, lastKey, value);
+        break;
+      case "delete":
+        JMorph.deleteEntry(target, lastKey);
+        break;
+      default:
+        JMorph.createEntry(target, lastKey, value);
+    }
+
+    this.logger.logDebug("JMorph::applyUpdate()/Completed");
+    this.logger.logDebug("JMorph::applyUpdate()/target2:", target);
+  }
+
+  /**
+   *
+   * @param target
+   * @param key
+   * @param value
+   */
+  
+  private static createEntry(target: any, lastKey: string, value: any): void {
+    this.logger.logDebug("JMorph::createEntry()/target:", target);
+    this.logger.logDebug("JMorph::createEntry()/lastKey:", lastKey);
+    this.logger.logDebug("JMorph::createEntry()/value:", value);
+  
+    if (Array.isArray(target)) {
+      this.logger.logDebug(`JMorph::createEntry() - Target is array. Pushing new value`);
+      target.push(value);
+    } else if (typeof target === "object" && target !== null) {
+      this.logger.logDebug(`JMorph::createEntry() - Target is object. Assigning property`);
+      target[lastKey] = value;
+    } else {
+      this.logger.logError("JMorph::createEntry() - Target is neither array nor object");
+      throw new Error("Cannot create entry: Target is neither array nor object.");
+    }
+  }
+  
+
+  private static updateEntry(target: any, key: string, value: any): void {
+    this.logger.logDebug(`JMorph::updateEntry()/Updating data at ${key}`);
+    target[key] = value;
+  }
+
+  private static deleteEntry(target: any, key: string): void {
+    this.logger.logDebug(`JMorph::deleteEntry()/Deleting data at ${key}`);
+    delete target[key];
+  }
+
+  /**
+   * Handles modifications to an array field in the JSON structure.
+   * @param target - The target array.
+   * @param key - The unique key to identify array items.
+   * @param value - The new value to be applied.
+   * @param action - The type of modification: create, update, delete, or read.
+   */
+  private static modifyArray(
+    target: any[],
+    key: string,
+    value: any,
+    action: string
+  ): void {
+    if (!Array.isArray(target)) return;
+
+    switch (action) {
+      case "create":
+        target.push(value);
+        break;
+      case "update":
+        const index = target.findIndex((item) => item[key] === value[key]);
+        if (index !== -1) {
+          target[index] = value;
+        }
+        break;
+      case "delete":
+        target = target.filter((item) => item[key] !== value[key]);
+        break;
+      case "read":
+        this.logger.logDebug(target.find((item) => item[key] === value[key]));
+        break;
+    }
+  }
+
+  /**
+   * Handles modifications to an object field in the JSON structure.
+   * @param target - The target object.
+   * @param key - The key of the field to be modified.
+   * @param value - The new value to be applied.
+   * @param action - The type of modification: create, update, delete, or read.
+   */
+  private static modifyObject(
+    target: any,
+    key: string,
+    value: any,
+    action: string
+  ): void {
+    switch (action) {
+      case "create":
+      case "update":
+        target[key] = value;
+        break;
+      case "delete":
+        delete target[key];
+        break;
+      case "read":
+        this.logger.logDebug(target[key]);
+        break;
+    }
+  }
+}
+```
+
+```ts
+// src/CdApi/sys/utils/jsdp-engine.ts
+import { JPathSegment, JSDPInstruction } from "../base/i-base";
+
+export class JSDPEngine {
+    /**
+     * Semantic Resolver: Navigates through Objects and Arrays (Mid-path)
+     */
+    static resolve(data: any, path: JPathSegment[]): { parent: any, key: string | number, target: any } {
+        let current = data;
+        let parent = null;
+        let lastKey: string | number = null;
+
+        for (let i = 0; i < path.length; i++) {
+            const segment = path[i];
+            parent = current;
+
+            if (typeof segment === 'object' && segment !== null) {
+                // MID-PATH ARRAY PIVOT
+                if (!Array.isArray(current)) throw new Error(`JSDP Error: Expected array at segment ${i}`);
+                
+                const idx = current.findIndex(item => item[segment.field] === segment.value);
+                if (idx === -1) throw new Error(`JSDP Error: Item not found where ${segment.field} = ${segment.value}`);
+                
+                lastKey = idx;
+                current = current[idx];
+            } else {
+                // OBJECT KEY TRAVERSAL
+                lastKey = segment as string | number;
+                current = current[lastKey];
+            }
+        }
+        return { parent, key: lastKey, target: current };
+    }
+
+    static apply(data: any, instruction: JSDPInstruction): any {
+        const { parent, key, target } = this.resolve(data, instruction.path);
+
+        switch (instruction.action) {
+            case 'update':
+                parent[key] = instruction.value;
+                break;
+            case 'delete':
+                Array.isArray(parent) ? parent.splice(key as number, 1) : delete parent[key];
+                break;
+            // Additional 'upsert' logic for the POC can be added here
+        }
+        return data;
+    }
+}
+```
+
+/////////////////////////////////////////
+
+You have mentioned about the incompletenes and I remembered we had worked on something along that line.
+Actually the latest definition is as below.
+I have just narrowed down on the where: IQueryWhere;
+The rest remains the same.
+```ts
+// Recursive support for nested 'andWhere' and 'orWhere'
+export interface IQuery {
+  select?: string[];
+  update?: ObjectLiteral | null;
+  where: IQueryWhere;
+  jsonUpdate?: IJsonUpdate[] | JSDPInstruction[]; 
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+  jFilters?: IJFilter[];
+  order?: any;
+  class?: string;
+  extData?: any; // any extra data
+}
+
+// Recursive support for nested 'andWhere' and 'orWhere'
+export interface IQueryWhere {
+  andWhere?: Array<IQueryWhere | { [field: string]: any }>;
+  orWhere?: Array<IQueryWhere | { [field: string]: any }>;
+
+  // legacy-compatible flat conditions
+  [field: string]: any;
+}
+```
+
+//////////////////////////////////////////
+
+I am thinking we can use the same approach that you have taken but integrating more of what we already have.
+To start with, we can still use the JSDPInstruction but just add the 'op' property.
+Note that, we already have the field for 'action'. Which we can also add 'read'.
+Now if you look at the json 'Example for updating json field', you will notice that there is no need to include $json. We are just aligning with what is already adopted.
+Note that when 'updating' we rely on IQuery by setting the 'where' property.
+Now that we have the 'op', it is possible to transition from 'where' to 'op'.
+
+```ts
+export interface JSDPInstruction {
+  v: "1.0";              // Protocol versioning for forward-compatibility
+  path: JPathSegment[];
+  value: any;
+  action: 'create' | 'update' | 'delete' | 'upsert'; 
+  conditions?: any;      // Space for 'Logic-gated' updates (R&D focus)
+}
+```
+
+Example for updating json field
+```json
+{
+            "ctx": "Sys",
+            "m": "Coops",
+            "c": "CoopMember",
+            "a": "UpdateCoopMemberProfile",
+            "dat": {
+                "f_vals": [
+                    {
+                        "query": {
+                            "update": null,
+                            "where": {
+                                "userId": 1010
+                            }
+                        },
+                        "jsonUpdate": [
+                            {
+                                "path": [
+                                    "fieldPermissions",
+                                    "userPermissions",
+                                    [
+                                        "userName"
+                                    ]
+                                ],
+                                "value": {
+                                    "userId": 1010,
+                                    "field": "userName",
+                                    "hidden": false,
+                                    "read": true,
+                                    "write": false,
+                                    "execute": false
+                                }
+                            },
+                            {
+                                "path": [
+                                    "fieldPermissions",
+                                    "groupPermissions",
+                                    [
+                                        "userName"
+                                    ]
+                                ],
+                                "value": {
+                                    "groupId": 0,
+                                    "field": "userName",
+                                    "hidden": false,
+                                    "read": true,
+                                    "write": false,
+                                    "execute": false
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "token": "08f45393-c10e-4edd-af2c-bae1746247a1"
+            },
+            "args": {}
+        }
+```
+
+/////////////////////////////////////////
+
+For typeorm, when where is set to {}, is not considered as empty but 'all' or 'any' so it can be risky to use where: {}.
+I am trying to update IQuery ( as Illustration 1) to allow where to be null or optional as suggested in Illustration 2 .
+This then brings issues like the one shown in Illustration 3:
+What is your suggested solution to this?
+
+Illustration 1:
+```ts
+export interface IQuery {
+  select?: string[];
+  update?: ObjectLiteral | null;
+  where: IQueryWhere | null;
+  jsonUpdate?: IJsonUpdate[];
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+  jFilters?: IJFilter[];
+  order?: any;
+  class?: string;
+  extData?: any; // any extra data
+}
+```
+
+Illustration 2:
+```ts
+{
+                  ctx: 'app',
+                  m: 'cd-bio-engine',
+                  c: 'CdBioEngineDna',
+                  a: 'Update',
+                  dat: {
+                    f_vals: [
+                      {
+                        query: {
+                          update: {
+                            cdBioEngineDnaData: '$outputs.FetchRfcData.blocks',
+                          },
+                          where: null, // 👈 It should be possible to have where as optional or set to null
+                        },
+
+                        jsonUpdate: [
+                          {
+                            v: '1.0',
+                            path: ['cdBioEngineDnaSrc', 'url'],
+                            value: extraParam.srcPath,
+                            action: 'read',
+                            op: 'eq',
+                          },
+                        ],
+                      },
+                    ],
+                    token: extraParam.cdToken,
+                  },
+                  args: {},
+                }
+```
+
+Illustration 3:
+Issue: 'serviceInput.cmd.query.where' is possibly 'null'.
+```ts
+if (serviceInput.cmd?.query.where) {
+      Object.keys(serviceInput.cmd.query.where).forEach((key) => {
+        queryBuilder.andWhere(`${key} = :${key}`, {
+          [key]: serviceInput.cmd?.query.where[key],
+        });
+      });
+    }
+```
+
+//////////////////////////////////////////
+
+Property 'startsWith' does not exist on type 'JPathSegment'.
+  Property 'startsWith' does not exist on type 'number'.
+
+Property 'endsWith' does not exist on type 'JPathSegment'.
+  Property 'endsWith' does not exist on type 'number'.
+
+Property 'slice' does not exist on type 'JPathSegment'.
+  Property 'slice' does not exist on type 'number'.
+
+```ts
+updateJsonData(jsonUpdate: JSDPInstruction, jsonData: any): any {
+    console.log('BaseService::updateJsonData()/jsonUpdate1:', jsonUpdate);
+    console.log('BaseService::updateJsonData()/jsonData1:', jsonData);
+
+    try {
+      // Validate `jsonUpdate` structure
+      if (!jsonUpdate || typeof jsonUpdate !== 'object') {
+        this.err.push('Invalid jsonUpdate object.');
+        return null;
+      }
+      if (!Array.isArray(jsonUpdate.path) || jsonUpdate.path.length === 0) {
+        this.err.push('Invalid jsonUpdate path: Must be a non-empty array.');
+        return null;
+      }
+
+      // Validate `jsonData`
+      if (typeof jsonData !== 'object' || jsonData === null) {
+        this.err.push('Invalid jsonData: Must be a non-null object.');
+        return null;
+      }
+
+      // Traverse the path to reach the target node
+      let target = jsonData;
+      const pathLength = jsonUpdate.path.length;
+
+      for (let i = 0; i < pathLength - 1; i++) {
+        const key = jsonUpdate.path[i];
+        console.log('BaseService::updateJsonData()/key0:', key);
+
+        if (key.startsWith('[') && key.endsWith(']')) {
+          console.log('BaseService::updateJsonData()/key1:', key);
+          // Handle array index
+          const index = parseInt(key.slice(1, -1), 10);
+          if (isNaN(index) || !Array.isArray(target)) {
+            this.err.push(`Invalid path at '${key}': Expected a valid array index in an array.`);
+            return null;
+          }
+          target = target[index];
+        } else {
+          // Handle object key
+          console.log('BaseService::updateJsonData()/key2:', key);
+          console.log('BaseService::updateJsonData()/target:', target);
+          if (!Object.prototype.hasOwnProperty.call(target, key)) {
+            this.err.push(`Path error: Key '${key}' does not exist.`);
+            return null;
+          }
+          target = target[key];
+        }
+      }
+
+      // Set the value at the target node
+      const finalKey = jsonUpdate.path[pathLength - 1];
+      console.log('BaseService::updateJsonData()/finalKey1:', finalKey);
+      if (finalKey.startsWith('[') && finalKey.endsWith(']')) {
+        console.log('BaseService::updateJsonData()/finalKey2:', finalKey);
+        const index = parseInt(finalKey.slice(1, -1), 10);
+        if (isNaN(index) || !Array.isArray(target)) {
+          this.err.push(
+            `Invalid path at final key '${finalKey}': Expected a valid array index in an array.`,
+          );
+          return null;
+        }
+        console.log('BaseService::updateJsonData()/target2:', target);
+        target[index] = jsonUpdate.value; // Update the value at the specified index
+      } else {
+        console.log('BaseService::updateJsonData()/jsonUpdate.value:', jsonUpdate.value);
+        console.log('BaseService::updateJsonData()/target3:', target);
+        console.log('BaseService::updateJsonData()/finalKey3:', finalKey);
+        target[finalKey] = jsonUpdate.value; // Update the value at the specified key
+      }
+
+      console.log('BaseService::updateJsonData()/jsonData3:', jsonData);
+      return jsonData; // Return the updated JSON data
+    } catch (e: any) {
+      // Catch unexpected errors and log them
+      this.err.push((e as Error).toString());
+      return null;
+    }
+  }
+```
+
+/////////////////////////////////////////
+
+I realised the case 'cdRequest' in CiCdRunnerService.executeTask() needed some clarity.
+It was set to invoke b.invokeCdRequest(task.cdRequest).
+This only works at the local level only.
+So we will depricate the case 'cdRequest' and instead introduce 'localCdRequest' and 'remoteCdRequest' as shown below.
+I need you to complete how the remoteCdRequest is set up so it can return the ICdResponse as data in 
+```ts
+export class CiCdRunnerService{
+async executeTask(
+    task: CICdTask,
+    descriptor: CdModuleDescriptor,
+    ctx: PipelineContext,
+  ): Promise<CdFxReturn<any>> {
+    try {
+      const b = new BaseService();
+      switch (task.type) {
+        case 'script-inline':
+          return this.runScript(task.executor, task.script);
+
+        case 'script-file':
+          return this.runScriptFromFile(task.executor, task.scriptFile);
+
+        case 'method':
+          if (!task.cdRequest) {
+            return { state: CdFxStateLevel.Error, message: 'cdRequest missing' };
+          }
+          return this.callMethodFromCdRequest(task.cdRequest);
+
+        /**
+         * @deprecated
+         * Use localCdRequest or
+         */
+        case 'cdRequest':
+          return b.invokeCdRequest(task.cdRequest);
+
+        case 'localCdRequest':
+          return b.invokeCdRequest(task.cdRequest);
+
+        case 'remoteCdRequest':
+          const cdResp = await this.remoteCdRequest(task.cdRequest as ICdRequest);
+          return ??  // <- setup required
+
+        default:
+          return {
+            state: CdFxStateLevel.Error,
+            message: `Unknown task type`,
+          };
+      }
+    } catch (err: any) {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: err.message,
+      };
+    }
+  }
+
+  async remoteCdRequest(cdRequest: ICdRequest): Promise<CdFxReturn<ICdResponse>> {
+    const svServer = new HttpService();
+    console.log('remoteCdRequest()/cdRequest:', JSON.stringify(cdRequest));
+    return svServer.proc(cdRequest);
+  }
+  
+}
+```
+
+```ts
+export class BaseService{
+  async invokeCdRequest<T = any>(cdRequest?: ICdRequest): Promise<CdFxReturn<T>> {
+    this.logger.logDebug('BaseService::invokeCdRequest() → Starting dispatch...');
+
+    if (!cdRequest) {
+      return { state: false, message: 'cdRequest is undefined or null.' };
+    }
+
+    this.logger.logDebug(
+      `BaseService::invokeCdRequest() → cdRequest received: ${inspect(cdRequest, { depth: 5 })}`,
+    );
+
+    const { ctx, m, c, a, args, dat } = cdRequest;
+
+    try {
+      const contextRoot = ctx.toLowerCase() === 'sys' ? 'sys' : 'app';
+      // const moduleName = `${m}`;
+      const controllerName = `${c}Controller`;
+      const controllerkebab = toKebabCase(c);
+      const modulePath = `../../${contextRoot}/${m}/controllers/${controllerkebab}.controller.js`;
+
+      this.logger.logDebug(`BaseService::invokeCdRequest() → Importing: ${modulePath}`);
+
+      const importedModule = await import(modulePath);
+      const ControllerClass = importedModule?.[controllerName];
+
+      if (!ControllerClass) {
+        return {
+          state: false,
+          message: `Controller not found: ${controllerName} at ${modulePath}`,
+        };
+      }
+
+      const controllerInstance = new ControllerClass();
+
+      if (typeof controllerInstance[a] !== 'function') {
+        return { state: false, message: `Action method not found: ${a}` };
+      }
+
+      const result = await controllerInstance[a](...(args ? Object.values(args) : []), dat);
+
+      if (!result?.state) {
+        this.logger.logError(`BaseService::invokeCdRequest() → Task failed: ${result.message}`);
+        return result;
+      }
+
+      return result as CdFxReturn<T>;
+    } catch (err: any) {
+      const message = `Error executing cdRequest: ${err.message}`;
+      this.logger.logError(`BaseService::invokeCdRequest() → ${message}`);
+      return {
+        state: false,
+        message,
+      };
+    }
+  }
+}
+```
+References
+```ts
+export interface ICdResponse {
+  app_state: IAppState;
+  data: any;
+}
+
+export interface IAppState {
+  success: boolean;
+  info: IRespInfo | null;
+  sess: ISessResp | null;
+  cache: object | null;
+  sConfig?: IServerConfig;
+}
+
+export interface IServerConfig {
+  usePush: boolean;
+  usePolling: boolean;
+  useCacheStore: boolean;
+}
+
+export interface IRespInfo {
+  messages: string[];
+  code: string | null;
+  app_msg: string | null;
+}
+
+export interface ISessResp {
+  cd_token?: string;
+  userId?: number | string | null;
+  jwt: {
+    jwtToken: string | null;
+    checked: boolean;
+    checkTime: number | null;
+    authorized: boolean;
+    ttl: number | null;
+  } | null;
+  ttl: number;
+  initUuid?: string;
+  initTime?: string;
+}
+```
+
+////////////////////////////////////////
+
+Currently we are hitting the cd-api backend but session token (cd_token) is empty string.
+When the HttpService.proc() is working, the token should be available from the profile.
+It is stored in the cd-valut. Note the cd_token: "#cdVault['cd_token']".
+The decryption process is coming up empty. We need to find out.
+Check if the information shared here can reveal what is wrong or I need to supply more infromation.
+
+```ts
+export class HttpService {
+async proc(params: ICdRequest, profileName = 'cd-api-local'): Promise<CdFxReturn<ICdResponse>> {
+    if (!this.instances.has(profileName)) {
+      const initialized = await this.init(profileName);
+      if (!initialized) {
+        throw new Error(`Profile '${profileName}' could not be initialized.`);
+      }
+    }
+
+    const result = await this.ctlCdCliProfile.loadProfiles();
+
+    if (!result.state || !result.data) {
+      throw new Error('Unable to load profiles.');
+    }
+
+    const profile = result.data.items.find((item: any) => item.cdCliProfileName === profileName);
+
+    const details: IProfileDetails = profile?.cdCliProfileData?.details || {};
+    let config: AxiosRequestConfig;
+
+    CdLog.debug(`HttpService::proc()/profileName:${profileName}`);
+    // CdLog.debug(
+    //   `HttpService::proc()/profile:${inspect(profile, {
+    //     depth: 3,
+    //   })}`,
+    // );
+    CdLog.debug(
+      `HttpService::proc()/profileDetails:${inspect(details, {
+        depth: 3,
+      })}`,
+    );
+
+    // 🔐 Decrypt crypt fields (e.g. apiKey) before using them
+    const decryptedFields = await this.decryptProfileFields(details);
+
+    CdLog.debug(
+      `HttpService::proc()/decryptedFields:${inspect(decryptedFields, {
+        depth: 3,
+      })}`,
+    );
+
+    if (details.httpConfig) {
+      config = JSON.parse(JSON.stringify(details.httpConfig));
+      config.data = params;
+
+      // 🔁 Replace placeholders like #apiKey in all headers
+      if (config.headers && typeof config.headers === 'object') {
+        for (const [key, val] of Object.entries(config.headers)) {
+          if (typeof val === 'string') {
+            config.headers[key] = val.replace(
+              /#(\w+)/g,
+              (_, token) => decryptedFields[token] || '',
+            );
+          }
+        }
+      }
+    } else {
+      if (!this.cdApiAxiosConfig) {
+        throw new Error('cdApiAxiosConfig is not initialized.');
+      }
+      config = { ...this.cdApiAxiosConfig, data: params };
+    }
+
+    CdLog.debug(`HttpService::proc()/params:${inspect(params, { depth: 5 })}`);
+    return this.request<ICdResponse>(config, profileName);
+  }
+
+  private async decryptProfileFields(details: IProfileDetails): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+
+    if (!details.cryptFields || !Array.isArray(details.cryptFields)) {
+      return result;
+    }
+
+    for (const fieldName of details.cryptFields) {
+      const field = details[fieldName];
+
+      if (field?.isEncrypted && field.encryptedValue && field.encryptionMeta) {
+        try {
+          const decryptedValue = await CdCliVaultController.decrypt(
+            field.encryptionMeta,
+            field.encryptedValue,
+          );
+          result[fieldName] = decryptedValue ?? '';
+        } catch (e) {
+          CdLog.error(`Failed to decrypt field '${fieldName}':${(e as Error).message}`);
+          result[fieldName] = ''; // Fail silently with empty string
+        }
+      } else if (typeof field?.value === 'string') {
+        result[fieldName] = field.value;
+      }
+    }
+
+    return result;
+  }
+}
+```
+partial logs showing decryption is yeilding {}
+```ts
+[2026-05-06 21:11:57] 🛠️ HttpService::proc()/profileDetails:{
+  session: {
+    jwt: null,
+    ttl: 600,
+    userId: 1010,
+    cd_token: "#cdVault['cd_token']"
+  },
+  cdEndpoint: 'https://localhost:3001/api',
+  permissions: {
+    userPermissions: [
+      {
+        read: true,
+        field: 'cdCliProfileData',
+        write: true,
+        hidden: false,
+        userId: 1000,
+        execute: false
+      }
+    ],
+    groupPermissions: [
+      {
+        read: true,
+        field: 'cdCliProfileData',
+        write: false,
+        hidden: false,
+        execute: false,
+        groupId: 0
+      }
+    ]
+  },
+  consumerToken: "#cdVault['consumerToken']"
+}
+[2026-05-06 21:11:57] 🛠️ HttpService::proc()/decryptedFields:{}
+```
+References
+```ts
+export interface IProfileDetails {
+  /**
+   * A required field for any external service that exposes an API endpoint.
+   * This field is mandatory for HTTP-based services.
+   */
+  endpoint?: string;
+
+  // Non-endpoint, service-specific keys (Git, SSH, AI, etc.)
+  sshKey?: string | null;
+  cdApiDir?: string;
+  devServer?: string;
+  remoteUser?: string;
+
+  gitAccess?: {
+    gitHubUser?: string;
+    gitHubToken?: string;
+    baseRepoUrl?: string;
+  };
+
+  session?: {
+    jwt?: string | null;
+    ttl?: number;
+    userId?: number;
+    cd_token?: string;
+  };
+
+  apiKey?: {
+    name?: string;
+    value?: string | null;
+    encryptedValue?: string;
+    isEncrypted?: boolean;
+    encryptionMeta?: any;
+  };
+
+  organizationId?: string;
+  openAiProjectName?: string;
+  defaultRequestConfig?: {
+    model?: string;
+    temperature?: number;
+    max_tokens?: number;
+  };
+
+  cryptFields?: string[];
+  encrypted?: boolean;
+
+  [key: string]: any;
+}
+```
+
+/////////////////////////////////////////////
+
+```ts
+async cloneRepoToLocal(
+    repoName: string,
+    repoDirectory: string,
+    repoHost: string /** This can be a Git username or organization */,
+  ): Promise<void> {
+    try {
+      // Experimental overrides
+      repoName = 'testAutoGit';
+      repoHost = 'corpdesk';
+      repoDirectory = '~';
+
+      // Fetch the GitHub profile
+      const gitProfileData = await this.getGitHubProfile();
+      if (!gitProfileData) {
+        throw new Error('GitHub profile could not be loaded.');
+      }
+
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/gitProfileData:', gitProfileData);
+
+      // Extract the endpoint and token from the GitHub profile
+      let endpoint = gitProfileData.details.endpoint;
+      let gitHubToken = gitProfileData.details.gitAccess?.gitHubToken;
+
+      CdLog.debug(`CdAutoGitController::cloneRepoToLocal()/endpoint: ${endpoint}`);
+
+      // Experimental overrides
+      endpoint = 'https://github.com';
+
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/endpoint:', {
+        url: endpoint,
+      });
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/gitHubToken:', {
+        token: gitHubToken,
+      });
+
+      // Decrypt and resolve all vault references in details
+      const resolved: IProfileDetails = await CdCliVaultController.resolveVaultReferencesInObject(
+        gitProfileData.details,
+        gitProfileData.cdVault,
+      );
+
+      // Extract from resolved details after vault substitution
+      // const { baseUrl, gitAccess } = resolved;
+      CdLog.debug(`CdAutoGitController::cloneRepoToLocal()/resolved:${JSON.stringify(resolved)}`);
+      endpoint = resolved.endpoint;
+      CdLog.debug(`CdAutoGitController::cloneRepoToLocal()/endpoint:${endpoint}`);
+      gitHubToken = resolved.gitAccess?.gitHubToken;
+      CdLog.debug(`CdAutoGitController::cloneRepoToLocal()/gitHubToken:${gitHubToken}`);
+      if (!endpoint || !gitHubToken) {
+        throw new Error(
+          'Missing GitHub endpoint or token. Ensure GitHub profile is configured correctly.',
+        );
+      }
+
+      // Construct the full repository URL with authentication
+      const authRepoUrl = endpoint.replace('https://', `https://${gitHubToken}@`);
+      const repoUrl = `${authRepoUrl}/${repoHost}/${repoName}.git`;
+
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/repoUrl:', {
+        url: repoUrl,
+      });
+
+      // Construct the git clone command
+      const gitCommand = `git clone ${repoUrl} ${repoDirectory}/${repoName}`;
+
+      CdLog.debug('CdAutoGitController::cloneRepoToLocal()/gitCommand:', {
+        cmd: gitCommand,
+      });
+
+      // Execute the git clone command
+      await this.runCommand(gitCommand);
+
+      // Log success message
+      CdLog.success(`Repository cloned into ${repoDirectory}/${repoName}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        CdLog.error(`Error cloning repository: ${error.message}`);
+      } else {
+        CdLog.error(`Error cloning repository: Unexpected error format: ${JSON.stringify(error)}`);
+      }
+    }
+  }
+```
+
+////////////////////////////////
+
+I adopted codes from another service which are not 100% valid for CdBioEngineDnaService.
+This is evident from the CdBioEngineDnaService.validateUpdateData() method.
+Note the presence of userId and possibly other items that are irrelevant.
+This is leading to illogical failure of update attempt.
+You can also review CdBioEngineDnaService.updateCdBioEngineDna() to confirm that it is conforming to the reference interfaces as per its objectives.
+
+```ts
+[5/8/2026, 6:15:06 AM] [DEBUG]: [CdBioEngineDnaService][validateUpdateProfileData] post.dat.f_vals[0]:{
+  query: { update: { cdBioEngineDnaData: [ [Object] ] } },
+  jsonUpdate: [
+    {
+      v: '1.0',
+      path: [ 'cdBioEngineDnaSrc', 'url' ],
+      value: '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"',
+      action: 'read',
+      op: 'eq'
+    }
+  ]
+}
+```
+
+References
+```ts
+export interface IQuery {
+  select?: string[];
+  update?: ObjectLiteral | null;
+  where?: IQueryWhere;
+  jsonUpdate?: JSDPInstruction[];
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+  jFilters?: IJFilter[];
+  order?: any;
+  class?: string;
+  extData?: any; // any extra data
+}
+
+// Recursive support for nested 'andWhere' and 'orWhere'
+export interface IQueryWhere {
+  andWhere?: Array<IQueryWhere | { [field: string]: any }>;
+  orWhere?: Array<IQueryWhere | { [field: string]: any }>;
+
+  // legacy-compatible flat conditions
+  [field: string]: any;
+}
+
+
+/**
+ * JSON Semantic Delta Protocol (JSDP)
+ */
+
+/**
+ * JSDP - Semantic Path Query
+ * The core of 'Identity-based Pathing'
+ */
+export interface JPathQuery {
+  field: string; // The unique attribute (e.g., 'consumerName', 'id', 'guid')
+  value: any; // The target value to match
+  op?: 'eq' | 'contains'; // Optional: Extensibility for the RFC/Patent
+}
+
+export type JPathSegment = string | number | JPathQuery;
+
+/**
+ * The JSDP Instruction (The upgrade from JUpdateInstruction)
+ */
+export interface JSDPInstruction {
+  v?: '1.0'; // Protocol versioning for forward-compatibility
+  modelField?: string; // name of the json column. Capacity to update multiple json columns in a given row
+  path: JPathSegment[];
+  value: any;
+  action: 'create' | 'update' | 'delete' | 'upsert' | 'read';
+  conditions?: any; // Space for 'Logic-gated' updates (R&D focus)
+}
+```
+
+```ts
+export class CdBioEngineDnaService extends GenericService<CdBioEngineDnaModel> {
+  logger!: Logging;
+  b: BaseService<CdBioEngineDnaModel>;
+  serviceModel = CdBioEngineDnaModel;
+  docName!: string;
+  cdToken!: string;
+
+  constructor() {
+    super(CdBioEngineDnaModel);
+    this.b = new BaseService();
+  }
+
+  async updateCdBioEngineDna(req: Request, res: Response) {
+    this.logger.logDebug("[CdBioEngineDnaService][updateCdBioEngineDna] 01");
+    try {
+      // Validate request data
+      if (await this.validateUpdateData(req, res)) {
+        /**
+         * 1. Get the requested row to update
+         */
+        const requestQuery: IQuery = (req as any).post.dat.f_vals[0].query;
+        const jsonUpdate: JSDPInstruction[] = (req as any).post.dat.f_vals[0]
+          .jsonUpdate;
+
+        console.log(
+          "CdBioEngineDnaService::updateCdBioEngineDna()/requestQuery:",
+          requestQuery,
+        );
+        console.log(
+          "CdBioEngineDnaService::updateCdBioEngineDna()/jsonUpdate:",
+          jsonUpdate,
+        );
+
+        // Validate jsonUpdate format
+        if (
+          !jsonUpdate ||
+          !Array.isArray(jsonUpdate) ||
+          jsonUpdate.length === 0
+        ) {
+          const e = "Invalid or empty jsonUpdate provided.";
+          this.b.err.push(e);
+          const i = {
+            messages: this.b.err,
+            code: "CdBioEngineDnaService:updateCdBioEngineDna",
+            app_msg: "",
+          };
+          await this.b.serviceErr(req, res, e, i.code);
+          // return await this.b.respond(req, res);
+        }
+
+        /**
+         * 2. Get the profile data to update
+         */
+        const profileData: CdBioEngineDnaModel[] =
+          await this.getCdBioEngineDnaI(req, res, requestQuery);
+        console.log(
+          "CdBioEngineDnaService::updateCdBioEngineDna()/profileData:",
+          profileData,
+        );
+        console.log(
+          "CdBioEngineDnaService::updateCdBioEngineDna()/profileData[0].cdBioEngineDnaData1:",
+          profileData[0].cdBioEngineDnaData,
+        );
+
+        if (!profileData) {
+          const e = "No profile data found for the given query.";
+          this.b.err.push(e);
+          const i = {
+            messages: this.b.err,
+            code: "CdBioEngineDnaService:updateCdBioEngineDna",
+            app_msg: "",
+          };
+          await this.b.serviceErr(req, res, e, i.code);
+          // return await this.b.respond(req, res);
+        }
+
+        /**
+         * 3. Use jsonUpdate derived above to update the profileData
+         */
+        // let updatedProfileData = profileData[0].cdBioEngineDnaData
+        let modifiedProfile;
+        for (const update of jsonUpdate) {
+          console.log(
+            "CdBioEngineDnaService::updateCdBioEngineDna()/update:",
+            update,
+          );
+          console.log(
+            "CdBioEngineDnaService::updateCdBioEngineDna()/profileData[0].cdBioEngineDnaData2:",
+            profileData[0].cdBioEngineDnaData,
+          );
+
+          modifiedProfile = await this.b.updateJsonData(
+            update,
+            profileData[0].cdBioEngineDnaData,
+          );
+
+          console.log(
+            "CdBioEngineDnaService::updateCdBioEngineDna()/modifiedProfile1:",
+            modifiedProfile,
+          );
+
+          if (!modifiedProfile) {
+            const e = `Failed to update profile data for path: ${update.path.join(
+              ".",
+            )}`;
+            this.b.err.push(e);
+            const i = {
+              messages: this.b.err,
+              code: "CdBioEngineDnaService:updateCdBioEngineDna",
+              app_msg: "",
+            };
+            await this.b.serviceErr(req, res, e, i.code);
+            return await this.b.respond(req, res);
+          }
+        }
+
+        /**
+         * 4. Once the profile is updated successfully, update the row with the amended profileData
+         */
+        requestQuery.update = {
+          cdBioEngineDnaData: JSON.stringify(modifiedProfile), // Updated profileData to be saved
+        };
+        let serviceInput: IServiceInput<any> = {
+          serviceInstance: this,
+          serviceModel: CdBioEngineDnaModel,
+          docName: "CdBioEngineDnaService::updateCdBioEngineDna",
+          cmd: {
+            query: requestQuery,
+          },
+        };
+        console.log(
+          "CdBioEngineDnaService::updateCdBioEngineDna()/requestQuery:",
+          requestQuery,
+        );
+
+        let ret;
+        if (modifiedProfile) {
+          ret = await this.updateI(req, res, serviceInput);
+          const finalRet = {
+            updateRet: ret,
+            newProfile: profileData,
+          };
+
+          // Respond with the updated profile data
+          this.b.cdResp.data = finalRet;
+          return await this.b.respond(req, res);
+        } else {
+          const e = "unexpected error ocured while updating";
+          this.b.err.push(e.toString());
+          const i = {
+            messages: this.b.err,
+            code: "CdBioEngineDnaService:updateCdBioEngineDna",
+            app_msg: "",
+          };
+          await this.b.serviceErr(req, res, e, i.code);
+          await this.b.respond(req, res);
+        }
+      } else {
+        const e = "Could not validate the requested data.";
+        this.b.err.push(e);
+        const i = {
+          messages: this.b.err,
+          code: "CdBioEngineDnaService:updateCdBioEngineDna",
+          app_msg: "",
+        };
+        await this.b.serviceErr(req, res, e, i.code);
+        await this.b.respond(req, res);
+      }
+    } catch (e: any) {
+      this.b.err.push(e.toString());
+      const i = {
+        messages: this.b.err,
+        code: "CdBioEngineDnaService:updateCdBioEngineDna",
+        app_msg: "",
+      };
+      await this.b.serviceErr(req, res, e, i.code);
+      await this.b.respond(req, res);
+    }
+  }
+
+  async validateUpdateData(
+    req: Request,
+    res: Response,
+  ): Promise<boolean> {
+    this.logger.logDebug(
+      "[CdBioEngineDnaService][validateUpdateProfileData] 01",
+    );
+    const svSess = new SessionService();
+    this.b.err = []; // Initialize error storage
+    let valid = true; // Assume valid unless a validation fails
+
+    try {
+      this.logger.logDebug(
+        "[CdBioEngineDnaService][validateUpdateProfileData] 02",
+      );
+      const sessionDataExt: ISessionDataExt | null =
+        await svSess.getSessionDataExt(req, res, true);
+
+      if (!sessionDataExt) {
+        this.logger.logDebug(
+          "[CdBioEngineDnaService][validateUpdateProfileData] 03",
+        );
+        const e = "Invalid session: Unable to retrieve session data.";
+        this.b.err.push(e);
+        return false;
+      }
+
+      this.logger.logDebug(
+        "[CdBioEngineDnaService][validateUpdateProfileData] 04",
+      );
+      const requestQuery: IQuery = (req as any).post.dat.f_vals[0]?.query;
+      this.logger.logDebug(
+        `[CdBioEngineDnaService][validateUpdateProfileData] post.dat.f_vals[0]:${inspect((req as any).post.dat.f_vals[0], { depth: 3 })}`,
+      );
+
+      // 1. Validate the presence of `requestQuery` and `requestQuery.where`
+      if (!requestQuery) {
+        this.logger.logDebug(
+          "[CdBioEngineDnaService][validateUpdateProfileData] 05",
+        );
+        const e = "Invalid request: Missing query or where clause.";
+        this.b.err.push(e);
+        return false;
+      }
+
+      this.logger.logDebug(
+        "[CdBioEngineDnaService][validateUpdateProfileData] 06",
+      );
+      if (requestQuery.where) {
+        const { userId, cdCdBioEngineDnaId } = requestQuery.where;
+
+        // 2. Validate `userId` and `cdCdBioEngineDnaId`
+        if (
+          typeof userId !== "number" ||
+          userId <= 0 ||
+          typeof cdCdBioEngineDnaId !== "number" ||
+          cdCdBioEngineDnaId <= 0
+        ) {
+          this.logger.logDebug(
+            "[CdBioEngineDnaService][validateUpdateProfileData] 07",
+          );
+          const e =
+            "Invalid request: userId and cdCdBioEngineDnaId must be positive integers.";
+          this.b.err.push(e);
+          valid = false;
+        }
+      }
+
+      this.logger.logDebug(
+        "[CdBioEngineDnaService][validateUpdateProfileData] 08",
+      );
+      // 3. Validate `JSDPInstruction[]` structure
+      const jsonUpdates: JSDPInstruction[] =
+        (req as any).post.dat.f_vals[0]?.jsonUpdate || [];
+      if (!Array.isArray(jsonUpdates)) {
+        this.logger.logDebug(
+          "[CdBioEngineDnaService][validateUpdateProfileData] 09",
+        );
+        const e = "Invalid request: jsonUpdate must be an array.";
+        this.b.err.push(e);
+        valid = false;
+      } else {
+        this.logger.logDebug(
+          "[CdBioEngineDnaService][validateUpdateProfileData] 10",
+        );
+        for (const update of jsonUpdates) {
+          this.logger.logDebug(
+            "[CdBioEngineDnaService][validateUpdateProfileData] 11",
+          );
+          if (
+            typeof update.path === "undefined" ||
+            update.path === null ||
+            typeof update.value === "undefined" ||
+            update.value === null
+          ) {
+            const e =
+              "Invalid request: Each jsonUpdate must contain a valid path and value.";
+            this.b.err.push(e);
+            valid = false;
+            break;
+          }
+          this.logger.logDebug(
+            "[CdBioEngineDnaService][validateUpdateProfileData] 12",
+          );
+          if (update.modelField && typeof update.modelField !== "string") {
+            const e =
+              "Invalid request: modelField must be a string if provided.";
+            this.b.err.push(e);
+            valid = false;
+            break;
+          }
+        }
+      }
+
+      this.logger.logDebug(
+        "[CdBioEngineDnaService][validateUpdateProfileData] 13",
+      );
+      // 4. Validate session user authorization
+      const sessionUserId = sessionDataExt.currentUser.userId;
+      if (sessionUserId !== userId) {
+        this.logger.logDebug(
+          "[CdBioEngineDnaService][validateUpdateProfileData] 14",
+        );
+        const e =
+          "Unauthorized: Session user does not have the right to update the specified profile.";
+        this.b.err.push(e);
+        valid = false;
+      }
+    } catch (e: any) {
+      this.logger.logDebug(
+        "[CdBioEngineDnaService][validateUpdateProfileData] 15",
+      );
+      // Capture unexpected errors
+      this.b.err.push(e.toString());
+      return false; // Return false if an unexpected error occurs
+    }
+
+    // Return the validation status
+    return valid;
+  }
+}
+```
+////////////////////////////////////
+
+Do for me a prompt that can allow me to continue same context in a new chat
+//////////////////////////////
+
+Below are what is in the BaseService() dedicated to json and query builder where applicable.
+The idea to to avoid replication that makes specific service bloated with facilities that need to be shared.
+Examine the following methods to see how they can assist in simplifying dependencies for CdBioEngineDnaService.updateCdBioEngineDna(). Note that it is currently relying on local methods in the class. But such facilities are meant to be available in the BaseService().
+Feel at liberty to also suggest on any improvement for the shared methods at the BaseService.
+
+```ts
+export class BaseService(){
+  async readQB(
+    req: Request,
+    res: Response,
+    serviceInput: IServiceInput<any>,
+  ): Promise<any> {
+    await this.init(req, res);
+
+    this.logger.logDebug(
+      "BaseService::readQB()/repo/model:",
+      serviceInput.serviceModel,
+    );
+    await this.setRepo(serviceInput);
+
+    // Ensure the mapping is registered
+    await this.entityAdapter.registerMappingFromEntity(
+      serviceInput.serviceModel,
+    );
+
+    // Create the helper instance
+    const queryBuilderHelper = new QueryBuilderHelper(this.repo);
+    const repo: any = this.repo;
+
+    try {
+      const queryBuilder =
+        await queryBuilderHelper.createQueryBuilder(serviceInput);
+      this.logger.logDebug("BaseService::readQB/sql:", queryBuilder.getSql());
+
+      let items = await queryBuilder.getRawMany();
+      this.logger.logDebug("BaseService::readQB()/items:", items);
+
+      const entityName = await this.entityAdapter.getEntityName(
+        serviceInput.serviceModel,
+      );
+      items = this.entityAdapter.mapRawToEntity(entityName, items);
+
+      this.logger.logDebug("BaseService::readQB()/Fetched-Items:", items);
+
+      const count = await queryBuilder.getCount();
+      this.logger.logDebug("Fetched Count:", count);
+
+      return {
+        items,
+        count,
+      };
+    } catch (err) {
+      console.error("Error in readQB:", err);
+      return await this.serviceErr(req, res, err, "BaseService:readQB");
+    }
+  }
+
+  readQB$(
+    req: Request,
+    res: Response,
+    serviceInput: IServiceInput<any>,
+  ): Observable<any> {
+    this.logger.logDebug("BaseService::readQB$()/serviceInput:", serviceInput);
+    return from(this.readQB(req, res, serviceInput));
+  }
+
+  /**
+   * For validating JSDPInstruction array
+   * @param jsonUpdate
+   * @param rootInterface
+   * @returns
+   */
+  validateJsonUpdate<T>(
+    jsonUpdate: JSDPInstruction[],
+    rootInterface: T,
+  ): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    function traversePath(
+      currentPath: string[],
+      currentInterface: any,
+    ): boolean {
+      // If no path left to validate, return true
+      if (currentPath.length === 0) return true;
+
+      const [currentKey, ...remainingPath] = currentPath;
+
+      if (Array.isArray(currentInterface) && currentKey === "[0]") {
+        // Check if the interface is an array and the key indicates an index
+        return traversePath(remainingPath, currentInterface[0]);
+      } else if (currentInterface && typeof currentInterface === "object") {
+        // Check if the key exists in the interface
+        if (!(currentKey in currentInterface)) {
+          errors.push(
+            `Invalid path key '${currentKey}' at '${currentPath.join(".")}'`,
+          );
+          return false;
+        }
+        // Continue traversing the remaining path
+        return traversePath(remainingPath, currentInterface[currentKey]);
+      } else {
+        // If the structure doesn't match, log an error
+        errors.push(
+          `Unexpected type at '${currentPath.join(
+            ".",
+          )}'. Expected object or array.`,
+        );
+        return false;
+      }
+    }
+
+    // Validate each update item
+    jsonUpdate.forEach((update) => {
+      if (!update.modelField || update.modelField !== "cdDevProjectData") {
+        errors.push(`Invalid modelField: '${update.modelField}'`);
+        return;
+      }
+
+      const { path } = update;
+      if (!Array.isArray(path) || path.length === 0) {
+        errors.push(`Invalid path: '${JSON.stringify(path)}'`);
+        return;
+      }
+
+      // Start traversal from the root interface
+      traversePath(path as string[], rootInterface);
+    });
+
+    return { valid: errors.length === 0, errors };
+  }
+
+  updateJsonData(jsonUpdate: JSDPInstruction, jsonData: any): any {
+    this.logger.logDebug(
+      "BaseService::updateJsonData()/jsonUpdate1:",
+      jsonUpdate,
+    );
+    this.logger.logDebug("BaseService::updateJsonData()/jsonData1:", jsonData);
+
+    try {
+      // Validate `jsonUpdate` structure
+      if (!jsonUpdate || typeof jsonUpdate !== "object") {
+        this.err.push("Invalid jsonUpdate object.");
+        return null;
+      }
+      if (!Array.isArray(jsonUpdate.path) || jsonUpdate.path.length === 0) {
+        this.err.push("Invalid jsonUpdate path: Must be a non-empty array.");
+        return null;
+      }
+
+      // Validate `jsonData`
+      if (typeof jsonData !== "object" || jsonData === null) {
+        this.err.push("Invalid jsonData: Must be a non-null object.");
+        return null;
+      }
+
+      // Traverse the path to reach the target node
+      let target = jsonData;
+      const pathLength = jsonUpdate.path.length;
+
+      for (let i = 0; i < pathLength - 1; i++) {
+        const key = jsonUpdate.path[i] as string;
+        this.logger.logDebug("BaseService::updateJsonData()/key0:", key);
+
+        if (key.startsWith("[") && key.endsWith("]")) {
+          this.logger.logDebug("BaseService::updateJsonData()/key1:", key);
+          // Handle array index
+          const index = parseInt(key.slice(1, -1), 10);
+          if (isNaN(index) || !Array.isArray(target)) {
+            this.err.push(
+              `Invalid path at '${key}': Expected a valid array index in an array.`,
+            );
+            return null;
+          }
+          target = target[index];
+        } else {
+          // Handle object key
+          this.logger.logDebug("BaseService::updateJsonData()/key2:", key);
+          this.logger.logDebug("BaseService::updateJsonData()/target:", target);
+          if (!Object.prototype.hasOwnProperty.call(target, key)) {
+            this.err.push(`Path error: Key '${key}' does not exist.`);
+            return null;
+          }
+          target = target[key];
+        }
+      }
+
+      // Set the value at the target node
+      const finalKey = jsonUpdate.path[pathLength - 1] as string;
+      this.logger.logDebug(
+        "BaseService::updateJsonData()/finalKey1:",
+        finalKey,
+      );
+      if (finalKey.startsWith("[") && finalKey.endsWith("]")) {
+        this.logger.logDebug(
+          "BaseService::updateJsonData()/finalKey2:",
+          finalKey,
+        );
+        const index = parseInt(finalKey.slice(1, -1), 10);
+        if (isNaN(index) || !Array.isArray(target)) {
+          this.err.push(
+            `Invalid path at final key '${finalKey}': Expected a valid array index in an array.`,
+          );
+          return null;
+        }
+        this.logger.logDebug("BaseService::updateJsonData()/target2:", target);
+        target[index] = jsonUpdate.value; // Update the value at the specified index
+      } else {
+        this.logger.logDebug(
+          "BaseService::updateJsonData()/jsonUpdate.value:",
+          jsonUpdate.value,
+        );
+        this.logger.logDebug("BaseService::updateJsonData()/target3:", target);
+        this.logger.logDebug(
+          "BaseService::updateJsonData()/finalKey3:",
+          finalKey,
+        );
+        target[finalKey] = jsonUpdate.value; // Update the value at the specified key
+      }
+
+      this.logger.logDebug(
+        "BaseService::updateJsonData()/jsonData3:",
+        jsonData,
+      );
+      return jsonData; // Return the updated JSON data
+    } catch (e: any) {
+      // Catch unexpected errors and log them
+      this.err.push(e.toString());
+      return null;
+    }
+  }
+
+  async readJSONColumnQB(
+    req: Request,
+    res: Response,
+    serviceInput: IServiceInput<any>,
+    jsonField: string,
+    keys: string[],
+  ): Promise<any> {
+    await this.init(req, res);
+    this.logger.logDebug(
+      "BaseService::readJSONColumnQB()/repo/model:",
+      serviceInput.serviceModel,
+    );
+    await this.setRepo(serviceInput);
+
+    const queryBuilderHelper = new QueryBuilderHelper(this.repo);
+    const queryBuilder =
+      await queryBuilderHelper.createQueryBuilder(serviceInput);
+
+    // Use MySQL JSON_EXTRACT to extract specific fields from the JSON column
+    keys.forEach((key) => {
+      queryBuilder.addSelect(
+        `JSON_UNQUOTE(JSON_EXTRACT(${jsonField}, '$.${key}'))`,
+        key,
+      );
+    });
+
+    try {
+      const items = await queryBuilder.getRawMany();
+      const entityName = await this.entityAdapter.getEntityName(
+        serviceInput.serviceModel,
+      );
+      const processedItems = this.entityAdapter.mapRawToEntity(
+        entityName,
+        items,
+      );
+
+      return {
+        items: processedItems,
+        count: await queryBuilder.getCount(),
+      };
+    } catch (err) {
+      return await this.serviceErr(
+        req,
+        res,
+        err,
+        "BaseService:readJSONColumnQB",
+      );
+    }
+  }
+
+  async updateJSONColumnQB(
+    req: Request,
+    res: Response,
+    serviceInput: IServiceInput<any>,
+    jsonField: string,
+    updates: Record<string, any>,
+  ): Promise<any> {
+    await this.init(req, res);
+    this.logger.logDebug(
+      "BaseService::updateJSONColumnQB()/repo/model:",
+      serviceInput.serviceModel,
+    );
+    await this.setRepo(serviceInput);
+
+    const buildJsonSetPaths = (
+      jsonField: string,
+      obj: any,
+      prefix: string = "",
+    ): string[] => {
+      return Object.keys(obj)
+        .map((key) => {
+          const path = `${prefix}${prefix ? "." : ""}${key}`;
+          if (typeof obj[key] === "object" && obj[key] !== null) {
+            // Recursively handle nested objects
+            return buildJsonSetPaths(jsonField, obj[key], path).join(", ");
+          } else {
+            // Use COALESCE to ensure JSON is initialized if null
+            return `JSON_SET(COALESCE(${jsonField}, '{}'), '$.${path}', '${obj[key]}')`;
+          }
+        })
+        .filter(Boolean);
+    };
+
+    // Generate the JSON_SET update query for the jsonField
+    const updateFields = buildJsonSetPaths(jsonField, updates).join(", ");
+
+    this.logger.logDebug(
+      "BaseService::updateJSONColumnQB()/updates:",
+      JSON.stringify(updates),
+    );
+    this.logger.logDebug(
+      "BaseService::updateJSONColumnQB()/updateFields:",
+      JSON.stringify(updateFields),
+    );
+
+    // Start building the query using the input provided in serviceInput.cmd?.query
+    const queryBuilder = this.repo
+      .createQueryBuilder()
+      .update(serviceInput.serviceModel);
+
+    // Handle dynamic update fields using the update property from QueryInput
+    if (serviceInput.cmd?.query.update) {
+      queryBuilder.set(serviceInput.cmd?.query.update);
+    } else {
+      // Fallback: use the JSON field update if no generic update is provided
+      queryBuilder.set({ [jsonField]: () => updateFields });
+    }
+
+    const where = serviceInput.cmd?.query?.where;
+
+    if (where && Object.keys(where).length > 0) {
+      Object.keys(where).forEach((key) => {
+        queryBuilder.andWhere(`${key} = :${key}`, {
+          [key]: where[key],
+        });
+      });
+    } else {
+      // Fallback: Use the primary key based on the service model's convention <controller>_id
+      const entityMetadata = this.ds.getMetadata(serviceInput.serviceModel);
+      const primaryKey = entityMetadata.primaryColumns[0]?.propertyName;
+      if (!primaryKey) {
+        throw new Error(
+          `No primary key found for model ${serviceInput.serviceModel.name}`,
+        );
+      }
+      if (!serviceInput.cmd || !serviceInput.cmd?.query) {
+        throw new Error(
+          `serviceInput.cmd or serviceInput.cmd?.query is undefined`,
+        );
+      }
+      queryBuilder.where(`${primaryKey} = :${primaryKey}`, {
+        [primaryKey]: (serviceInput.cmd?.query as any)[primaryKey],
+      });
+    }
+
+    try {
+      // Execute the query
+      return await queryBuilder.execute();
+    } catch (err) {
+      return await this.serviceErr(
+        req,
+        res,
+        err,
+        "BaseService:updateJSONColumnQB",
+      );
+    }
+  }
+
+  async deleteJSONColumnFieldQB(
+    req: Request,
+    res: Response,
+    serviceInput: IServiceInput<any>,
+    jsonField: string,
+    keys: string[],
+  ): Promise<any> {
+    await this.init(req, res);
+    this.logger.logDebug(
+      "BaseService::deleteJSONColumnFieldQB()/repo/model:",
+      serviceInput.serviceModel,
+    );
+    await this.setRepo(serviceInput);
+
+    // Generate the JSON_REMOVE query for the keys to remove from the jsonField
+    const removeFields = keys
+      .map((key) => `JSON_REMOVE(${jsonField}, '$.${key}')`)
+      .join(", ");
+
+    // Create the query builder and update the JSON field
+    const queryBuilder = this.repo.createQueryBuilder();
+    const primaryKey = serviceInput.primaryKey;
+    if (!primaryKey) {
+      throw new Error(
+        "serviceInput.primaryKey is required for deleteJSONColumnFieldQB",
+      );
+    }
+    // queryBuilder
+    //   .update(serviceInput.serviceModel)
+    //   .set({ [jsonField]: () => removeFields })
+    //   .where(`${primaryKey} = :${primaryKey}`, {
+    //     [primaryKey]: serviceInput.cmd?.query?.[primaryKey],
+    //   });
+    queryBuilder
+      .update(serviceInput.serviceModel)
+      .set({ [jsonField]: () => removeFields })
+      .where(`${primaryKey} = :${primaryKey}`, {
+        // Cast query to any to bypass the missing index signature check
+        [primaryKey]: (serviceInput.cmd?.query as any)?.[primaryKey],
+      });
+
+    try {
+      // Execute the query
+      return await queryBuilder.execute();
+    } catch (err) {
+      return await this.serviceErr(
+        req,
+        res,
+        err,
+        "BaseService:deleteJSONColumnFieldQB",
+      );
+    }
+  }
+}
+```
+
+```ts
+export class CdBioEngineDnaService extends GenericService<CdBioEngineDnaModel> {
+  logger!: Logging;
+  b: BaseService<CdBioEngineDnaModel>;
+  serviceModel = CdBioEngineDnaModel;
+  docName!: string;
+  cdToken!: string;
+
+  constructor() {
+    super(CdBioEngineDnaModel);
+    this.b = new BaseService();
+  }
+
+  async updateCdBioEngineDna(req: Request, res: Response): Promise<any> {
+    try {
+      const valid = await this.validateUpdateData(req, res);
+
+      if (!valid) {
+        return await this.respondValidationFailure(req, res);
+      }
+
+      const payload = this.extractUpdatePayload(req);
+
+      const targetRows = await this.resolveTargetRows(req, res, payload);
+
+      const semanticResult = await this.applySemanticUpdates(
+        req,
+        res,
+        targetRows,
+        payload,
+      );
+
+      const persistResult = await this.persistSemanticUpdates(
+        req,
+        res,
+        semanticResult,
+      );
+
+      return await this.buildUpdateResponse(req, res, persistResult);
+    } catch (e: any) {
+      return await this.handleUpdateError(req, res, e);
+    }
+  }
+}
+```
+
+//////////////////////////////////////
+
+What I shared was focused on the current work we are dealing with.
+Note that even for 'update' action, we have more flavours at the BaseService()
+```ts
+async update(req: Request, res: Response, serviceInput: IServiceInput<any>) {
+    let ret: any = [];
+    try {
+      await this.init(req, res);
+      // await this.setRepo(serviceInput.serviceModel)
+      await this.setRepo(serviceInput);
+      // const serviceRepository = await this.ds.getRepository(serviceInput.serviceModel);
+      this.logger.logDebug(
+        "BaseService::update()/repo/model:",
+        serviceInput.serviceModel,
+      );
+      // const serviceRepository: any = await this.repo(req, res, serviceInput.serviceModel)
+      const serviceRepository: any = this.repo;
+      const result = await serviceRepository.update(
+        serviceInput.cmd?.query.where,
+        await this.fieldsAdaptor(serviceInput.cmd?.query.update, serviceInput),
+      );
+      if ("affected" in result) {
+        this.cdResp.app_state.success = true;
+        this.cdResp.app_state.info.app_msg = `${result.affected} record/s updated`;
+        ret = result;
+      } else {
+        this.cdResp.app_state.success = false;
+        this.cdResp.app_state.info.app_msg = `some error occorred`;
+        if (this.debug) {
+          ret = result;
+        }
+      }
+      return ret;
+    } catch (e: any) {
+      this.err.push(e.toString());
+      const i = {
+        messages: this.err,
+        code: "BaseService:update",
+        app_msg: "",
+      };
+      // await this.setAppState(false, i, null);
+      await this.serviceErr(req, res, e, i.code);
+      return this.cdResp;
+    }
+  }
+
+  
+  update$(req: Request, res: Response, serviceInput: IServiceInput<any>) {
+    return from(this.update(req, res, serviceInput));
+  }
+
+  /**
+   * For internal use
+   * @param req 
+   * @param res 
+   * @param serviceInput 
+   * @returns 
+   */
+  async updateI(
+    req: Request,
+    res: Response,
+    serviceInput: IServiceInput<T>,
+  ): Promise<CdFxReturn<UpdateResult> | UpdateResult | ICdResponse> {
+    try {
+      const repository = this.db.getRepository(serviceInput.serviceModel);
+
+      // Ensure update is cast to the correct TypeORM update type
+      const updateData = serviceInput.cmd!.query
+        .update as unknown as QueryDeepPartialEntity<T>;
+
+      const updateResult = await repository.update(
+        serviceInput.cmd!.query.where,
+        updateData,
+      );
+
+      if (req) {
+        return updateResult;
+      } else {
+        return {
+          data: updateResult,
+          state: true,
+          message: "Updated successfully",
+        };
+      }
+    } catch (e: any) {
+      await this.serviceErr(req, res, e, "BaseService:updateI");
+      if (req) {
+        return this.cdResp;
+      } else {
+        return { state: false, data: null, message: (e as Error).toString() };
+      }
+    }
+  }
+```
+
+/////////////////////////////////////
+
+Now with that background on the role of BaseService() and given its facilities, we need updateCdBioEngineDna() to process the following data.
+'query' property contains the value of what need to be used for the update.
+'jsonUpdate' is of JSDPInstruction type.
+The design is to allow a specific json data to be updated.
+We can say update the given data at 'query' propert 'where' jsonUpdate[0].path === jsonUpdate[0].value.
+So you can rework the updateCdBioEngineDna() to use facilities in the BaseService to process the update.
+
+```ts
+{
+  ctx: 'app',
+  m: 'cd-bio-engine',
+  c: 'CdBioEngineDna',
+  a: 'UpdateCdBioEngineDna',
+  dat: {
+    f_vals: [
+      {
+        query: { update: { cdBioEngineDnaData: [Array] } },
+        jsonUpdate: [
+          {
+            v: '1.0',
+            path: [Array],
+            value: '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"',
+            action: 'read',
+            op: 'eq'
+          }
+        ]
+      }
+    ],
+    token: 'd33bb2d3-f4d5-42b4-8e31-44fed3e29826'
+  },
+  args: {}
+}
+```
+
+```ts
+export interface JSDPInstruction {
+  v?: "1.0";              // Protocol versioning for forward-compatibility
+  modelField?: string; // name of the json column. Capacity to update multiple json columns in a given row
+  path: JPathSegment[]; // path to the subject key
+  value: any;
+  action: 'create' | 'update' | 'delete' | 'upsert' | 'read'; 
+  conditions?: any;      // Space for 'Logic-gated' updates (R&D focus)
+}
+```
+
+///////////////////////////////////////
+
+For more clarity and specific to this test:
+We have {"url": "https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md", "type": "git"} as the contents for CdBioEngineDnaModel.cdBioEngineDnaSrc field in a given row at the database.
+We need logic that will find it and update CdBioEngineDnaModel.cdBioEngineDnaData field.
+
+```ts
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { IQuery, JSDPInstruction } from "../../../sys/base/i-base";
+
+@Entity({
+  name: "cd_bio_engine_dna",
+  synchronize: false,
+})
+export class CdBioEngineDnaModel {
+  @PrimaryGeneratedColumn({
+    name: "cd_bio_engine_dna_id",
+  })
+  cdBioEngineDnaId?: number;
+
+  @Column({
+    name: "cd_bio_engine_dna_guid",
+  })
+  cdBioEngineDnaGuid!: string;
+
+  @Column({
+    name: "cd_bio_engine_dna_name",
+  })
+  cdBioEngineDnaName!: string;
+
+  @Column({
+    name: "cd_bio_engine_dna_description",
+    nullable: true,
+  })
+  cdBioEngineDnaDescription?: string;
+
+  @Column({
+    name: "cd_bio_engine_dna_enabled",
+    default: true,
+  })
+  cdBioEngineDnaEnabled?: boolean;
+
+  @Column({
+    name: "doc_id",
+  })
+  docId!: number;
+
+  // 🔥 DNA Payload (RFC Blocks)
+  @Column({
+    name: "cd_bio_engine_dna_data",
+    type: "json",
+    nullable: true,
+  })
+  cdBioEngineDnaData?: any;
+
+  @Column({
+    name: "cd_bio_engine_dna_src",
+    type: "json",
+    nullable: true,
+  })
+  cdBioEngineDnaSrc?: any;
+}
+```
+
+////////////////////////////////////////////
+
+There is some compliance issues with your implementation:
+Below is the recommended and thought out request.
+The query property is of IQuery type.
+IQuery target regular sql query.
+JSDPInstruction is dedicated to json fields.
+In your proposal uses:
+```ts
+query: {
+      where: {
+        cdBioEngineDnaSrc: {
+          url: targetUrl,
+        },
+      },
+}
+```
+In corpdesk terms, this would mean search where cdBioEngineDnaSrc === {
+          url: targetUrl,
+        }
+It also suggest for this to be search using normal sql query.
+But what we need is:
+"search the json fileld  cdBioEngineDnaSrc where the property url value is targetUrl.
+In corpdesk terms this role is handled by JSDPInstruction.
+
+Actual content of the cell being searched for:
+May also be more elaborate than what is given.
+```ts
+{"url": "https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md", "type": "git"}
+```
+
+The instructions in the request below should be processed as:
+1. Search for json row where 'path' === 'value' and return the resultingRow.
+2. Update resultingRow with cdBioEngineDnaData = [GivenArray]
+
+```ts
+{
+  ctx: 'app',
+  m: 'cd-bio-engine',
+  c: 'CdBioEngineDna',
+  a: 'UpdateCdBioEngineDna',
+  dat: {
+    f_vals: [
+      {
+        query: { update: { cdBioEngineDnaData: [Array] } },
+        jsonUpdate: [
+          {
+            v: '1.0',
+            path: [Array],
+            value: '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"',
+            action: 'read',
+            op: 'eq'
+          }
+        ]
+      }
+    ],
+    token: 'd33bb2d3-f4d5-42b4-8e31-44fed3e29826'
+  },
+  args: {}
+}
+```
+
+```ts
+export interface IQuery {
+  select?: string[];
+  update?: object;
+  where?: IQueryWhere;
+  jsonUpdate?: JSDPInstruction[]; // This was developed for JSON columns. Its use can be found in the implementation of UserProfile and how CoopMemberProfile has extended UserProfile
+  distinct?: boolean;
+  take?: number;
+  skip?: number;
+  jFilters?: IJFilter[];
+  order?: any;
+  class?: string;
+  extData?: any; // any extra data
+}
+
+// Recursive support for nested 'andWhere' and 'orWhere'
+export interface IQueryWhere {
+  andWhere?: Array<IQueryWhere | { [field: string]: any }>;
+  orWhere?: Array<IQueryWhere | { [field: string]: any }>;
+
+  // legacy-compatible flat conditions
+  [field: string]: any;
+}
+```
+
+```ts
+export interface JSDPInstruction {
+  v?: "1.0";              // Protocol versioning for forward-compatibility
+  modelField?: string; // name of the json column. Capacity to update multiple json columns in a given row
+  path: JPathSegment[]; // path to the subject key
+  value: any;
+  action: 'create' | 'update' | 'delete' | 'upsert' | 'read'; 
+  conditions?: any;      // Space for 'Logic-gated' updates (R&D focus)
+}
+```
+
+//////////////////////////////////////////////////
+Exaimine the following documentation to build a context for what we are about to discuss.
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/10.%20biological_engine_rfc.md
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/11.%20rfc-processing-patent-draft_v3.md
+
+From the above documents, we have achieved the following:
+1. Inserted a machine readable section of rfc, cd-rfc block.
+2. Created logic in cd-cli that is cabable of extracting cd-rfc block from any rfc based on given url.
+3. Set up backend cd-bio-engine and created facility in cd-api for updating given rfc/DNA
+4. Created logic in cd-cli and cd-api for searching and returning rfc/DNA from the database via cd-api
+4. Set up a pipleline that can:
+  - extract given cd-rfc
+  - update the returned machine readable rfc/dna to database via cd-api
+  - test access to the persisted data
+
+Let me know how we move from here, given the intended objectives.
+
+/////////////////////////////////
+
+I was thinking with that background, we need to get back to the ai integration implementation.
+Below are a jist of what we had developed but was still not tested.
+I am thinking, we need to be in a state where we can test basic integration of ai and rfc/dna access.
+In effect make sure that at cd-cli, cd-bio-engine/CdDnaTranscriptionEngine is able to: 
+  - access cd-ai and 
+  - use it to perform basic action that relies on rfc/dna
+If we can narrow down to this test, it can help us have a platform for setting up cd-bio-engine/CdDnaTranscriptionEngine facilities
+ 
+```sh
+emp-12@emp-12 ~/cd-cli (main)> tree src/CdCli/app/cd-ai
+src/CdCli/app/cd-ai
+├── CHANGELOG.md
+├── controllers
+│   ├── budget-guard.controller.ts
+│   ├── cd-ai.controller.ts
+│   ├── cd-ai-type.controller.ts
+│   ├── cd-ai-usage-logs.controller.ts
+│   ├── cd-ai-usage-logs-type.controller.ts
+│   ├── cd-deepseek.controller.ts
+│   ├── cd-gemini.controller.ts
+│   ├── cd-logger.controller.ts
+│   ├── cd-open-ai.controller.ts
+│   └── queue-watcher.controller.ts
+├── generate-index.sh
+├── index.ts
+├── LICENSE
+├── models
+│   ├── budget-guard.model.ts
+│   ├── cd-ai.model.ts
+│   ├── cd-ai-type.model.ts
+│   ├── cd-ai-usage-logs.model.ts
+│   ├── cd-ai-usage-logs-type.model.ts
+│   ├── cd-ai-usage-logs-view.model.ts
+│   ├── cd-ai-view.model.ts
+│   ├── cd-deepseek.model.ts
+│   ├── cd-gemini.model.ts
+│   ├── cd-open-ai.model.ts
+│   └── queue-watcher.model.ts
+├── module.json
+├── package.json
+├── README.md
+└── services
+    ├── budget-guard.service.ts
+    ├── cd-ai-log-router.service.ts
+    ├── cd-ai-registry.service.ts
+    ├── cd-ai.service.ts
+    ├── cd-ai-type.service.ts
+    ├── cd-ai-usage-logs.service.ts
+    ├── cd-ai-usage-logs-type.service.ts
+    ├── cd-deepseek.service.ts
+    ├── cd-gemini.service.ts
+    ├── cd-open-ai.service.ts
+    └── queue-watcher.service.ts
+
+4 directories, 39 files
+emp-12@emp-12 ~/cd-cli (main)> 
+```
+
+```ts
+// src/CdCli/app/cd-ai/services/cd-ai.service.ts
+
+import { CdAiPromptRequest, CdAiPromptResponse } from '../models/cd-ai.model.js';
+import { CdOpenAiService } from './cd-open-ai.service.js';
+import { CdGeminiService } from './cd-gemini.service.js';
+import { CdDeepSeekService } from './cd-deepseek.service.js';
+
+export class CdAiService {
+  static async sendPrompt(
+    request: CdAiPromptRequest,
+  ): Promise<CdAiPromptResponse> {
+    switch (request.provider) {
+      case 'openai':
+        return CdOpenAiService.sendPrompt(request);
+      case 'gemini':
+        return CdGeminiService.sendPrompt(request);
+      case 'deepseek':
+        return CdDeepSeekService.sendPrompt(request);
+      default:
+        return {
+          success: false,
+          message: `Unsupported provider: ${request.provider}`,
+        };
+    }
+  }
+}
+
+```
+
+```ts
+// src/CdCli/app/cd-ai/services/cd-open-ai.service.ts
+
+import {
+  ChatMessage,
+  ChatResponse,
+  OpenAiHttpData,
+  OpenAiRequestConfig,
+} from '../models/cd-open-ai.model.js';
+import { CdAiPromptRequest, CdAiPromptResponse } from '../models/cd-ai.model.js';
+import { join } from 'node:path';
+import fs from 'node:fs';
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { CdCliProfileController } from '../../../sys/cd-cli/controllers/cd-cli-profile.cointroller.js';
+import CdCliVaultController from '../../../sys/cd-cli/controllers/cd-cli-vault.controller.js';
+import { EncryptionMeta } from '../../../sys/cd-cli/models/cd-cli-vault.model.js';
+import { AiServiceRegistry } from './cd-ai-registry.service.js';
+import { HttpService } from '../../../sys/base/http.service.js';
+import { IProfileDetails } from '../../../sys/cd-cli/models/cd-cli-profile.model.js';
+
+export class CdOpenAiService {
+  readonly name = 'Open AI';
+  readonly type = 'open-ai';
+
+  constructor() {
+    AiServiceRegistry.register(this);
+  }
+  async init() {
+    // Initialize API clients, keys etc.
+  }
+  async getBudgetStatus(): Promise<{
+    used: number;
+    limit: number;
+    remaining: number;
+  }> {
+    // Pull from service or cache
+    return { used: 10, limit: 100, remaining: 90 };
+  }
+
+  static async sendPrompt(
+    request: CdAiPromptRequest,
+  ): Promise<CdAiPromptResponse> {
+    const profileName = 'openai';
+
+    try {
+      const profile = await this.getProfile();
+
+      if (!profile || !profile.apiKey || !profile.baseUrl) {
+        return {
+          success: false,
+          message: 'OpenAI profile not found or decryption failed.',
+        };
+      }
+
+      const model =
+        request.model ?? profile.defaultRequestConfig?.model ?? 'gpt-3.5-turbo';
+
+      const requestBody: OpenAiRequestConfig = {
+        ...profile.defaultRequestConfig,
+        model,
+        temperature: request.temperature ?? 0.7,
+        max_tokens: request.maxTokens ?? 1024,
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant.' },
+          { role: 'user', content: request.prompt ?? '' },
+        ],
+      };
+
+      const httpService = new HttpService(true);
+      const initialized = await httpService.init(profileName, profile.baseUrl);
+      if (!initialized) {
+        return {
+          success: false,
+          message: `Failed to initialize HTTP client for '${profileName}'.`,
+        };
+      }
+
+      const response = await httpService.request<ChatResponse>(
+        {
+          method: 'POST',
+          url: '/chat/completions',
+          headers: {
+            Authorization: `Bearer ${profile.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          data: requestBody,
+        },
+        profileName,
+      );
+
+      if (!response.state || !response.data) {
+        return {
+          success: false,
+          message: response.message || 'OpenAI API call failed.',
+        };
+      }
+
+      const result = response.data;
+
+      const content = result.choices?.[0]?.message?.content?.trim();
+      const tokensUsed = result.usage?.total_tokens;
+
+      return {
+        success: true,
+        message: 'OpenAI prompt executed successfully.',
+        content: content ?? '',
+        usage: {
+          tokensUsed,
+          estimatedCost: this.estimateCost(tokensUsed, model),
+        },
+      };
+    } catch (error: any) {
+      CdLog.error(`OpenAI sendPrompt() error: ${error.message}`);
+      return {
+        success: false,
+        message: `OpenAI error: ${error.message}`,
+      };
+    }
+  }
+
+  private static async getProfile(): Promise<IProfileDetails | null> {
+    const ctlCdCliProfile = new CdCliProfileController();
+    const profileRet = await ctlCdCliProfile.getProfileByName('open-ai');
+
+    if (!profileRet.state) return null;
+
+    const profile = profileRet.data;
+    const profileData = profile?.cdCliProfileData;
+    const apiKeyField = profileData?.details?.apiKey;
+
+    if (
+      apiKeyField?.isEncrypted &&
+      apiKeyField?.encryptedValue &&
+      apiKeyField?.encryptionMeta
+    ) {
+      const encryptionMeta = apiKeyField.encryptionMeta as EncryptionMeta & {
+        iv: string;
+      };
+      const decryptedApiKey = await CdCliVaultController.decrypt(
+        encryptionMeta,
+        apiKeyField.encryptedValue,
+      );
+
+      if (!decryptedApiKey) {
+        CdLog.warning('OpenAI API key decryption failed.');
+        return null;
+      }
+
+      if (!profileData || !profileData.details) {
+        CdLog.warning('OpenAI profile data or details are missing.');
+        return null;
+      }
+      return {
+        ...profileData.details,
+        apiKey: {
+          ...profileData.details.apiKey,
+          value: decryptedApiKey,
+        },
+        baseUrl: profileData.details.baseUrl ?? 'https://api.openai.com/v1',
+      };
+    }
+
+    CdLog.warning(
+      'OpenAI profile is missing valid encrypted API key information.',
+    );
+    return null;
+  }
+
+  private static estimateCost(tokensUsed: number = 0, model: string): number {
+    const pricingPer1K: Record<string, number> = {
+      'gpt-3.5-turbo': 0.0015,
+      'gpt-4': 0.03,
+    };
+    const rate = pricingPer1K[model] ?? 0.01;
+    return parseFloat(((tokensUsed / 1000) * rate).toFixed(4));
+  }
+}
+
+new CdOpenAiService(); // triggers registration
+
+```
+
+```ts
+// src/CdCli/app/cd-ai/services/budget-guard.service.ts
+
+import CdLog from '../../../sys/cd-comm/controllers/cd-logger.controller.js';
+import { BudgetStatus } from '../models/budget-guard.model.js';
+import { CdAiLogRouterService } from './cd-ai-log-router.service.js';
+
+export class BudgetGuardService {
+  static start(): void {
+    // CdLog.aiInfo('[BudgetGuard] Monitoring AI budget usage...');
+    CdAiLogRouterService.push('[BudgetGuard] Monitoring AI budget usage...');
+    // Real implementation would check persistent usage data
+    const budget: BudgetStatus = {
+      used: 20,
+      limit: 100,
+      remaining: 80,
+    };
+
+    if (budget.remaining < 10) {
+      CdAiLogRouterService.push('[BudgetGuard] Budget running low!');
+    } else {
+      CdAiLogRouterService.push(
+        `[BudgetGuard] Budget OK. Remaining: ${budget.remaining}`,
+      );
+    }
+  }
+}
+
+```
+
+```ts
+// src/CdCli/app/cd-ai/services/cd-ai-log-router.service.ts
+const LOG_BUFFER_LIMIT = 1000;
+
+export class CdAiLogRouterService {
+  private static logs: string[] = [];
+  private static writeToConsole = false; // Always route by default
+
+  /**
+   * If dev mode is enabled, disable console output and enable routing.
+   * @param enabled Whether dev mode is on.
+   */
+  static setDevMode(enabled: boolean) {
+    this.writeToConsole = !enabled;
+  }
+
+  /**
+   * Push an AI log message into memory buffer.
+   * @param message The log message
+   */
+  static push(message: string) {
+    if (this.writeToConsole) return; // prevent console leaks
+
+    this.logs.push(message);
+    if (this.logs.length > LOG_BUFFER_LIMIT) {
+      this.logs.shift();
+    }
+
+    // Optional: write to file
+    // fs.appendFileSync('/tmp/cd-ai.log', message + '\n');
+  }
+
+  static getLogs(): string[] {
+    return [...this.logs];
+  }
+
+  static clear() {
+    this.logs = [];
+  }
+}
+
+```
+
+```ts
+import { CdAiServiceInterface } from '../models/cd-ai.model.js';
+
+export class AiServiceRegistry {
+  private static registry = new Map<string, CdAiServiceInterface>();
+
+  static register(service: CdAiServiceInterface) {
+    this.registry.set(service.type, service);
+  }
+
+  static getAllServices(): CdAiServiceInterface[] {
+    return Array.from(this.registry.values());
+  }
+
+  static getService(type: string): CdAiServiceInterface | undefined {
+    return this.registry.get(type);
+  }
+}
+
+```
+
+///////////////////////////////////////
+
+Kindly go through the following documents.
+You will notice that we do not go through cd-cli command but access the BaseService.invokeCdRequest().
+This is where cli commands converge with optional ai/ai agents.
+You can adjust your approach in consideration of your aquired context.
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/3.%20cd-cli-to-app-craft.md
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/4.%20ai-agent-integration.md
+
+///////////////////////////////////
+
+Another important consideration at this stage is that we hope that we can have that ai to work with piplelines as opposed to regular cods in files.2
+An example is show below.
+The pipleline below is what was used to test access to git repository for rfc, pull cd-rfc block then send it to database via cd-api for update.
+The pipleline also set a task for testing reading the same data.
+We are desiging automation run by machines, not humans coding at their convinience.
+Machines should be able to even build and maintain pipelines as need arises.
+You will also notice architecture allows the pipeiles to be constracted and executed on demand as opposed to the current files that are just for reasearch and testing.
+So as we move foward, we need to have this in mind.
+
+
+```sh
+emp-12@emp-12 ~/cd-cli (main)> tree src/CdCli/app/app-craft/workshop/cd-api/
+src/CdCli/app/app-craft/workshop/cd-api/
+├── model
+│   ├── cd-ai.create.sql
+│   └── cd-ai-module.model.ts
+├── output
+├── template
+│   └── abcd
+│       ├── controllers
+│       │   ├── abcd.controller.ts
+│       │   └── abcd-efg.controller.ts
+│       ├── models
+│       │   ├── abcd-efg.model.ts
+│       │   ├── abcd-efg-type.model.ts
+│       │   ├── abcd-efg-view.model.ts
+│       │   ├── abcd.model.ts
+│       │   ├── abcd-type.model.ts
+│       │   ├── abcd-view.model.ts
+│       │   └── IAbcds.ts
+│       ├── README.md
+│       └── services
+│           ├── abcd-efg.service.ts
+│           ├── abcd.service.ts
+│           └── abcd-type.service.ts
+└── workflow
+    ├── cd-ai.create.module.json
+    ├── cd-ai.edit.workflow.json
+    ├── ci-cd
+    │   ├── cd-rfc.workflow.ts
+    │   └── cd-rfc-workshop.model.ts
+    ├── package
+    │   └── cd-ai.create.workflow.ts
+    ├── production
+    │   └── cd-ai.create.workflow.ts
+    ├── sandbox
+    │   └── cd-ai.create.workflow.ts
+    └── test-bed
+        ├── cd-ai.workflow.ts
+        └── cd-ai-workshop.model.ts
+
+14 directories, 24 files
+emp-12@emp-12 ~/cd-cli (main)> 
+```
+
+
+```ts
+// src/CdCli/app/app-craft/workshop/cd-api/workflow/ci-cd/cd-rfc.workflow.ts
+
+export class CdRfcWorkFlow {
+  appType = AppType.CdApiModule;
+  cdObjName = 'cd-rfc';
+  oEnv = 'ci-cd';
+  outputDir = `${MOD_CRAFT_WORKSHOP_DIR}/${this.appType}/output`;
+updateWorkFlow(
+    cdModule: CdModuleDescriptor,
+    moduleType: string,
+    extraParam: any,
+  ): CiCdDescriptor {
+    CdLog.debug('Starting CdRfcWorkFlow::updateWorkFlow()');
+    CdLog.debug(
+      `CdRfcWorkFlow:: updateWorkFlow()/cdModule: ${inspect(cdModule, {
+        depth: 2,
+      })}, type: ${moduleType}, extraParam: ${inspect(extraParam, { depth: 2 })}`,
+    );
+    return {
+      cICdPipeline: {
+        name: 'CdRfc Update Pipeline',
+        type: 'dev-env-setup',
+        stages: [
+          {
+            name: 'Update RFC Data',
+            description: 'Extract and Update RFC Data from documentation repository',
+            tasks: [
+              // ─────────────────────────────
+              // 1. FETCH
+              // ─────────────────────────────
+              {
+                name: 'FetchRfcData',
+                type: 'method',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'app',
+                  m: 'cd-auto-git',
+                  c: 'CdAutoGit',
+                  a: 'ReadDocBlock',
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    identifier: extraParam.srcPath,
+                    blockType: cdModule.versionControl?.repository.name,
+                  },
+                },
+                onResult: [
+                  {
+                    ifState: [CdFxStateLevel.Success, CdFxStateLevel.PartialSuccess],
+                    toTask: 'UpdateRfcData',
+                  },
+                  {
+                    ifState: [
+                      CdFxStateLevel.LogicalFailure,
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                    ],
+                    toTask: 'NotifyFailure',
+                  },
+                ],
+              },
+
+              // ─────────────────────────────
+              // 2. UPDATE (USES OUTPUT)
+              // ─────────────────────────────
+              {
+                name: 'UpdateRfcData',
+                type: 'remoteCdRequest',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'app',
+                  m: 'cd-bio-engine',
+                  c: 'CdBioEngineDna',
+                  a: 'UpdateCdBioEngineDna',
+                  dat: {
+                    f_vals: [
+                      {
+                        query: {
+                          update: {
+                            cdBioEngineDnaData: '$outputs.FetchRfcData.blocks',
+                          },
+                        },
+                        jsonUpdate: [
+                          {
+                            v: '1.0',
+                            path: ['cdBioEngineDnaSrc', 'url'],
+                            value: extraParam.srcPath,
+                            action: 'read',
+                            op: 'eq',
+                          },
+                        ],
+                      },
+                    ],
+                    token: extraParam.cdToken,
+                  },
+                  args: {},
+                },
+                onResult: [
+                  {
+                    ifState: [CdFxStateLevel.Success, CdFxStateLevel.PartialSuccess],
+                    toTask: 'GetRfcData',
+                  },
+                  {
+                    ifState: [
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: 'NotifyFailure',
+                  },
+                ],
+              },
+              // ─────────────────────────────
+              // 3. TEST READING OF DNA
+              // ─────────────────────────────
+              {
+                name: 'GetRfcData',
+                type: 'remoteCdRequest',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'app',
+                  m: 'cd-bio-engine',
+                  c: 'CdBioEngineDna',
+                  a: 'JGet',
+                  dat: {
+                    f_vals: [
+                      {
+                        // query: {
+                        //   update: {
+                        //     cdBioEngineDnaData: '$outputs.FetchRfcData.blocks',
+                        //   },
+                        // },
+                        jsonUpdate: [
+                          {
+                            v: '1.0',
+                            path: ['cdBioEngineDnaSrc', 'url'],
+                            value: extraParam.srcPath,
+                            action: 'read',
+                            op: 'eq',
+                          },
+                        ],
+                      },
+                    ],
+                    token: extraParam.cdToken,
+                  },
+                  args: {},
+                },
+                onResult: [
+                  // {
+                  //   ifState: [CdFxStateLevel.Success, CdFxStateLevel.PartialSuccess],
+                  //   toTask: null, // end
+                  // },
+                  {
+                    ifState: [
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: 'NotifyFailure',
+                  },
+                ],
+              },
+
+              // ─────────────────────────────
+              // 3. FAILURE HANDLER
+              // ─────────────────────────────
+              {
+                name: 'NotifyFailure',
+                type: 'method',
+                executor: 'cd-cli',
+                status: 'pending',
+                cdRequest: {
+                  ctx: 'sys',
+                  m: 'dev-descriptor',
+                  c: 'CiCdRunner',
+                  a: 'SendFailureAlert',
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    message: `RFC update failed for module: ${cdModule.name}`,
+                    failedTask: '$outputs.UpdateRfcData',
+                    stage: 'Update RFC Data',
+                    task: 'UpdateRfcData',
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    };
+  }
+}
+```
+
+///////////////////////////////////////
+
+I would like the initialization of cd-rpc to conform with what we have in cd-api.
+Not to be exact but conform to patterns for setting up files and directory structure.
+For example the corpdesk sources in cd-api is in src/CdApi where we have 'sys' and 'app' directories hosting the various corpdesk modules as per corpdesk rfc 0001:
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md
+
+Note that main.ts should reflect that when SECURE="true", it should enable working via SSL.
+Note also use of config.ts for various configurations.
+
+Below are cd-api examples.
+.env file settings
+```sh
+# http port for running webroot without SSL. Used by letsencrypt validation and automation
+HTTP_PORT=8080
+HTTP_ENABLED=true
+HTTP_WEBROOT="/.well-known/acme-challenge"
+# using ssl?
+SECURE="true"
+# can be sio (socket.io) or wss (websocket)
+PUSH_MODE="PUSH_BASIC"
+# API_HOST_NAME="asdap.africa"
+API_HOST_NAME="localhost"
+# API_HOST_IP="146.190.165.51"
+API_HOST_IP="127.0.0.1"
+API_PORT=3001
+API_URL="https://localhost"
+API_ROUTE="/api"
+WSS_PORT=3003
+ORIGIN_URL="https://localhost"
+ORIGIN_URL_1="https://asdap.africa"
+ORIGIN_URL_2="http://localhost"
+ORIGIN_PORT=443
+
+# mysql dev
+DB_MS_CONN_NAME="mysql"
+DB_MS_HOST="localhost"
+DB_MS_USER="cd"
+DB_MS_PORT="3306"
+DB_MS_PWD="mlx^O78!fjA"
+DB_MS_NAME="cd1213"
+
+# sqlight dev
+DB_SL_CONN_NAME="sqlight"
+DB_SL_HOST="localhost"
+DB_SL_USER="cd"
+DB_SL_PORT="3306"
+DB_SL_PWD="mlx^O78!fjA"
+DB_SL_NAME="cd1213"
+
+DB_REDIS_HOST="localhost"
+DB_REDIS_PORT="6379"
+
+CACHE_TTL="3600"
+SIO_HOST="localhost"
+NODE_ENV="development"
+LOG_LEVEL="debug"
+TZ = "Africa/Nairobi"
+LOCALE="en-US"
+
+KEY_PATH="/home/emp-12/.ssl/key.pem"
+CERT_PATH="/home/emp-12/.ssl/cert.pem"
+CSR_PATH=""
+# KEY_PATH="/etc/letsencrypt/live/cd-api.co.ke/privkey.pem"
+# CERT_PATH="/etc/letsencrypt/live/cd-api.co.ke/cert.pem"
+# CA_PATH="/etc/letsencrypt/live/cd-api.co.ke/chain.pem"
+USER_ACTIVATION_URL="https://asdap.africa/account/home"
+EMAIL_ADDRESS="corpdesk@zohomail.com"
+EMAIL_USERNAME="corpdesk@zohomail.com"
+EMAIL_PASSWORD="???"
+EMAIL_ASDAP_PASS="???"
+MAIL_ZEPTO_API_KEY="???"
+
+# https://www.back4app.com // geographical database
+B4A_URL="https://parseapi.back4app.com"
+# This is app's application id
+X_Parse_Application_Id='???'
+# This is app's REST API key
+X_Parse_REST_API_Key='????'
+
+```
+index.ts
+```ts
+#!/usr/bin/env ts-node
+
+import { Main } from './main';
+
+const app = new Main();
+app.run();
+```
+
+init.ts
+```ts
+import { Request, Response } from "express";
+import { CdRequest } from './sys/utils/request';
+const cdr = new CdRequest()
+import { CdExec } from './CdExec';
+export async function CdInit(req: Request, res: Response, ds?:any) {
+    const r = await cdr.processPost(req, res, async () => {
+        const cb = new CdExec();
+        await cb.exec(req, res, ds);
+    });
+};
+```
+
+```ts
+import { Request, Response } from "express";
+import { BaseService } from './sys/base/base.service';
+import { IRespInfo } from './sys/base/i-base';
+import { Logging } from './sys/base/winston.log';
+
+export class CdExec {
+    b: BaseService<any>;
+    logger: Logging;
+    constructor() {
+        this.b = new BaseService();
+        this.logger = new Logging();
+    }
+    async exec(req: Request, res: Response, ds=null) {
+        this.logger.logInfo('CdExec::exec()/01');
+        if (await this.b.valid(req, res)) {
+            this.logger.logInfo('CdExec::exec()/02');
+            try {
+                const pl = (req as any).post; // payload;
+                const ePath = this.b.entryPath(pl);
+                const clsCtx = {
+                    path: ePath,
+                    clsName: `${pl.c}Controller`,
+                    action: pl.a,
+                    dataSource: ds
+                }
+                // this.logger.logInfo('CdExec::exec()/clsCtx:', clsCtx)
+                await this.b.resolveCls(req, res, clsCtx);
+            } catch (e: any) {
+                this.logger.logInfo('CdExec::exec()/03');
+                const i: IRespInfo = {
+                    messages: e,
+                    code: 'CdExec:exec:01',
+                    app_msg: ''
+                }
+                await this.b.returnErr(req, res, i);
+            }
+        } else {
+            this.logger.logInfo('CdExec::exec()/04');
+            this.b.err.push('invalid request');
+            const i: IRespInfo = {
+                messages: this.b.err,
+                code: 'CdExec:exec:02',
+                app_msg: ''
+            }
+            await this.b.returnErr(req, res, i);
+        }
+    }
+}
+```
+
+main.ts
+```ts
+// -----------------------------------------------------------------------------
+// Main application bootstrapper for Corpdesk
+// Responsible for:
+// - Express initialization
+// - HTTP / HTTPS server selection
+// - API, SIO, WSS orchestration
+// - Delegating actual work to services
+// -----------------------------------------------------------------------------
+
+import config from "./config";
+import express, { Application, Request, Response } from "express";
+import cors from "cors";
+import "reflect-metadata";
+import fs from "fs";
+import path from "path";
+import http from "http";
+import https from "https";
+
+// Database
+import { MysqlDataSource as ds } from "./CdApi/sys/base/data-source";
+
+// Corpdesk engine
+import { CdInit } from "./CdApi/init";
+
+// Logging
+import { Logging } from "./CdApi/sys/base/winston.log";
+
+// Push services
+import { Server as SocketIOServer } from "socket.io";
+import { createClient, RedisClientOptions } from "redis";
+import Redis, { Cluster } from "ioredis";
+import { SioService } from "./CdApi/sys/cd-push/services/sio.service";
+import { WebsocketService } from "./CdApi/sys/cd-push/services/websocket.service";
+import pusher from "./CdApi/sys/cd-push/services/pusher";
+import WebSocket from "ws";
+
+// -----------------------------------------------------------------------------
+
+export class Main {
+  private logger = new Logging();
+  private app!: Application;
+
+  // ---------------------------------------------------------------------------
+  // Entry point
+  // ---------------------------------------------------------------------------
+  async run() {
+    this.logger.logInfo("Main::run()::start");
+
+    this.initExpress();
+    this.registerMiddleware();
+    this.registerRoutes();
+
+    // HTTP server for webroot (letsencrypt, static validation)
+    if (config.http.enabled) {
+      this.startHttpWebrootServer();
+    }
+
+    // Main API / Push server (HTTP or HTTPS based on SECURE)
+    const server = this.createApiServer();
+
+    // Socket.IO
+    if (config.pushService.sio.enabled) {
+      this.startSocketIO(server);
+    }
+
+    // Native WebSocket
+    if (config.pushService.wss.enabled) {
+      this.startWebSocket(server);
+    }
+
+    // Start listening
+    server.listen(config.apiPort, () => {
+      this.logger.logInfo(`API server listening`, {
+        port: config.apiPort,
+        secure: config.secure,
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Express & middleware
+  // ---------------------------------------------------------------------------
+  private initExpress() {
+    this.app = express();
+  }
+
+  private registerMiddleware() {
+    this.app.use(cors(config.Cors.options));
+    this.app.use(express.json());
+
+    if (!config.http.webroot) {
+      this.logger.logWarn(
+        "HTTP webroot is not configured. Let's Encrypt validation will fail.",
+      );
+      return;
+    }
+    // Serve webroot for letsencrypt validation
+    this.app.use(
+      config.http.webroot,
+      express.static(path.join(__dirname, config.http.webroot)),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Routes
+  // ---------------------------------------------------------------------------
+  private registerRoutes() {
+    // Socket.IO registration endpoint
+    this.app.post("/sio/p-reg/", (req, res) => {
+      this.setApiHeaders(res);
+      CdInit(req, res);
+    });
+
+    if (!config.apiRoute) {
+      this.logger.logWarn(
+        "API route is not configured. API endpoints will not be available.",
+      );
+      return;
+    }
+    // Main API entry
+    this.app.post(config.apiRoute, (req, res) => {
+      this.setApiHeaders(res);
+      CdInit(req, res, ds);
+    });
+
+    // Pusher endpoints
+    if (config.pushService.pusher.enabled) {
+      this.registerPusherRoutes();
+    }
+  }
+
+  private registerPusherRoutes() {
+    this.app.post("/notify", (req, res) => {
+      const { channel, event } = req.body;
+      pusher
+        .trigger(channel, event, { message: "Notification" })
+        .then(() => res.sendStatus(200))
+        .catch((err) => res.status(500).send(err.message));
+    });
+
+    this.app.post("/pusher/auth", (req, res) => {
+      const { socket_id, channel_name } = req.body;
+      res.send(pusher.authenticate(socket_id, channel_name));
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Server creation
+  // ---------------------------------------------------------------------------
+  private createApiServer(): http.Server | https.Server {
+    if (config.secure === "true") {
+      this.logger.logInfo("Starting HTTPS API server");
+
+      const sslConfig = this.loadSslCredentials();
+      if (!sslConfig) {
+        this.logger.logError(
+          "Failed to load SSL credentials. Falling back to HTTP.",
+        );
+        return http.createServer(this.app);
+      }
+
+      return https.createServer(sslConfig, this.app);
+    }
+
+    this.logger.logInfo("Starting HTTP API server");
+    return http.createServer(this.app);
+  }
+
+  private startHttpWebrootServer() {
+    http.createServer(this.app).listen(config.http.port, () => {
+      this.logger.logInfo(`HTTP webroot listening`, {
+        port: config.http.port,
+      });
+    });
+  }
+
+  private loadSslCredentials() {
+    if (!config.keyPath || !config.certPath) {
+      this.logger.logError(
+        "Error loading SSL credentials: keyPath or certPath is not configured.",
+      );
+      return;
+    }
+    return {
+      key: fs.readFileSync(config.keyPath),
+      cert: fs.readFileSync(config.certPath),
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Socket.IO
+  // ---------------------------------------------------------------------------
+  private startSocketIO(server: http.Server | https.Server) {
+    const io = new SocketIOServer(server, {
+      cors: {
+        origin: config.Cors.options.origin,
+        credentials: true,
+      },
+    });
+
+    const { pubClient, subClient } = this.createRedisClients();
+    const sio = new SioService();
+    sio.run(io, pubClient, subClient);
+  }
+
+  // private createRedisClients() {
+  //   let pubClient: any;
+  //   let subClient: any;
+
+  //   switch (config.push.mode) {
+  //     case 'PUSH_CLUSTER':
+  //       pubClient = new Redis.Cluster(config.push.startupNodes);
+  //       break;
+  //     case 'PUSH_SENTINEL':
+  //       pubClient = new Redis(config.push.sentinalOptions);
+  //       break;
+  //     default:
+  //       pubClient = createClient({
+  //         host: config.push.redisHost,
+  //         port: config.push.redisPort,
+  //         legacyMode: true
+  //       } as RedisClientOptions);
+  //   }
+
+  //   subClient = pubClient.duplicate();
+  //   return { pubClient, subClient };
+  // }
+
+  private createRedisClients(): {
+    pubClient: Redis | Cluster;
+    subClient: Redis | Cluster;
+  } {
+    let pubClient: Redis | Cluster;
+    let subClient: Redis | Cluster;
+
+    switch (config.push.mode) {
+      case "PUSH_CLUSTER":
+        pubClient = new Redis.Cluster(config.push.startupNodes);
+        break;
+      case "PUSH_SENTINEL":
+        pubClient = new Redis(config.push.sentinalOptions);
+        break;
+      default:
+        // Note: ioredis usually doesn't use 'legacyMode' or 'createClient'
+        // in this specific syntax; this looks like node-redis.
+        // See the section below if you are using node-redis.
+        pubClient = new Redis({
+          host: config.push.redisHost,
+          port: config.push.redisPort,
+        });
+    }
+
+    subClient = pubClient.duplicate();
+    return { pubClient, subClient };
+  }
+
+  // ---------------------------------------------------------------------------
+  // WebSocket
+  // ---------------------------------------------------------------------------
+  private startWebSocket(server: http.Server | https.Server) {
+    const wss = new WebSocket.Server({ server, path: "/ws" });
+    const wsService = new WebsocketService();
+    wsService.run(wss);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Utilities
+  // ---------------------------------------------------------------------------
+  private setApiHeaders(res: Response) {
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    );
+  }
+}
+
+```
+
+```ts
+// <proj-directory>/src/config.ts
+import mysql from "mysql2";
+import Redis, { Cluster, RedisOptions, ClusterNode } from 'ioredis';
+import * as fs from "fs";
+import * as dotenv from "dotenv";
+import "reflect-metadata";
+import { DataSource, DataSourceOptions, DatabaseType } from "typeorm";
+import path from "path";
+import { RunMode } from "./CdApi/sys/base/i-base";
+import { inspect } from "util";
+import { ModuleConfig } from "./CdApi/sys/moduleman/models/module.model";
+dotenv.config();
+
+// 1. Define strict types for your configuration
+type RedisMode = 'PUSH_CLUSTER' | 'PUSH_SENTINEL' | 'PUSH_SINGLE';
+
+interface PushConfig {
+  mode: RedisMode;
+  serverHost: string;
+  serverPort: number;
+  redisHost: string;
+  redisPort: number;
+  startupNodes: ClusterNode[];
+  sentinalOptions: RedisOptions;
+}
+
+/**
+ * this section needs to be automated.
+ * the automation should be integrated during installation of given module
+ * both front end and backend should be considered in installation process of given module.
+ */
+// const ENTITIES = [
+//   __dirname + "/CdApi/sys/user/models/*.model.ts",
+//   __dirname + "/CdApi/sys/moduleman/models/*.model.ts",
+//   __dirname + "/CdApi/sys/comm/models/*.model.ts",
+//   __dirname + "/CdApi/sys/cd-cli/models/*.model.ts",
+//   __dirname + "/CdApi/sys/scheduler/models/*.model.ts",
+//   __dirname + "/CdApi/sys/cd-dev/models/*.model.ts",
+//   __dirname + "/CdApi/app/cd-accts/models/*.model.ts",
+//   __dirname + "/CdApi/app/coops/models/*.model.ts",
+//   __dirname + "/CdApi/app/cd-geo/models/*.model.ts",
+// ];
+
+const entitiesConfigPath = path.join(
+  __dirname,
+  "configs",
+  "module-entities.json"
+);
+
+export function loadEntityPaths(): string[] {
+  try {
+    const modules = JSON.parse(fs.readFileSync(entitiesConfigPath, "utf8"));
+    return modules
+      .filter((m: ModuleConfig) => m.enabled)
+      .map((m: ModuleConfig) =>
+        path.join(__dirname, `CdApi/${m.ctx}/${m.moduleName}/models/*.model.ts`)
+      );
+  } catch (err) {
+    console.error("Failed to load entity modules:", err);
+    return [];
+  }
+}
+
+export function loadSyncableEntities(): string[] {
+  try {
+    console.log("start loading syncable entities...");
+    const modules: ModuleConfig[] = JSON.parse(fs.readFileSync(entitiesConfigPath, "utf8"));
+    console.log(
+      `config/loadSyncableEntities()/modules:${inspect(modules, { depth: 2 })}`
+    );
+    return modules
+      .filter((m: ModuleConfig) => m.syncable)
+      .map((m: ModuleConfig) =>
+        path.join(__dirname, `CdApi/${m.ctx}/${m.moduleName}/models/*.model.ts`)
+      );
+  } catch (err) {
+    console.error("Failed to load entity modules:", err);
+    return [];
+  }
+}
+
+const ENTITIES = loadEntityPaths();
+
+export const AppDataSource = new DataSource({
+  name: "conn2",
+  type: "mysql",
+  port: Number(process.env.DB_MS_PORT),
+  host: process.env.DB_MS_HOST,
+  username: process.env.DB_MS_USER,
+  database: process.env.DB_MS_NAME,
+  password: process.env.DB_MS_PWD,
+  synchronize: false,
+  // entities: [UserModel],
+  entities: ENTITIES,
+  migrations: [],
+  subscribers: [],
+  // logging: false,
+  logging: [
+    "query",
+    // 'error',
+    // 'schema',
+    // 'warn',
+    // 'info',
+    // 'log'
+  ],
+});
+
+const mysqlConfig: DataSourceOptions = {
+  name: "default",
+  type: "mysql",
+  port: parseInt(process.env.DB_MS_PORT || "3306", 10), // Ensure port is a number,
+  host: process.env.DB_MS_HOST,
+  username: process.env.DB_MS_USER,
+  database: process.env.DB_MS_NAME,
+  password: process.env.DB_MS_PWD,
+  entities: ENTITIES,
+  /**
+   * LOGGING OPTIONS
+   * query - logs all queries.
+   * error - logs all failed queries and errors.
+   * schema - logs the schema build process.
+   * warn - logs internal orm warnings.
+   * info - logs internal orm informative messages.
+   * log - logs internal orm log messages.
+   */
+  // logging: [
+  //     'query',
+  //     // 'error',
+  //     // 'schema',
+  //     // 'warn',
+  //     // 'info',
+  //     // 'log'
+  // ],
+  logging: ["query", "error", "warn", "log"],
+  // logging: "all"
+};
+// const mysqlConfig: DataSourceOptions = {
+//   name: "default",
+//   type: "mysql", // Ensures TypeORM understands it's MySQL and not Aurora MySQL
+//   port: parseInt(process.env.DB_MS_PORT || "3306", 10), // Ensure port is a number
+//   host: process.env.DB_MS_HOST || "localhost", // Provide defaults if undefined
+//   username: process.env.DB_MS_USER || "root",
+//   password: process.env.DB_MS_PWD || "",
+//   database: process.env.DB_MS_NAME || "test",
+//   entities: ENTITIES,
+//   logging: ["query", "error", "warn", "log"],
+// };
+
+const mysqlConfig2 = {
+  type: "mysql",
+  port: process.env.DB_MS_PORT,
+  host: process.env.DB_MS_HOST,
+  username: process.env.DB_MS_USER,
+  database: process.env.DB_MS_NAME,
+  password: process.env.DB_MS_PWD,
+  synchronize: true,
+  entities: ENTITIES,
+  migrations: [],
+  subscribers: [],
+  // logging: false,
+  logging: [
+    "query",
+    // 'error',
+    // 'schema',
+    // 'warn',
+    // 'info',
+    // 'log'
+  ],
+};
+
+// export const sqliteConfig = {
+//   name: process.env.DB_SL_NAME,
+//   type: "sqlite",
+//   database: __dirname + "/database.sqlite",
+//   synchronize: false,
+//   // keepConnectionAlive: true,
+//   logging: false,
+//   entities: ENTITIES,
+// };
+const sqliteConfig: DataSourceOptions = {
+  name: "default",
+  type: "sqlite", // Ensures TypeORM understands it's MySQL and not Aurora MySQL
+  database: __dirname + "/database.sqlite",
+  synchronize: false,
+  entities: ENTITIES,
+  logging: ["query", "error", "warn", "log"],
+};
+
+export async function sqliteConfigFx(connName: string): Promise<any> {
+  return {
+    name: connName,
+    type: "sqlite",
+    database: __dirname + "/database.sqlite",
+    synchronize: false,
+    // keepConnectionAlive: true,
+    logging: false,
+    entities: ENTITIES,
+  };
+}
+
+const API_HOST_NAME = process.env.API_HOST_NAME;
+const API_HOST_IP = process.env.API_HOST_IP;
+// http port for runnint webroot without SSL. Used by letsencrypt validation and automation
+const HTTP_PORT = process.env.HTTP_PORT;
+// control the server to serve http or not. Eg cd-api should be able to serve http but sio should not.
+const HTTP_WEBROOT = process.env.HTTP_WEBROOT;
+const HTTP_ENABLED = process.env.HTTP_ENABLED === "true";
+const API_PORT = process.env.API_PORT;
+const API_ROUTE = process.env.API_ROUTE;
+const END_POINT = `${process.env.API_URL}:${API_PORT}`;
+
+// Username: 	accosca-6@empservices.co.ke
+// Password: 	Use the email account’s password.
+// Incoming Server: 	mail.empservices.co.ke
+// IMAP Port: 993 POP3 Port: 995
+// Outgoing Server: 	mail.empservices.co.ke
+// SMTP Port: 465
+// IMAP, POP3, and SMTP require authentication.
+export const empMailConfig = {
+  domain: "empservices.co.ke",
+  incomingServer: "mail.empservices.co.ke",
+  imapPort: 993,
+  outgoingServer: "mail.empservices.co.ke",
+  smtpPort: 465,
+};
+export default {
+  runMode: RunMode.UNRESTRICTED_DEVELOPER_MODE,
+  ds: {
+    sqlite: new DataSource(sqliteConfig),
+    mysql: new DataSource(mysqlConfig),
+  },
+  pushService: {
+    sio: {
+      enabled: true,
+    },
+    wss: {
+      enabled: false,
+    },
+    pusher: {
+      enabled: true,
+    },
+  },
+  wssPort: process.env.WSS_PORT,
+  secure: process.env.SECURE,
+  // httpPort: HTTP_PORT,
+  http: {
+    hostName: API_HOST_NAME,
+    hostIp: API_HOST_IP,
+    enabled: HTTP_ENABLED,
+    port: HTTP_PORT,
+    webroot: HTTP_WEBROOT,
+  },
+  keyPath: process.env.KEY_PATH,
+  certPath: process.env.CERT_PATH,
+  caPath: process.env.CSR_PATH,
+  apiPort: process.env.API_PORT,
+  apiRoute: API_ROUTE,
+  endPoint: END_POINT,
+  cacheTtl: process.env.CACHE_TTL,
+  userActivationUrl: process.env.USER_ACTIVATION_URL,
+  emailUsers: [
+    {
+      name: "ASDAP",
+      email: process.env.EMAIL_ADDRESS,
+      user: process.env.EMAIL_USERNAME,
+      pass: process.env.EMAIL_PASSWORD,
+      config: empMailConfig,
+      auth: {
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    },
+    {
+      name: "asdap-admin",
+      email: "asdap-admin@empservices.co.ke",
+      user: "asdap-admin@empservices.co.ke",
+      pass: process.env.EMAIL_ASDAP_PASS,
+      config: empMailConfig,
+      auth: {
+        user: "asdap-admin@empservices.co.ke",
+        pass: process.env.EMAIL_ASDAP_PASS,
+      },
+    },
+  ],
+  emailApiKeys: {
+    zepto: process.env.MAIL_ZEPTO_API_KEY,
+  },
+  emailInterface: [
+    {
+      name: "zeptomail",
+      active: false,
+    },
+    {
+      name: "nodemailer",
+      active: true,
+    },
+  ],
+  back4app: {
+    url: process.env.B4A_URL,
+    appId: process.env.X_Parse_Application_Id,
+    apiKey: process.env.X_Parse_REST_API_Key,
+  },
+  Cors: {
+    options: {
+      // key:fs.readFileSync(path.join(process.env.CERT_PATH)),
+      // cert:fs.readFileSync(path.join(process.env.KEY_PATH)),
+      // ca:fs.readFileSync(path.join(process.env.CSR_PATH)),
+      // requestCert: false,
+      // rejectUnauthorized: false,
+      allowedHeaders: [
+        "Origin",
+        "X-Requested-With",
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "X-Access-Token",
+      ],
+      credentials: true,
+      methods: "GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE",
+      origin: [
+        `https://${API_HOST_IP}`,
+        `https://localhost:443`,
+        `https://127.0.0.1:443`,
+        `https://localhost:5173`,
+        `http://localhost:5173`,
+        `http://localhost:80`,
+        `http://127.0.0.1:80`,
+        `https://${API_HOST_NAME}`,
+        `https://www.${API_HOST_NAME}`,
+        `https://cd-user.${API_HOST_NAME}`,
+        `https://cd-comm.${API_HOST_NAME}`,
+        `https://cd-moduleman.${API_HOST_NAME}`,
+      ],
+      preflightContinue: false,
+    },
+  },
+  db: mysqlConfig,
+  db2: mysqlConfig2,
+  sqlite: sqliteConfig,
+  // push: {
+  //   mode: process.env.PUSH_MODE,
+  //   serverHost: "https://146.190.165.51",
+  //   serverPort: process.env.SIO_PORT,
+  //   redisHost: process.env.REDIS_HOST,
+  //   redisPort: process.env.REDIS_PORT,
+  //   /**
+  //    * for redis-adapter cluster
+  //    */
+  //   startupNodes: [
+  //     {
+  //       port: 6380,
+  //       host: process.env.REDIS_HOST,
+  //     },
+  //     {
+  //       port: 6381,
+  //       host: "146.190.165.51",
+  //     },
+  //   ],
+  //   /**
+  //    * for redis-adapter sentinel
+  //    */
+  //   sentinalOptions: {
+  //     sentinels: [
+  //       { host: process.env.REDIS_HOST, port: Number(process.env.REDIS_PORT) },
+  //       { host: "asdap.africa", port: Number(process.env.REDIS_PORT) },
+  //     ],
+  //     name: "master01",
+  //   },
+  // },
+  push: {
+    // Cast the mode or default to single instance
+    mode: (process.env.PUSH_MODE as RedisMode) || 'PUSH_SINGLE',
+    serverHost: "https://146.190.165.51",
+    serverPort: parseInt(process.env.SIO_PORT || '3000', 10),
+    redisHost: process.env.REDIS_HOST || '127.0.0.1',
+    redisPort: parseInt(process.env.REDIS_PORT || '6379', 10),
+    
+    startupNodes: [
+      {
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: 6380,
+      },
+      {
+        host: "146.190.165.51",
+        port: 6381,
+      },
+    ],
+
+    sentinalOptions: {
+      sentinels: [
+        { 
+          host: process.env.REDIS_HOST || '127.0.0.1', 
+          port: parseInt(process.env.REDIS_PORT || '6379', 10) 
+        },
+        { 
+          host: "asdap.africa", 
+          port: parseInt(process.env.REDIS_PORT || '6379', 10) 
+        },
+      ],
+      name: "master01",
+    } as RedisOptions,
+  } as PushConfig,
+  cache: {
+    ttl: 600,
+  },
+  usePush: true,
+  usePolling: true,
+  useCacheStore: true,
+};
+
+export function mailConfig(username: string, password: string) {
+  return {
+    mailService: "cloudmailin",
+    host: "zohomail.com",
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    auth: {
+      user: username,
+      pass: password,
+    },
+    logger: true,
+  };
+}
+
+```
+
+//////////////////////////////////
+
+There is a section in .env you have given as:
+
+# -------------------------------------------------------------------
+# API
+# -------------------------------------------------------------------
+
+API_HOST_NAME="localhost"
+API_HOST_IP="127.0.0.1"
+
+API_PORT=3010
+API_ROUTE="/rpc"
+
+API_URL="https://localhost"
+
+The correction that need to happen is this:
+This can be retained as is but the API_ROUTE="/rpc" should be API_ROUTE="/api"
+These will then be paremeters for connecting to cd-api.
+
+Then you create a similar section for RPC where 'API_' is substituted with 'RPC_' with dedicated params for RPC.
+
+You can revice the .env with those corrections.
+
+/////////////////////////////////
+
+Below is the current setup of config for cd-api.
+Revice the content with the following considerations:
+- it should assume this is cd-rpc and not cd-api
+- we now have cd-api params in the .env and they should be reflected in the configs
+- only cd-api connects to mysql so mysql params should be removed
+- however as a client, we may need connection to sqlite (these ones can be retained.)
+- if you notice any consideration that needs to be revised, you can do so
+
+```ts
+// <proj-directory>/src/config.ts
+import mysql from "mysql2";
+import Redis, { Cluster, RedisOptions, ClusterNode } from 'ioredis';
+import * as fs from "fs";
+import * as dotenv from "dotenv";
+import "reflect-metadata";
+import { DataSource, DataSourceOptions, DatabaseType } from "typeorm";
+import path from "path";
+import { RunMode } from "./CdApi/sys/base/i-base";
+import { inspect } from "util";
+import { ModuleConfig } from "./CdApi/sys/moduleman/models/module.model";
+dotenv.config();
+
+// 1. Define strict types for your configuration
+type RedisMode = 'PUSH_CLUSTER' | 'PUSH_SENTINEL' | 'PUSH_SINGLE';
+
+interface PushConfig {
+  mode: RedisMode;
+  serverHost: string;
+  serverPort: number;
+  redisHost: string;
+  redisPort: number;
+  startupNodes: ClusterNode[];
+  sentinalOptions: RedisOptions;
+}
+
+/**
+ * this section needs to be automated.
+ * the automation should be integrated during installation of given module
+ * both front end and backend should be considered in installation process of given module.
+ */
+// const ENTITIES = [
+//   __dirname + "/CdApi/sys/user/models/*.model.ts",
+//   __dirname + "/CdApi/sys/moduleman/models/*.model.ts",
+//   __dirname + "/CdApi/sys/comm/models/*.model.ts",
+//   __dirname + "/CdApi/sys/cd-cli/models/*.model.ts",
+//   __dirname + "/CdApi/sys/scheduler/models/*.model.ts",
+//   __dirname + "/CdApi/sys/cd-dev/models/*.model.ts",
+//   __dirname + "/CdApi/app/cd-accts/models/*.model.ts",
+//   __dirname + "/CdApi/app/coops/models/*.model.ts",
+//   __dirname + "/CdApi/app/cd-geo/models/*.model.ts",
+// ];
+
+const entitiesConfigPath = path.join(
+  __dirname,
+  "configs",
+  "module-entities.json"
+);
+
+export function loadEntityPaths(): string[] {
+  try {
+    const modules = JSON.parse(fs.readFileSync(entitiesConfigPath, "utf8"));
+    return modules
+      .filter((m: ModuleConfig) => m.enabled)
+      .map((m: ModuleConfig) =>
+        path.join(__dirname, `CdApi/${m.ctx}/${m.moduleName}/models/*.model.ts`)
+      );
+  } catch (err) {
+    console.error("Failed to load entity modules:", err);
+    return [];
+  }
+}
+
+export function loadSyncableEntities(): string[] {
+  try {
+    console.log("start loading syncable entities...");
+    const modules: ModuleConfig[] = JSON.parse(fs.readFileSync(entitiesConfigPath, "utf8"));
+    console.log(
+      `config/loadSyncableEntities()/modules:${inspect(modules, { depth: 2 })}`
+    );
+    return modules
+      .filter((m: ModuleConfig) => m.syncable)
+      .map((m: ModuleConfig) =>
+        path.join(__dirname, `CdApi/${m.ctx}/${m.moduleName}/models/*.model.ts`)
+      );
+  } catch (err) {
+    console.error("Failed to load entity modules:", err);
+    return [];
+  }
+}
+
+const ENTITIES = loadEntityPaths();
+
+export const AppDataSource = new DataSource({
+  name: "conn2",
+  type: "mysql",
+  port: Number(process.env.DB_MS_PORT),
+  host: process.env.DB_MS_HOST,
+  username: process.env.DB_MS_USER,
+  database: process.env.DB_MS_NAME,
+  password: process.env.DB_MS_PWD,
+  synchronize: false,
+  // entities: [UserModel],
+  entities: ENTITIES,
+  migrations: [],
+  subscribers: [],
+  // logging: false,
+  logging: [
+    "query",
+    // 'error',
+    // 'schema',
+    // 'warn',
+    // 'info',
+    // 'log'
+  ],
+});
+
+const mysqlConfig: DataSourceOptions = {
+  name: "default",
+  type: "mysql",
+  port: parseInt(process.env.DB_MS_PORT || "3306", 10), // Ensure port is a number,
+  host: process.env.DB_MS_HOST,
+  username: process.env.DB_MS_USER,
+  database: process.env.DB_MS_NAME,
+  password: process.env.DB_MS_PWD,
+  entities: ENTITIES,
+  /**
+   * LOGGING OPTIONS
+   * query - logs all queries.
+   * error - logs all failed queries and errors.
+   * schema - logs the schema build process.
+   * warn - logs internal orm warnings.
+   * info - logs internal orm informative messages.
+   * log - logs internal orm log messages.
+   */
+  // logging: [
+  //     'query',
+  //     // 'error',
+  //     // 'schema',
+  //     // 'warn',
+  //     // 'info',
+  //     // 'log'
+  // ],
+  logging: ["query", "error", "warn", "log"],
+  // logging: "all"
+};
+// const mysqlConfig: DataSourceOptions = {
+//   name: "default",
+//   type: "mysql", // Ensures TypeORM understands it's MySQL and not Aurora MySQL
+//   port: parseInt(process.env.DB_MS_PORT || "3306", 10), // Ensure port is a number
+//   host: process.env.DB_MS_HOST || "localhost", // Provide defaults if undefined
+//   username: process.env.DB_MS_USER || "root",
+//   password: process.env.DB_MS_PWD || "",
+//   database: process.env.DB_MS_NAME || "test",
+//   entities: ENTITIES,
+//   logging: ["query", "error", "warn", "log"],
+// };
+
+const mysqlConfig2 = {
+  type: "mysql",
+  port: process.env.DB_MS_PORT,
+  host: process.env.DB_MS_HOST,
+  username: process.env.DB_MS_USER,
+  database: process.env.DB_MS_NAME,
+  password: process.env.DB_MS_PWD,
+  synchronize: true,
+  entities: ENTITIES,
+  migrations: [],
+  subscribers: [],
+  // logging: false,
+  logging: [
+    "query",
+    // 'error',
+    // 'schema',
+    // 'warn',
+    // 'info',
+    // 'log'
+  ],
+};
+
+// export const sqliteConfig = {
+//   name: process.env.DB_SL_NAME,
+//   type: "sqlite",
+//   database: __dirname + "/database.sqlite",
+//   synchronize: false,
+//   // keepConnectionAlive: true,
+//   logging: false,
+//   entities: ENTITIES,
+// };
+const sqliteConfig: DataSourceOptions = {
+  name: "default",
+  type: "sqlite", // Ensures TypeORM understands it's MySQL and not Aurora MySQL
+  database: __dirname + "/database.sqlite",
+  synchronize: false,
+  entities: ENTITIES,
+  logging: ["query", "error", "warn", "log"],
+};
+
+export async function sqliteConfigFx(connName: string): Promise<any> {
+  return {
+    name: connName,
+    type: "sqlite",
+    database: __dirname + "/database.sqlite",
+    synchronize: false,
+    // keepConnectionAlive: true,
+    logging: false,
+    entities: ENTITIES,
+  };
+}
+
+const API_HOST_NAME = process.env.API_HOST_NAME;
+const API_HOST_IP = process.env.API_HOST_IP;
+// http port for runnint webroot without SSL. Used by letsencrypt validation and automation
+const HTTP_PORT = process.env.HTTP_PORT;
+// control the server to serve http or not. Eg cd-api should be able to serve http but sio should not.
+const HTTP_WEBROOT = process.env.HTTP_WEBROOT;
+const HTTP_ENABLED = process.env.HTTP_ENABLED === "true";
+const API_PORT = process.env.API_PORT;
+const API_ROUTE = process.env.API_ROUTE;
+const END_POINT = `${process.env.API_URL}:${API_PORT}`;
+
+// Username: 	accosca-6@empservices.co.ke
+// Password: 	Use the email account’s password.
+// Incoming Server: 	mail.empservices.co.ke
+// IMAP Port: 993 POP3 Port: 995
+// Outgoing Server: 	mail.empservices.co.ke
+// SMTP Port: 465
+// IMAP, POP3, and SMTP require authentication.
+export const empMailConfig = {
+  domain: "empservices.co.ke",
+  incomingServer: "mail.empservices.co.ke",
+  imapPort: 993,
+  outgoingServer: "mail.empservices.co.ke",
+  smtpPort: 465,
+};
+export default {
+  runMode: RunMode.UNRESTRICTED_DEVELOPER_MODE,
+  ds: {
+    sqlite: new DataSource(sqliteConfig),
+    mysql: new DataSource(mysqlConfig),
+  },
+  pushService: {
+    sio: {
+      enabled: true,
+    },
+    wss: {
+      enabled: false,
+    },
+    pusher: {
+      enabled: true,
+    },
+  },
+  wssPort: process.env.WSS_PORT,
+  secure: process.env.SECURE,
+  // httpPort: HTTP_PORT,
+  http: {
+    hostName: API_HOST_NAME,
+    hostIp: API_HOST_IP,
+    enabled: HTTP_ENABLED,
+    port: HTTP_PORT,
+    webroot: HTTP_WEBROOT,
+  },
+  keyPath: process.env.KEY_PATH,
+  certPath: process.env.CERT_PATH,
+  caPath: process.env.CSR_PATH,
+  apiPort: process.env.API_PORT,
+  apiRoute: API_ROUTE,
+  endPoint: END_POINT,
+  cacheTtl: process.env.CACHE_TTL,
+  userActivationUrl: process.env.USER_ACTIVATION_URL,
+  emailUsers: [
+    {
+      name: "ASDAP",
+      email: process.env.EMAIL_ADDRESS,
+      user: process.env.EMAIL_USERNAME,
+      pass: process.env.EMAIL_PASSWORD,
+      config: empMailConfig,
+      auth: {
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    },
+    {
+      name: "asdap-admin",
+      email: "asdap-admin@empservices.co.ke",
+      user: "asdap-admin@empservices.co.ke",
+      pass: process.env.EMAIL_ASDAP_PASS,
+      config: empMailConfig,
+      auth: {
+        user: "asdap-admin@empservices.co.ke",
+        pass: process.env.EMAIL_ASDAP_PASS,
+      },
+    },
+  ],
+  emailApiKeys: {
+    zepto: process.env.MAIL_ZEPTO_API_KEY,
+  },
+  emailInterface: [
+    {
+      name: "zeptomail",
+      active: false,
+    },
+    {
+      name: "nodemailer",
+      active: true,
+    },
+  ],
+  back4app: {
+    url: process.env.B4A_URL,
+    appId: process.env.X_Parse_Application_Id,
+    apiKey: process.env.X_Parse_REST_API_Key,
+  },
+  Cors: {
+    options: {
+      // key:fs.readFileSync(path.join(process.env.CERT_PATH)),
+      // cert:fs.readFileSync(path.join(process.env.KEY_PATH)),
+      // ca:fs.readFileSync(path.join(process.env.CSR_PATH)),
+      // requestCert: false,
+      // rejectUnauthorized: false,
+      allowedHeaders: [
+        "Origin",
+        "X-Requested-With",
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "X-Access-Token",
+      ],
+      credentials: true,
+      methods: "GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE",
+      origin: [
+        `https://${API_HOST_IP}`,
+        `https://localhost:443`,
+        `https://127.0.0.1:443`,
+        `https://localhost:5173`,
+        `http://localhost:5173`,
+        `http://localhost:80`,
+        `http://127.0.0.1:80`,
+        `https://${API_HOST_NAME}`,
+        `https://www.${API_HOST_NAME}`,
+        `https://cd-user.${API_HOST_NAME}`,
+        `https://cd-comm.${API_HOST_NAME}`,
+        `https://cd-moduleman.${API_HOST_NAME}`,
+      ],
+      preflightContinue: false,
+    },
+  },
+  db: mysqlConfig,
+  db2: mysqlConfig2,
+  sqlite: sqliteConfig,
+  // push: {
+  //   mode: process.env.PUSH_MODE,
+  //   serverHost: "https://146.190.165.51",
+  //   serverPort: process.env.SIO_PORT,
+  //   redisHost: process.env.REDIS_HOST,
+  //   redisPort: process.env.REDIS_PORT,
+  //   /**
+  //    * for redis-adapter cluster
+  //    */
+  //   startupNodes: [
+  //     {
+  //       port: 6380,
+  //       host: process.env.REDIS_HOST,
+  //     },
+  //     {
+  //       port: 6381,
+  //       host: "146.190.165.51",
+  //     },
+  //   ],
+  //   /**
+  //    * for redis-adapter sentinel
+  //    */
+  //   sentinalOptions: {
+  //     sentinels: [
+  //       { host: process.env.REDIS_HOST, port: Number(process.env.REDIS_PORT) },
+  //       { host: "asdap.africa", port: Number(process.env.REDIS_PORT) },
+  //     ],
+  //     name: "master01",
+  //   },
+  // },
+  push: {
+    // Cast the mode or default to single instance
+    mode: (process.env.PUSH_MODE as RedisMode) || 'PUSH_SINGLE',
+    serverHost: "https://146.190.165.51",
+    serverPort: parseInt(process.env.SIO_PORT || '3000', 10),
+    redisHost: process.env.REDIS_HOST || '127.0.0.1',
+    redisPort: parseInt(process.env.REDIS_PORT || '6379', 10),
+    
+    startupNodes: [
+      {
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: 6380,
+      },
+      {
+        host: "146.190.165.51",
+        port: 6381,
+      },
+    ],
+
+    sentinalOptions: {
+      sentinels: [
+        { 
+          host: process.env.REDIS_HOST || '127.0.0.1', 
+          port: parseInt(process.env.REDIS_PORT || '6379', 10) 
+        },
+        { 
+          host: "asdap.africa", 
+          port: parseInt(process.env.REDIS_PORT || '6379', 10) 
+        },
+      ],
+      name: "master01",
+    } as RedisOptions,
+  } as PushConfig,
+  cache: {
+    ttl: 600,
+  },
+  usePush: true,
+  usePolling: true,
+  useCacheStore: true,
+};
+
+export function mailConfig(username: string, password: string) {
+  return {
+    mailService: "cloudmailin",
+    host: "zohomail.com",
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    auth: {
+      user: username,
+      pass: password,
+    },
+    logger: true,
+  };
+}
+
+```
+
+////////////////////////////////////////////
+
+When we controlling the cd-bio-engine from cli, the following logs are produced.
+We are only showing what happens up to the time the request for BaseService.invikeCdRequest() is formed.
+I have also shared DevModeService.executeCrudCommand() which is responsible for executing BaseService.invikeCdRequest().
+The idea of sharing this is to demonstrate that this process allows for:
+1. Moving all logics beyond this point to cd-rpc
+2. The final request formed can be sent to cd-rpc via http/s
+3. In the same vain, similar request can be sent from ai or ai agent to cd-rpc
+We will now need to first test this same process when it is wired to cd-rpc -> cd-api to achieve the same result.
+By the time it is able to do the same, we will only require a postman or curl to show that the same can be managed by ai.
+There after, we will then create an isolated ai agent that is able to:
+- update database from git repository.
+- read from database and do basing ai functions associated with cd-bio-engine. 
+```log
+cd dev  > update --model --name cd-rfc --o-env ci-cd --repo cd-api --src-path "https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md";
+[2026-05-12 19:12:59] 🛠️ DevMode::eval()/input:update --model --name cd-rfc --o-env ci-cd --repo cd-api --src-path "https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md";
+
+[2026-05-12 19:12:59] 🛠️ DevModeModel::handleInput()/input:update --model --name cd-rfc --o-env ci-cd --repo cd-api --src-path "https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md";
+[2026-05-12 19:12:59] 🛠️ DevModeModel::executeCommand()/command:update --model --name cd-rfc --o-env ci-cd --repo cd-api --src-path "https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"
+[2026-05-12 19:12:59] 🛠️ DevModeModel::executeCommand()/options:{"_":[],"model":true,"name":"cd-rfc","o-env":"ci-cd","repo":"cd-api","src-path":"\"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md\""}
+update.command::execute()/starting
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand() action=UPDATE, name=cd-rfc, o-env=ci-cd, options={
+  _: [
+    '--model',
+    '--name',
+    'cd-rfc',
+    '--o-env',
+    'ci-cd',
+    '--repo',
+    'cd-api',
+    '--src-path',
+    '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+  ],
+  model: true,
+  name: 'cd-rfc',
+  'o-env': 'ci-cd',
+  repo: 'cd-api',
+  'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+}
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/projResult:{
+  state: 1,
+  message: "Project 'cd-api' validated successfully.",
+  data: 'cd-api'
+}
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/resultValidEnv:{
+  state: 1,
+  message: "Output environment 'ci-cd' validated successfully.",
+  data: { name: 'ci-cd', label: 'Ci Cd', context: 'custom' }
+}
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/name:cd-rfc
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/oEnv:ci-cd
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/selectedTarget:{
+  cdObjTypeId: 5,
+  cdObjTypeName: 'model',
+  cdObjTypeGuid: 'f028f009-1a2d-40d4-b284-645c855ad04c',
+  modCraftController: 'CdModel'
+})
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/actionTargetName:model
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/01
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/repoName:cd-api
+[2026-05-12 19:12:59] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-12 19:12:59] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-12 19:12:59] 🛠️ VersionService::getAppTypeFromRepoName()/repoName:cd-api
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/appType: cd-api
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/filePath: /home/emp-12/cd-cli/dist/CdCli/app/app-craft/workshop/cd-api/workflow/ci-cd/cd-rfc-workshop.model.js
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/02
+[2026-05-12 19:12:59] 🛠️ SessionController::getSession()/profileName: | Context: [object Object]
+[2026-05-12 19:12:59] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-12 19:12:59] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-12 19:12:59] ℹ️ cdToken has been set
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/03
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/05
+[2026-05-12 19:12:59] 🛠️ DevModeModel::getRegistry()/action:3
+[2026-05-12 19:12:59] 🛠️ DevModeModel::getRegistry()/cdObjName:cd-rfc
+[2026-05-12 19:12:59] 🛠️ DevModeModel::getRegistry()/appType:cd-api
+[2026-05-12 19:12:59] 🛠️ DevModeModel::getRegistry()/actionTargetName:model
+[2026-05-12 19:12:59] 🛠️ DevModeModel::getRegistry()/actionStr:update
+[2026-05-12 19:12:59] 🛠️ DevModeModel::getRegistry()/actionLabel:Update
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/06
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/resultItemRegistry:[object Object]
+[2026-05-12 19:12:59] 🛠️ DevModeService::getRegistryForCdObj()/07
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/registryCount:35
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/{ actionTargetName, name, oEnv, repo },:{
+  actionTargetName: 'model',
+  name: 'cd-rfc',
+  oEnv: 'ci-cd',
+  repo: 'cd-api'
+}
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/options:{
+  _: [
+    '--model',
+    '--name',
+    'cd-rfc',
+    '--o-env',
+    'ci-cd',
+    '--repo',
+    'cd-api',
+    '--src-path',
+    '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+  ],
+  model: true,
+  name: 'cd-rfc',
+  'o-env': 'ci-cd',
+  repo: 'cd-api',
+  'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+}
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/selectedItem:{
+  name: 'model',
+  flag: 'model',
+  label: 'model',
+  description: 'Update a developer model environment',
+  action: 3,
+  actionTarget: {
+    cdObjTypeId: 5,
+    cdObjTypeName: 'model',
+    cdObjTypeGuid: 'f028f009-1a2d-40d4-b284-645c855ad04c',
+    modCraftController: 'CdModel'
+  },
+  requiredOptions: [ 'name', 'o-env' ],
+  targetName: 'cd-rfc',
+  targetType: 'cd-api',
+  cdRequest: {
+    ctx: 'app',
+    m: 'app-craft',
+    c: 'CdModel',
+    a: 'update',
+    dat: { f_vals: [Array], token: '' },
+    args: null
+  }
+}
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/args:{
+  actionTargetName: 'model',
+  name: 'cd-rfc',
+  oEnv: 'ci-cd',
+  repo: 'cd-api',
+  'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+}
+[2026-05-12 19:12:59] 🛠️ DevModeService::executeCrudCommand()/request:{
+  ctx: 'app',
+  m: 'app-craft',
+  c: 'CdModel',
+  a: 'update',
+  dat: { f_vals: [ { data: null } ], token: '' },
+  args: {
+    actionTargetName: 'model',
+    name: 'cd-rfc',
+    oEnv: 'ci-cd',
+    repo: 'cd-api',
+    'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+  }
+}
+```
+
+```ts
+export class DevModeService{
+async executeCrudCommand(action: DevModeAction, options: any): Promise<CdFxReturn<null>> {
+    const { name, ['o-env']: oEnv, repo } = options;
+
+    CdLog.debug(
+      `DevModeService::executeCrudCommand() action=${DevModeAction[action]}, name=${name}, o-env=${oEnv}, options=${inspect(options, { depth: 2 })}`,
+    );
+
+    // Validate repo
+    const projResult = this.validateProject(repo);
+    if (projResult.state !== CdFxStateLevel.Success) {
+      console.error(`[repo Error] ${projResult.message}`);
+      process.exit(1);
+    }
+
+    CdLog.debug(
+      `DevModeService::executeCrudCommand()/projResult:${inspect(projResult, { depth: 2 })}`,
+    );
+
+    // Validate output environment
+    const resultValidEnv = this.validateOutputEnv(oEnv);
+    CdLog.debug(
+      `DevModeService::executeCrudCommand()/resultValidEnv:${inspect(resultValidEnv, { depth: 2 })}`,
+    );
+    if (resultValidEnv.state !== CdFxStateLevel.Success) {
+      console.error(`[o-env Error] ${resultValidEnv.message}`);
+      process.exit(1);
+    }
+
+    ////////////////////////////////////////
+
+    if (!name || !oEnv) {
+      return {
+        state: false,
+        data: null,
+        message: '❌ Missing --name or --o-env.',
+      };
+    }
+
+    CdLog.debug(`DevModeService::executeCrudCommand()/name:${name}`);
+    CdLog.debug(`DevModeService::executeCrudCommand()/oEnv:${oEnv}`);
+
+    const selectedTarget = actionTargets.find((t) => options[t.cdObjTypeName]);
+    if (!selectedTarget) {
+      return {
+        state: false,
+        data: null,
+        message: '❌ No valid object type (e.g., --cd-module, --model) specified.',
+      };
+    }
+
+    CdLog.debug(
+      `DevModeService::executeCrudCommand()/selectedTarget:${inspect(selectedTarget, { depth: 2 })})`,
+    );
+
+    const actionTargetName = selectedTarget.cdObjTypeName;
+    CdLog.debug(`DevModeService::executeCrudCommand()/actionTargetName:${actionTargetName}`);
+
+    let registryResult: CdFxReturn<IDevModeInstructionDescriptor[]>;
+    try {
+      registryResult = await this.getRegistryForCdObj(action, actionTargetName, oEnv, name, repo);
+      // CdLog.debug(
+      //   `DevModeService::executeCrudCommand()/registryResult:${inspect(registryResult, { depth: 2 })}`,
+      // );
+
+    } catch (err: any) {
+      return {
+        state: false,
+        data: null,
+        message: `❌ ${err.message}`,
+      };
+    }
+
+    if (!registryResult.state || !registryResult.data) {
+      return {
+        state: false,
+        data: null,
+        message: registryResult.message || '❌ Invalid registry.',
+      };
+    }
+
+    const registry = registryResult.data;
+    CdLog.debug(`DevModeService::executeCrudCommand()/registryCount:${registry.length}`);
+    const selectedItem = registry.find((item) => options[item.flag]);
+
+    if (!selectedItem) {
+      return {
+        state: false,
+        data: null,
+        message: `❌ Invalid item to ${DevModeAction[action].toLowerCase()}.`,
+      };
+    }
+
+    const missing = selectedItem.requiredOptions.filter((key) => !options[key]);
+    if (missing.length > 0) {
+      return {
+        state: false,
+        data: null,
+        message: `❌ Missing required options: ${missing.join(', ')}`,
+      };
+    }
+
+    try {
+      const sessionService = new SessionService();
+      const cdToken = await sessionService.sessData.cdToken;
+
+      CdLog.debug(
+        `DevModeService::executeCrudCommand()/{ actionTargetName, name, oEnv, repo },:${inspect({ actionTargetName, name, oEnv, repo }, { depth: 2 })}`,
+      );
+      CdLog.debug(`DevModeService::executeCrudCommand()/options:${inspect(options, { depth: 2 })}`);
+      CdLog.debug(
+        `DevModeService::executeCrudCommand()/selectedItem:${inspect(selectedItem, { depth: 2 })}`,
+      );
+      const args = this.buildCdRequestArgs(
+        { actionTargetName, name, oEnv, repo },
+        options,
+        selectedItem,
+      );
+      CdLog.debug(`DevModeService::executeCrudCommand()/args:${inspect(args, { depth: 2 })}`);
+
+      const request: ICdRequest = {
+        ...selectedItem.cdRequest,
+        dat: {
+          ...selectedItem.cdRequest.dat,
+          token: cdToken,
+        },
+        args,
+      };
+
+      CdLog.debug(`DevModeService::executeCrudCommand()/request:${inspect(request, { depth: 3})}`);
+
+      const b = new BaseService();
+      const responseCdRequest = await b.invokeCdRequest(request);
+      return responseCdRequest;
+    } catch (err: any) {
+      return {
+        state: false,
+        data: null,
+        message: `❌ Error during ${DevModeAction[action].toLowerCase()}: ${err.message}`,
+      };
+    }
+  }
+}
+```
+
+//////////////////////////////////////
+
+Below is what I have adopted:
+Note the use of 'ICdWire'/'CdWire' in interface and property naming.
+In view of CdWireTransportType interface application to functions(methods), I have shared some existing descriptors definition which may have bearing on what we settle for.
+Where there is a potential for merging and reusing existing definitions can be a plus.
+For example in src/CdCli/sys/dev-descriptor/models/workstations.model.ts, which is dedicated for workstations, we have network associated definitions, there can be opportunity to integrate what is already existing (even if it means refining for reuse)
+As I was looking at the existing definitions, I also noted that it would be good to have a dedicated model for network descriptors. When done well, it can serve the CdWireTransportType.
+
+```ts
+export interface ICdWireOptions {
+
+  transport?: TransportDescriptor;
+
+  runtime?: RuntimeDescriptor;
+
+  tracing?: TracingDescriptor;
+
+  // retry?: ICdWireRetryOptions;
+
+  // timeout?: number;
+
+  metadata?: Record<string, any>;
+}
+
+export interface CdWireOptions {
+  transport: TransportDescriptor;
+  runtime: RuntimeDescriptor;
+  tracing?: TracingDescriptor;
+}
+
+export interface ICdWireTransportOptions {
+
+  type: CdWireTransportType;
+
+  endpoint?: string;
+
+  protocol?: "http" | "https" | "ws" | "tcp";
+
+  headers?: Record<string, string>;
+
+  discovery?: {
+    service?: string;
+    version?: string;
+  };
+}
+
+export enum CdWireTransportType {
+  Local = "local",
+  Rpc = "rpc",
+  Http = "http",
+  Queue = "queue",
+  WebSocket = "websocket",
+  Worker = "worker"
+}
+```
+
+```ts
+// src/CdCli/sys/dev-descriptor/models/function-descriptor.model.ts
+import { ICdRequest } from '../../base/i-base.js';
+import { DependencyDescriptor } from '../index.js';
+import type { BaseDescriptor } from './base-descriptor.model.js';
+
+export interface FunctionDescriptor extends BaseDescriptor {
+  name: string; // override the BaseDescriptor, which is optional
+  scope: ScopeDescriptor; // Access level and static nature
+  parameters?: ParameterDescriptor[]; // Function parameters
+  output?: OutputDescriptor; // Return type and description
+  typeInfo?: TypeInfoDescriptor; // Generic types information
+  behavior?: BehaviorDescriptor; // Behavioral characteristics
+  annotations?: AnnotationsDescriptor['annotations']; // Metadata or decorators
+  apiInfo?: ApiInfoDescriptor; // API-related information
+  documentation?: DocumentationDescriptor; // Documentation details
+  miscellaneous?: MiscellaneousDescriptor; // Overloads and tags
+  isDefault: boolean; // Indicates if the function is a default export
+  assert?: ICdRequest; // Optional assertion for testing purposes
+  dependancy?: DependencyDescriptor[]
+}
+
+// Scope Descriptor
+export interface ScopeDescriptor extends BaseDescriptor {
+  visibility:
+    | 'public'
+    | 'private'
+    | 'protected'
+    | 'package-private'
+    | 'unknown'; // Access level
+  static: boolean; // Indicates if the function is static
+}
+
+// Parameter Descriptor
+export interface ParameterDescriptor extends BaseDescriptor {
+  name: string; // Parameter name
+  type: string; // Data type of the parameter
+  optional?: boolean; // Indicates if the parameter is optional
+  defaultValue?: any; // Default value of the parameter
+}
+
+// Output Descriptor
+// export interface OutputDescriptor extends BaseDescriptor {
+//   returnType: string; // Data type of the return value
+//   description?: string; // Explanation of the return value
+// }
+export interface OutputDescriptor extends BaseDescriptor {
+  returnType: string; // e.g., 'Observable<CdFxReturn<...>>'
+  description?: string;
+  observableInnerType?: string; // ✅ Optional: e.g., 'CdFxReturn<MyModel[]>'
+}
+
+// Type Information Descriptor
+export interface TypeInfoDescriptor extends BaseDescriptor {
+  genericTypes?: string[]; // List of generic types
+}
+
+// Behavior Descriptor
+export interface BehaviorDescriptor extends BaseDescriptor {
+  isPure: boolean; // If the function is pure
+  isAsync: boolean; // If the function is asynchronous
+  isStatic?: boolean; // If the function is static
+  returnsPromise?: boolean; // If the function returns a Promise
+  isObservable?: boolean; // If the function returns an Observable
+  throws?: string[]; // List of exceptions or errors the function might throw
+}
+
+// Annotations Descriptor
+export interface AnnotationsDescriptor extends BaseDescriptor {
+  annotations?: string[]; // Metadata or decorators
+}
+
+// API Information Descriptor
+export interface ApiInfoDescriptor extends BaseDescriptor {
+  route?: string; // API route or URL path for this function
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'unknown'; // HTTP method
+  callsService?: string; // Name of the service method this function calls
+}
+
+// Documentation Descriptor
+export interface DocumentationDescriptor extends BaseDescriptor {
+  examples?: string[]; // Usage examples
+  notes?: string; // Additional notes or caveats
+}
+
+// Miscellaneous Descriptor
+export interface MiscellaneousDescriptor extends BaseDescriptor {
+  overload?: FunctionDescriptor[]; // List of alternative function signatures
+  tags?: string[]; // Tags or categories
+}
+
+```
+
+```ts
+// src/CdCli/sys/dev-descriptor/models/workstations.model.ts
+
+/* eslint-disable style/brace-style */
+import type { CdFxReturn } from '../../base/i-base.js';
+
+import type { ProfileModel } from '../../cd-cli/models/cd-cli-profile.model.js';
+import type { EnvironmentService } from '../services/environment.service.js';
+import type { BaseDescriptor } from './base-descriptor.model.js';
+import type { ContainerDescriptor } from './container-manager.model.descriptor.js';
+/* eslint-disable antfu/if-newline */
+// import type { WorkstationDescriptor } from './dev-descriptor.model';
+// import type { OperatingSystemDescriptor } from './app-descriptor.model';
+import {
+  cdApiDependencies,
+  type DependencyDescriptor,
+} from '../../dev-descriptor/models/dependancy-descriptor.model.js';
+import {
+  // CdApiSetupTasks,
+  type CiCdDescriptor,
+  type CICdTask,
+} from './cicd-descriptor.model.js';
+// import type { ContainerDescriptor } from './container-manager.model.descriptor';
+import type { EnvironmentDescriptor } from './environment.model.js';
+import type { MetricsQuantity } from './service-provider.model.js';
+import type { VersionControlDescriptor } from './version-control.model.js';
+import CdLog from '../../cd-comm/controllers/cd-logger.controller.js';
+import { defaultOs, getOsByName, operatingSystems } from './os.model.js';
+import {
+  getPermissionsByName,
+  getPermissionsByRoleNames,
+  roles,
+} from './permissions.model.js';
+import {
+  defaultSoftware,
+  getSoftwareByName,
+  softwareDataStore,
+} from './software-store.model.js';
+import {
+  getTestingFramework,
+  getTestingFrameworkByContext,
+  testingFrameworks,
+} from './testing-framework.model.js';
+
+/**
+ * Questions:
+ * - virtualization and container should be under machine type or machine type should be integrated with a property called host
+ */
+export interface WorkstationDescriptor extends BaseDescriptor {
+  machineType: MachineType;
+  os: OperatingSystemDescriptor;
+  enabled?: boolean;
+  workstationAccess: WorkstationAccessDescriptor;
+  requiredSoftware: DependencyDescriptor[];
+}
+
+export interface SystemResources extends BaseDescriptor {
+  cpuCores: number; // Number of CPU cores
+  memory: MetricsQuantity; // e.g., "32GB" {units: 'GB',value: 32}
+  storage: MetricsQuantity; // e.g., "1TB"
+}
+
+export interface OperatingSystemDescriptor extends BaseDescriptor {
+  name: string; // Name of the operating system (e.g., Windows, Linux, macOS)
+  version: string; // Version of the operating system (e.g., "10.0.19044", "Ubuntu 22.04")
+  architecture: 'x86_64' | 'x86' | 'x64' | 'ARM' | 'ARM64' | 'unknown'; // CPU architecture supported by the OS
+  kernelVersion?: string; // Optional: Specific kernel version (e.g., "5.15.0-79-generic")
+  distribution?: string; // Optional: For Linux distros (e.g., "Ubuntu", "Fedora")
+  buildNumber?: string; // Optional: Build number for the OS (e.g., Windows-specific)
+  environmentVariables?: { [key: string]: string }; // Optional: Key-value pairs of environment variables
+  timezone: string; // Timezone of the environment (e.g., "UTC", "America/New_York")
+}
+
+// Physical Machine Descriptor
+export interface PhysicalMachineDescriptor extends BaseDescriptor {
+  systemResources: SystemResources; // Total physical resources
+  powerState?: 'on' | 'off' | 'suspended' | 'unknown';
+  networkInterfaces: NetworkInterfaceDescriptor[]; // Physical network interfaces
+}
+
+// Virtual Machine Descriptor
+export interface VirtualMachineDescriptor extends BaseDescriptor {
+  hypervisor:
+    | 'KVM'
+    | 'VMware'
+    | 'VirtualBox'
+    | 'Hyper-V'
+    | 'Xen'
+    | 'Other'
+    | 'unknown';
+  vmId: string;
+  allocatedResources: SystemResources; // Resources allocated to this VM
+  networkMode: 'bridged' | 'nat' | 'host-only';
+  state: 'running' | 'stopped' | 'paused' | 'unknown';
+}
+
+// export type MachineType = 'physical' | 'virtual' | 'container';
+export interface MachineType extends BaseDescriptor {
+  name: 'physical' | 'virtual' | 'container' | 'unknown';
+  hostMachine:
+    | PhysicalMachineDescriptor
+    | VirtualMachineDescriptor
+    | ContainerDescriptor;
+}
+
+export interface WorkstationAccessDescriptor extends BaseDescriptor {
+  accessScope?: 'local' | 'remote' | 'hybrid' | 'unknown';
+  physicalAccess?: 'direct' | 'vpn' | 'tunnel' | 'unknown';
+  /**
+   * transport may be optional if physicalAccess = direct
+   */
+  transport?: {
+    protocol: 'ssh' | 'http' | 'rdp' | 'grpc' | 'other' | 'unknown';
+    credentials?: TransportCredentials; // Holds authentication details based on protocol
+  };
+  interactionType?: 'cli' | 'gui' | 'api' | 'desktop' | 'unknown';
+}
+
+// Define a flexible structure for transport-specific credentials
+export interface TransportCredentials extends BaseDescriptor {
+  sshCredentials?: SshCredentials;
+  httpCredentials?: HttpCredentials;
+  rdpCredentials?: RdpCredentials;
+  grpcCredentials?: GrpcCredentials;
+  otherCredentials?: Record<string, unknown>; // Allows future expansion
+}
+
+// Keep SSH credentials definition unchanged
+export interface SshCredentials extends BaseDescriptor {
+  username: string;
+  host: string;
+  port: number;
+  privateKey?: string;
+  password?: string;
+}
+
+// Example HTTP authentication credentials
+export interface HttpCredentials extends BaseDescriptor {
+  username: string;
+  password: string;
+  token?: string; // Supports bearer tokens for APIs
+}
+
+// Example RDP authentication credentials
+export interface RdpCredentials extends BaseDescriptor {
+  username: string;
+  password: string;
+  domain?: string; // Optional for Windows domain logins
+}
+
+// Example gRPC authentication credentials
+export interface GrpcCredentials extends BaseDescriptor {
+  apiKey?: string;
+  cert?: string; // Optional certificate for secure connections
+  token?: string;
+}
+
+// Condition Descriptor
+export interface ConditionDescriptor extends BaseDescriptor {
+  type: 'time-based' | 'location-based' | 'context-based' | 'other' | 'unknown'; // Type of condition
+  details: Record<string, any>; // Details of the condition (e.g., time range, IP address)
+}
+
+// Comprehensive OS Permissions Descriptor
+export interface OperatingSystemPermissionDescriptor extends BaseDescriptor {
+  basePermissions: PermissionDescriptor[]; // List of base permissions defined in the system
+  accessControls: AccessControlDescriptor[]; // Access control rules
+  auditConfig?: AuditDescriptor; // Audit configuration for permissions
+  roles?: RoleDescriptor[]; // Optional roles for role-based access control
+}
+
+// Base Permission Descriptor
+export interface PermissionDescriptor extends BaseDescriptor {
+  name: string; // Name of the permission (e.g., "read", "write", "execute")
+  description?: string; // Description of the permission
+  level: 'user' | 'group' | 'system' | 'unknown' | 'unknown' | 'unknown'; // Level of the permission (e.g., user, group, or system-wide)
+  type: 'file' | 'directory' | 'process' | 'network' | 'service' | 'unknown'; // Type of resource the permission applies to
+}
+
+// Access Control Descriptor
+export interface AccessControlDescriptor extends BaseDescriptor {
+  subject: string; // Subject (user, group, or process) the permission applies to
+  resource: string; // Resource (e.g., file path, directory, process ID, service name)
+  allowedActions: (
+    | 'read'
+    | 'write'
+    | 'execute'
+    | 'delete'
+    | 'modify'
+    | 'create'
+    | 'unknown'
+  )[]; // Allowed actions on the resource
+  conditions?: ConditionDescriptor[]; // Optional conditions or constraints
+}
+
+// Audit Descriptor
+export interface AuditDescriptor extends BaseDescriptor {
+  logChanges: boolean; // Whether changes to the permissions should be logged
+  lastModifiedBy?: string; // User or process that last modified the permission
+  lastModifiedAt?: Date; // Timestamp of the last modification
+  auditTrail?: string[]; // Log of previous changes
+}
+
+// Role-Based Access Control Descriptor (Optional)
+export interface RoleDescriptor extends BaseDescriptor {
+  roleName: string; // Name of the role (e.g., "admin", "user", "guest")
+  permissions: PermissionDescriptor[]; // List of permissions assigned to this role
+}
+
+export interface FileStoreDescriptor extends BaseDescriptor {
+  name: string; // Unique identifier for the file store
+  type:
+    | 'local'
+    | 'network'
+    | 'object-storage'
+    | 'distributed'
+    | 'container-managed'
+    | 'unknown'; // Type of file storage
+
+  fileStorageCapacity: FileStorageCapacity; // Storage capacity details
+  fileStorageLocation: FileStorageLocation; // Storage location details
+  fileStorageAccess: FileStorageAccess; // Access control details
+  fileStorageRedundancy?: FileStorageRedundancy; // Redundancy details
+  fileStorageEncryption?: FileStorageEncryption; // Encryption details
+  fileStoragePerformance?: FileStoragePerformance; // Performance details
+  fileStorageIntegration?: FileStorageIntegration; // Integration details
+  fileStorageBackup?: FileStorageBackup; // Backup details
+  fileStorageMetadata?: FileStorageMetadata; // Metadata details
+}
+
+// Root Interface
+export interface NetworkInterfaceDescriptor extends BaseDescriptor {
+  hostname: string; // Hostname of the workstation
+  ip4Addresses?: string[]; // List of IPv4 addresses
+  ip6Addresses?: string[]; // List of IPv6 addresses
+  servicePorts?: ServicePortConfig; // Port configurations
+  publicUrl?: string; // Public URL of the service
+  firewallRules?: FirewallRule[]; // Firewall rules for allowed IPs and protocols
+  dnsConfig?: DNSConfig; // DNS configuration
+  routingConfig?: RoutingConfig; // Routing-related configurations
+  proxySettings?: ProxySettings; // Proxy server settings
+  networkPolicies?: NetworkPolicy[]; // Policies governing network behavior
+}
+
+// Service Port Configurations
+// export interface ServicePortConfig extends BaseDescriptor {
+//   http?: number; // HTTP port
+//   https?: number; // HTTPS port
+//   portMapping?: PortMapping[]; // Port mapping details, including forwarding, ingress, and egress
+// }
+export interface ServicePortConfig extends BaseDescriptor {
+  http?: number; // HTTP port
+  https?: number; // HTTPS port
+  ports?: Record<string, number[]>; // Generic protocol-based port mapping (e.g., tcp, udp)
+  portMapping?: PortMapping[]; // Port mapping details, including forwarding, ingress, and egress
+}
+
+// Port Mapping Details
+// export interface PortMapping extends BaseDescriptor {
+//   containerPort: number; // Port inside the container/application
+//   hostPort?: number; // Port exposed on the host
+//   protocol: 'TCP' | 'UDP' | 'unknown'; // Protocol type
+//   ingress?: IngressConfig; // Ingress rules for this port
+//   egress?: EgressConfig; // Egress rules for this port
+// }
+export interface PortMapping extends BaseDescriptor {
+  port: number; // Port used by the service
+  protocol: 'TCP' | 'UDP' | 'unknown'; // Protocol type
+  ingress?: IngressConfig; // Ingress rules for this port
+  egress?: EgressConfig; // Egress rules for this port
+}
+
+// Ingress Configuration
+export interface IngressConfig extends BaseDescriptor {
+  allowedSources?: string[]; // Allowed source IPs or CIDR blocks
+  rateLimit?: number; // Maximum number of requests per second
+  tlsEnabled?: boolean; // Whether TLS is enabled for this port
+}
+
+// Egress Configuration
+export interface EgressConfig extends BaseDescriptor {
+  allowedDestinations?: string[]; // Allowed destination IPs or CIDR blocks
+  bandwidthLimit?: string; // Bandwidth limit for egress traffic (e.g., "100Mbps")
+}
+
+// Firewall Rules
+export interface FirewallRule extends BaseDescriptor {
+  id?: string; // Unique identifier for the rule
+  action: 'allow' | 'deny' | 'unknown'; // Action to take (allow or deny)
+  protocol: 'TCP' | 'UDP' | 'ICMP' | 'unknown'; // Protocol for the rule
+  portRange?: { from: number; to: number }; // Port range (optional)
+  source?: string; // Source IP or CIDR (optional)
+  destination?: string; // Destination IP or CIDR (optional)
+  description?: string; // Description of the rule
+}
+
+// DNS Configuration
+export interface DNSConfig extends BaseDescriptor {
+  primary: string; // Primary DNS server
+  secondary?: string; // Secondary DNS server
+  searchDomains?: string[]; // List of search domains
+  records?: DNSRecord[]; // DNS records
+}
+
+// DNS Record
+export interface DNSRecord extends BaseDescriptor {
+  provider: 'route53' | 'google-dns' | 'cloudflare' | 'custom' | 'unknown'; // DNS provider
+  type: 'A' | 'AAAA' | 'CNAME' | 'TXT' | 'MX' | 'unknown'; // DNS record type
+  name: string; // Name of the record
+  value: string; // Value of the record
+  ttl?: number; // Time-to-live (TTL) in seconds
+}
+
+// Routing Configuration
+export interface RoutingConfig extends BaseDescriptor {
+  staticRoutes?: StaticRoute[]; // Static routes
+  loadBalancing?: LoadBalancingConfig; // Load balancing settings
+}
+
+// Static Route
+export interface StaticRoute extends BaseDescriptor {
+  destination: string; // Destination CIDR block
+  gateway: string; // Gateway for the route
+  metric?: number; // Priority metric for the route
+}
+
+// Load Balancing Configuration
+export interface LoadBalancingConfig extends BaseDescriptor {
+  strategy: 'round-robin' | 'least-connections' | 'ip-hash' | 'unknown'; // Load balancing strategy
+  healthCheck?: {
+    interval: number; // Health check interval in seconds
+    timeout: number; // Timeout in seconds
+    retries: number; // Number of retries before marking unhealthy
+  };
+}
+
+// Proxy Settings
+export interface ProxySettings extends BaseDescriptor {
+  httpProxy?: string; // HTTP proxy URL
+  httpsProxy?: string; // HTTPS proxy URL
+  noProxy?: string[]; // List of domains or IPs to bypass the proxy
+}
+
+// Network Policy
+export interface NetworkPolicy extends BaseDescriptor {
+  name: string; // Policy name
+  description?: string; // Description of the policy
+  allowedIngress?: IngressConfig[]; // Allowed ingress configurations
+  allowedEgress?: EgressConfig[]; // Allowed egress configurations
+}
+
+export interface VolumeMapping extends BaseDescriptor {
+  hostPath: string; // Host machine path
+  containerPath: string; // Container path
+}
+
+// export interface PortMapping {
+//   hostPort: number; // Host machine port
+//   containerPort: number; // Container port
+// }
+
+export interface HardwareSpecs extends BaseDescriptor {
+  cpu: CpuSpecs;
+  memory: MemorySpecs;
+  fileStorage: FileStoreDescriptor[];
+  gpu?: GpuSpecs;
+}
+
+export interface FileReference extends BaseDescriptor {
+  name: string; // Logical name of the file reference (e.g., "packageJson", "dockerCompose")
+  filePath: string; // Path to the file (relative or absolute)
+  format: 'json' | 'yaml' | 'xml' | 'text' | 'unknown'; // Format of the file
+  section?: string | string[]; // Optional: Section(s) of the file to extract (e.g., "dependencies" for package.json)
+  description?: string; // Description of the purpose of this file reference
+}
+
+// Interface for File Storage Capacity
+export interface FileStorageCapacity extends BaseDescriptor {
+  size: string; // Total storage size (e.g., "500GB", "2TB")
+  autoScaling?: boolean; // Whether storage can auto-scale
+  quota?: {
+    userLimit?: string; // Per-user storage limit (e.g., "10GB")
+    groupLimit?: string; // Per-group storage limit
+  };
+}
+
+// Interface for File Storage Location
+export interface FileStorageLocation extends BaseDescriptor {
+  path?: string; // Path for local or network file storage
+  bucketName?: string; // Bucket name for object storage
+  region?: string; // Region for cloud-based storage (e.g., "us-east-1")
+  endpoints?: string[]; // Custom endpoints for distributed or object storage
+}
+
+// Interface for File Storage Access
+export interface FileStorageAccess extends BaseDescriptor {
+  fileStorageAccessType: 'public' | 'private' | 'restricted' | 'unknown'; // Access control type
+  osPermissions?: PermissionDescriptor[];
+  authentication?: AuthenticationConfig;
+}
+
+export interface AuthenticationConfig extends BaseDescriptor {
+  type: 'key-based' | 'token-based' | 'role-based' | 'none' | 'unknown'; // Authentication mechanism
+  credentials?: {
+    apiKey?: string; // API key for access
+    token?: string; // Authentication token
+    user?: string; // Username
+    password?: string; // Password
+    roles?: string[]; // Role-based access roles
+  };
+}
+
+// Interface for File Storage Redundancy
+export interface FileStorageRedundancy extends BaseDescriptor {
+  enabled: boolean; // Whether redundancy is enabled
+  strategy?: 'mirroring' | 'striping' | 'parity' | 'unknown'; // Redundancy strategy
+  replicas?: number; // Number of replicas for redundancy
+}
+
+// Interface for File Storage Encryption
+export interface FileStorageEncryption extends BaseDescriptor {
+  enabled: boolean; // Whether encryption is enabled
+  atRest?: boolean; // Encrypt files at rest
+  inTransit?: boolean; // Encrypt files during transit
+  algorithm?: string; // Encryption algorithm (e.g., "AES-256")
+}
+
+// Interface for File Storage Performance
+export interface FileStoragePerformance extends BaseDescriptor {
+  maxThroughput?: string; // Maximum throughput (e.g., "1Gbps")
+  latency?: string; // Expected latency (e.g., "10ms")
+  caching?: {
+    enabled: boolean; // Whether caching is enabled
+    type?: 'local' | 'distributed' | 'unknown'; // Type of caching
+    size?: string; // Cache size (e.g., "10GB")
+  };
+}
+
+// Interface for File Storage Integration
+export interface FileStorageIntegration extends BaseDescriptor {
+  containerManager?: {
+    manager: 'kubernetes' | 'docker'; // Container manager type
+    volumeType: 'persistentVolume' | 'configMap' | 'emptyDir' | 'unknown'; // Volume type
+    mountPath: string; // Mount path inside the container
+    accessModes: string[]; // Kubernetes access modes (e.g., "ReadWriteOnce", "ReadOnlyMany")
+  };
+  cloudProvider?: {
+    provider: 'aws-s3' | 'gcp-storage' | 'azure-blob' | 'unknown'; // Cloud provider
+    sdkVersion?: string; // SDK version for interaction
+    customEndpoints?: string[]; // Custom endpoints for interaction
+  };
+}
+
+// Interface for File Storage Backup
+export interface FileStorageBackup extends BaseDescriptor {
+  enabled: boolean; // Whether backups are enabled
+  schedule?: string; // Cron-like schedule for backups (e.g., "0 3 * * *")
+  retentionPolicy?: string; // Retention policy (e.g., "30d" for 30 days)
+  destination?: string; // Destination for backups (e.g., S3 bucket, NFS path)
+}
+
+// Interface for File Storage Metadata
+export interface FileStorageMetadata extends BaseDescriptor {
+  description?: string; // Description of the file store
+  createdBy?: string; // Creator of the file store
+  tags?: string[]; // Tags for categorization
+  createdAt?: string; // Creation timestamp
+  lastModified?: string; // Last modification timestamp
+}
+
+export interface CpuSpecs extends BaseDescriptor {
+  model: string; // CPU model (e.g., "Intel Core i7-12700K")
+  cores: number; // Number of CPU cores
+  threads: number; // Number of CPU threads
+}
+
+export interface GpuSpecs extends BaseDescriptor {
+  model: string; // Optional: GPU model (e.g., "NVIDIA RTX 3080")
+  memory: number; // GPU memory in MB
+}
+
+export interface MemorySpecs extends BaseDescriptor {
+  total: number; // Total memory in MB
+  used?: number; // Optional: Memory currently in use in MB
+}
+
+export interface SshCredentials extends BaseDescriptor {
+  username: string; // SSH username (for remote workstations)
+  host: string; // SSH host address (e.g., "192.168.1.100")
+  port: number; // SSH port (default: 22)
+  privateKey?: string; // Optional: Path or content of the SSH private key
+  password?: string; // Optional: Password for SSH authentication
+}
+
+```
+
+//////////////////////////////////
+
+Just to understand where we are going to extending: models section of dev-descriptor module
+```sh
+emp-12@emp-12 ~/cd-cli (main) [2]> tree src/CdCli/sys/dev-descriptor/models/
+src/CdCli/sys/dev-descriptor/models/
+├── base-descriptor.model.ts
+├── cd-app.model.ts
+├── cd-controller-descriptor.model.ts
+├── cd-model-descriptor.model.ts
+├── cd-module-descriptor.model.ts
+├── cd-service-descriptor.model.ts
+├── cicd-descriptor.model.ts
+├── component-descriptor.model.ts
+├── container-manager.model.descriptor.ts
+├── contributor.model.ts
+├── datastore-descriptor.model.ts
+├── dependancy-descriptor.model.ts
+├── dev-descriptor.model.ts
+├── environment.model.ts
+├── function-descriptor.model.ts
+├── language.model.ts
+├── license.model.ts
+├── migration-descriptor.model.ts
+├── os.model.ts
+├── permissions.model.ts
+├── service-descriptor.model.ts
+├── service-provider.model.ts
+├── software-store.model.ts
+├── testing-framework.model.ts
+├── version-control.model.ts
+├── view-model-descriptor.model.ts
+└── workstations.model.ts
+
+1 directory, 27 files
+emp-12@emp-12 ~/cd-cli (main)> 
+```
+
+///////////////////////////////////
+
+Below is what I have so far.
+I need you to assist me with definitions for RuntimeDescriptor and TracingDescriptorc.
+I am thinking retry and timeouts can be consolidated under something like session: ICdWireSession.
+
+```ts
+export interface ICdWireOptions {
+
+  transport?: TransportDescriptor;
+
+  runtime?: RuntimeDescriptor;
+
+  tracing?: TracingDescriptor;
+
+  // retry?: RetryOptions;
+
+  // timeout?: number;
+
+  metadata?: Record<string, any>;
+}
+```
+
+```ts
+/**
+ * Transport:
+ * - Protocol: HTTP, HTTPS, WS, WSS, TCP, GRPC, SSH
+ */
+
+export enum TransportProtocol {
+  HTTP = 'http',
+  HTTPS = 'https',
+  WS = 'ws',
+  WSS = 'wss',
+  TCP = 'tcp',
+  GRPC = 'grpc',
+  SSH = 'ssh'
+}
+
+export enum TransportExecutionMode {
+  LOCAL = 'local',
+  REMOTE = 'remote',
+  RPC = 'rpc',
+  QUEUE = 'queue',
+  WORKER = 'worker'
+}
+
+export interface TransportDescriptor {
+  protocol: TransportProtocol;
+  mode: TransportExecutionMode;
+  endpoint?: string;
+  headers?: Record<string, string>;
+}
+```
+
+///////////////////////////
+
+```ts
+export interface RuntimeDescriptor {
+
+  /**
+   * Execution strategy inside the host system
+   */
+  mode: 'sync' | 'async' | 'deferred' | 'stream' | 'unknown';
+
+  /**
+   * Concurrency model for execution
+   */
+  concurrency?: {
+    type: 'single' | 'multi' | 'parallel' | 'worker-pool' | 'event-loop';
+    limit?: number;
+  };
+
+  /**
+   * Isolation boundary
+   * - useful for AI agents, sandboxed execution, plugins
+   */
+  isolation?: {
+    level: 'none' | 'process' | 'thread' | 'container' | 'vm' | 'sandbox';
+  };
+
+  /**
+   * Execution priority within runtime scheduler
+   */
+  priority?: 'low' | 'normal' | 'high' | 'critical';
+
+  /**
+   * Lifecycle behavior of execution
+   */
+  lifecycle?: {
+    ephemeral?: boolean;     // destroyed after execution
+    persistent?: boolean;    // long-running context
+    reusable?: boolean;      // cached execution context
+  };
+}
+
+export interface TracingDescriptor {
+
+  /**
+   * Enable or disable tracing entirely
+   */
+  enabled: boolean;
+
+  /**
+   * Correlation identity (critical for distributed CdWire → CdRpc → CdApi flows)
+   */
+  correlation?: {
+    traceId?: string;
+    spanId?: string;
+    parentId?: string;
+  };
+
+  /**
+   * Logging behavior
+   */
+  logging?: {
+    level: 'debug' | 'info' | 'warn' | 'error' | 'silent';
+    includePayload?: boolean;
+    includeHeaders?: boolean;
+    sanitize?: boolean;
+  };
+
+  /**
+   * Metrics collection
+   */
+  metrics?: {
+    enabled: boolean;
+    namespace?: string;
+    tags?: Record<string, string>;
+  };
+
+  /**
+   * Distributed tracing export targets
+   */
+  exporters?: {
+    console?: boolean;
+    otel?: boolean;        // OpenTelemetry
+    endpoint?: string;      // custom collector
+  };
+
+  /**
+   * Timing capture behavior
+   */
+  timing?: {
+    enabled: boolean;
+    captureStartEnd?: boolean;
+    captureBreakdown?: boolean;
+  };
+}
+
+export interface CdWireSessionDescriptor {
+
+  /**
+   * Unique execution session identity
+   */
+  sessionId?: string;
+
+  /**
+   * Timeout control for entire session lifecycle
+   */
+  timeout?: {
+    ms: number;
+    strategy?: 'hard' | 'soft'; // hard = kill, soft = allow completion
+  };
+
+  /**
+   * Retry policy (NOT transport-level retry, but execution retry)
+   */
+  retry?: {
+    enabled: boolean;
+    maxAttempts: number;
+    backoff?: 'fixed' | 'linear' | 'exponential';
+    intervalMs?: number;
+    retryOn?: string[]; // error codes or names
+  };
+
+  /**
+   * Idempotency control (important for RPC/HTTP/AI retries)
+   */
+  idempotency?: {
+    key?: string;
+    enabled?: boolean;
+  };
+
+  /**
+   * Execution lifespan control
+   */
+  lifecycle?: {
+    persistSession?: boolean;
+    expireAfterMs?: number;
+  };
+}
+```
+
+/////////////////////////////////////////////
+
+With what we have so far, what the is the appropriate correcton for below and the revised signature for BaseService.invokeCdRequest()
+
+```ts
+await b.invokeCdRequest(request, {
+  mode: "local"
+});
+```
+
+```ts
+await b.invokeCdRequest(request, {
+  mode: "rpc"
+});
+```
+
+```ts
+async invokeCdRequest<T = any>(cdRequest?: ICdRequest): Promise<CdFxReturn<T>>
+```
+
+
+/////////////////////////////////////////////
+
+When a method is called locally, what is the setting for protocol?
+```ts
+const responseCdRequest = await cdWire.execute<null>(request, {
+        transport: {
+          mode: TransportExecutionMode.LOCAL,
+          protocol: TransportProtocol.?,
+        },
+      });
+```
+
+```ts
+export enum TransportProtocol {
+  HTTP = 'http',
+  HTTPS = 'https',
+  WS = 'ws',
+  WSS = 'wss',
+  TCP = 'tcp',
+  GRPC = 'grpc',
+  SSH = 'ssh'
+}
+```
+
+////////////////////////////////////////////////////
+
+
+```ts
+{
+  "ctx": "app",
+  "m": "app-craft",
+  "c": "CdModel",
+  "a": "update",
+  "dat": { "f_vals": [ { "data": null } ], "token": "" },
+  "args": {
+    "actionTargetName": "model",
+    "name": "cd-rfc",
+    "oEnv": "ci-cd",
+    "repo": "cd-api",
+    "src-path": "https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"
+  }
+}
+```
+
+//////////////////////////
+
+Background of HttpService class.
+Should be the central point for all http trafic in corpdesk subsystem.
+Earlier it only considered http transport execution.
+Right now we have optional executors(ICdWireExecutor) eg HttpExecutor, RpcExecutor.
+What we need to design now is some appropriate way of wiring the enpoint setup given the optional executors.
+At the moment, we have the option of setting the endpoint at the point of cdWire.execute().
+```ts
+      const responseCdRequest = await cdWire.execute<null>(request, {
+        transport: {
+          mode: TransportExecutionMode.RPC,
+          protocol: TransportProtocol.HTTP,
+          // endpoint: 'http://localhost:3000/rpc', // This could be made dynamic based on config or CLI options
+        },
+      });
+```
+I am thinking this option can still stand but the most stable place for it should be at the optional executor level.
+This is the point when the enpoint should be determinalble rather that optional. At least at operational level.
+Based on the practical case I am dealing with right now, the executor is RpcExecutor. 
+So we have the method:
+```ts
+export class RpcExecutor implements ICdWireExecutor {
+async executeRpcHttp<T = any>(cdRequest: ICdRequest): Promise<CdFxReturn<T>> {
+    CdLog.debug('[CdRpc][RpcExecutor][executeRpcHttp] 01');
+    CdLog.debug(`[CdRpc][RpcExecutor][executeRpcHttp] Request: ${JSON.stringify(cdRequest)}`);
+    CdLog.debug(`[CdRpc][RpcExecutor][executeRpcHttp] endPoint: ${inspect(config.rpc.endpoint)}`);
+    const svServer = new HttpService();
+    console.log('remoteCdRequest()/cdRequest:', JSON.stringify(cdRequest));
+    return svServer.proc(cdRequest) as Promise<CdFxReturn<T>>;
+  }
+}
+```
+I have deliberately set a log that indecate the config.rpc.endpoint where the endpoint setting resides in this case.
+So, I am proposing that in the HttpService class, we can add setEndPoint().
+At the moment we are focusing on HttpService.proc().
+The method should continue to work as is but we add an condition where if HttpService.setEndPoint() is invoked before running HttpService.proc(), the new setting for endpoint will apply.
+
+Give the revised codes for HttpService including the new method setEndPoint().
+HttpService has a number of experimental codes. So it may not be as elegant as expected.
+Maintain all the logs.
+Otherwise, as you do the revised version, try to do a lot of comments that explains various areas.
+
+
+
+```ts
+/**
+ * 
+ * Usage Guide
+ * ***********************************************
+ * Location: src/CdRpc/sys/base/http.service.ts
+//  1. Using Preset Profile (cdApiLocal)
+const httpService = new HttpService(true); // Enable debugMode
+const postData: ICdRequest;
+const result = await httpService.proc(
+  postData,
+  'cdApiLocal', // Optional since it's the default
+);
+
+if (result.state) {
+  console.log('✅ Modules:', result.data);
+} else {
+  console.error('❌ Error:', result.message);
+}
+
+***************************************************
+
+// 2. Using profile:
+const httpService = new HttpService(true); // With debug logs
+// Optionally initialize the profile (skipped automatically if `request()` or `proc()` is called)
+await httpService.init('deepseek');
+
+const profileName = 'deepseek';
+
+const config: AxiosRequestConfig = {
+  method: 'POST',
+  url: '/chat/completions',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: 'Bearer #apiKey', // Will be decrypted automatically
+  },
+  data: {
+    model: 'deepseek-chat',
+    messages: [
+      { role: 'user', content: 'What is the capital of Kenya?' },
+    ],
+  },
+};
+
+// Make the request (profile must exist in your cd-cli profile list)
+const response = await httpService.request(config, profileName);
+
+if (response.state) {
+  console.log('✅ Response from Deepseek:', response.data);
+} else {
+  console.error('❌ Error calling Deepseek:', response.message);
+}
+
+*************************************************************************
+3.
+
+const profileDetails = profile.cdCliProfileData.details;
+const result = await httpService.request(profileDetails.httpConfig, 'deepseek');
+
+*******************************************************************************
+
+4. Typical profile with httpConfig
+
+{
+  "cdCliProfileName": "deepseek",
+  "cdCliProfileData": {
+    "details": {
+      "apiKey": {
+        "name": "apiKey",
+        "description": "Encrypted Deepseek API key",
+        "value": null,
+        "encryptedValue": "<long-encrypted-string>",
+        "isEncrypted": true,
+        "encryptionMeta": {
+          "name": "default",
+          "algorithm": "aes-256-cbc",
+          "encoding": "hex",
+          "ivLength": 16,
+          "iv": "<iv-hex>",
+          "encryptedAt": "2025-05-25T10:24:35.527Z"
+        }
+      },
+      "baseUrl": "https://api.deepseek.com/v1",
+      "defaultModel": "deepseek-chat",
+      "cryptFields": ["apiKey"],
+      "httpConfig": {
+        "method": "POST",
+        "url": "/chat/completions",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer #apiKey"
+        },
+        "data": null
+      },
+      "encrypted": true
+    }
+  }
+}
+
+
+
+
+ */
+
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import * as https from 'https';
+import { CdCliProfileController } from '../cd-cli/controllers/cd-cli-profile.cointroller';
+import CdLog from '../comm/controllers/cd-logger.controller';
+import type { CdFxReturn, ICdRequest, ICdResponse } from './i-base';
+import { IProfileDetails } from '../cd-cli/models/cd-cli-profile.model';
+import config from '../../../config';
+import CdCliVaultController from '../cd-cli/controllers/cd-cli-vault.controller';
+import { inspect } from 'util';
+
+export class HttpService {
+  private instances: Map<string, AxiosInstance> = new Map();
+  ctlCdCliProfile = new CdCliProfileController();
+  cdApiAxiosConfig?: AxiosRequestConfig;
+  cdToken = '';
+
+  constructor(private debugMode = false) {
+    this.presetConfigs();
+  }
+
+  presetConfigs() {
+    this.cdApiAxiosConfig = {
+      method: 'POST',
+      url: config.cdApi.endpoint,
+      data: null,
+    };
+
+    const defaultInstance = axios.create({
+      baseURL: config.cdApi.endpoint,
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+    });
+
+    this.instances.set('cdApiLocal', defaultInstance);
+    CdLog.info(`Preset Axios instance for profile: cdApiLocal`);
+  }
+
+  async init(profileName = 'cdApiLocal', endpoint?: string): Promise<boolean> {
+    const resolvedEndpoint = endpoint || (await this.resolveEndpointFromProfile(profileName));
+    if (!resolvedEndpoint) {
+      CdLog.error(`HttpService::init()/Preset Axios instance for profile: cdApiLocal`);
+      return false;
+    }
+
+    const axiosInstance = axios.create({
+      baseURL: resolvedEndpoint,
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+    });
+
+    this.instances.set(profileName, axiosInstance);
+    CdLog.info(`Initialized Axios for profile: ${profileName} (${resolvedEndpoint})`);
+    return true;
+  }
+
+  async resolveEndpointFromProfile(profileName: string): Promise<string | null> {
+    const result = await this.ctlCdCliProfile.loadProfiles();
+    // CdLog.debug(
+    //   `HttpService::resolveEndpointFromProfile()/profile:${inspect(result, {
+    //     depth: 3,
+    //   })}`,
+    // );
+    if (!result.state || !result.data) {
+      CdLog.error(`HttpService::resolveEndpointFromProfile()/Unable to load profiles.`);
+      return null;
+    }
+
+    const profile = result.data.items.find((item: any) => item.cdCliProfileName === profileName);
+
+    CdLog.debug(`HttpService::resolveEndpointFromProfile()/profileName:${profileName}`);
+
+    // CdLog.debug(
+    //   `HttpService::resolveEndpointFromProfile()/profile:${inspect(profile, {
+    //     depth: 2,
+    //   })}`,
+    // );
+
+    const details: IProfileDetails = profile?.cdCliProfileData?.details || {};
+    const endpoint = details.endpoint || details.cdEndpoint;
+
+    CdLog.debug(
+      `HttpService::resolveEndpointFromProfile()/details:${inspect(details, {
+        depth: 2,
+      })}`,
+    );
+
+    if (!endpoint) {
+      CdLog.error(
+        `HttpService::resolveEndpointFromProfile()/Profile '${profileName}' is missing a valid endpoint.`,
+      );
+      return null;
+    }
+
+    return endpoint;
+  }
+
+  resolveEndpointFromDetails(details: IProfileDetails): string {
+    if (!details.endpoint) {
+      throw new Error(
+        "HttpService::resolveEndpointFromDetails()/Missing required 'endpoint' in profile details.",
+      );
+    }
+    return details.endpoint;
+  }
+
+  async getCdApiUrl(profileName = 'cdApiLocal'): Promise<string | null> {
+    CdLog.debug('HttpService::getCdApiUrl():01');
+    const result = await this.ctlCdCliProfile.loadProfiles();
+    CdLog.debug('HttpService::getCdApiUrl():02');
+
+    if (!result.state || !result.data) {
+      CdLog.error(`HttpService::getCdApiUrl()/Unable to load profiles.`);
+      return null;
+    }
+    CdLog.debug('HttpService::getCdApiUrl():03');
+    const profile = result.data.items.find((item: any) => item.cdCliProfileName === profileName);
+
+    const endpoint = profile?.cdCliProfileData?.details?.cdEndpoint;
+    if (!endpoint) {
+      CdLog.error(`HttpService::getCdApiUrl()/Profile '${profileName}' is missing a cdEndpoint.`);
+      return null;
+    }
+    CdLog.debug('HttpService::getCdApiUrl():04');
+    return endpoint;
+  }
+
+  /**
+   * Generic HTTP request
+   */
+  async request<T = any>(
+    config: AxiosRequestConfig,
+    profileName = 'cdApiLocal',
+  ): Promise<CdFxReturn<T>> {
+    const instance = this.instances.get(profileName);
+    if (!instance) {
+      return {
+        state: false,
+        data: null,
+        message: `Axios instance for '${profileName}' not initialized.`,
+      };
+    }
+
+    try {
+      if (this.debugMode) {
+        CdLog.debug(`HttpService::request()`, config);
+      }
+
+      const response = await instance.request<T>(config);
+
+      if (this.debugMode) {
+        CdLog.debug('HttpService::response()', {
+          status: response.status,
+          data: response.data,
+        });
+      }
+
+      return {
+        state: true,
+        data: response.data,
+        message: 'Request succeeded.',
+      };
+    } catch (e: any) {
+      const message = e.response?.data?.app_state?.info?.app_msg || e.response?.data || e.message;
+
+      CdLog.error('HttpService::request()/Error', message);
+
+      return {
+        state: false,
+        data: null,
+        message: `HTTP Request Failed: ${inspect(message, { depth: 3 })}`,
+      };
+    }
+  }
+
+  /**
+   * Profile-aware proc wrapper with support for httpConfig from profile.details
+   */
+  async proc(params: ICdRequest, profileName = 'cd-api-local'): Promise<CdFxReturn<ICdResponse>> {
+    if (!this.instances.has(profileName)) {
+      const initialized = await this.init(profileName);
+      if (!initialized) {
+        throw new Error(`Profile '${profileName}' could not be initialized.`);
+      }
+    }
+
+    const result = await this.ctlCdCliProfile.loadProfiles();
+
+    if (!result.state || !result.data) {
+      throw new Error('Unable to load profiles.');
+    }
+
+    const profile = result.data.items.find((item: any) => item.cdCliProfileName === profileName);
+
+    const details: IProfileDetails = profile?.cdCliProfileData?.details || {};
+    let config: AxiosRequestConfig;
+
+    CdLog.debug(`HttpService::proc()/profileName:${profileName}`);
+    CdLog.debug(
+      `HttpService::proc()/profileDetails:${inspect(details, {
+        depth: 3,
+      })}`,
+    );
+
+    // 🔐 Decrypt crypt fields (e.g. apiKey) before using them
+    const decryptedFields = await this.decryptProfileFields(details);
+
+    CdLog.debug(
+      `HttpService::proc()/decryptedFields:${inspect(decryptedFields, {
+        depth: 3,
+      })}`,
+    );
+
+    const createCdCliProfile = new CdCliProfileController();
+    // const ctlSession = new SessonController();
+    const sidRet = await createCdCliProfile.getSessionData() as CdFxReturn<string>;
+    this.cdToken = sidRet.data as string;
+    params.dat.token = this.cdToken
+
+    if (details.httpConfig) {
+      config = JSON.parse(JSON.stringify(details.httpConfig));
+      config.data = params;
+
+      // 🔁 Replace placeholders like #apiKey in all headers
+      if (config.headers && typeof config.headers === 'object') {
+        for (const [key, val] of Object.entries(config.headers)) {
+          if (typeof val === 'string') {
+            config.headers[key] = val.replace(
+              /#(\w+)/g,
+              (_, token) => decryptedFields[token] || '',
+            );
+          }
+        }
+      }
+    } else {
+      if (!this.cdApiAxiosConfig) {
+        throw new Error('cdApiAxiosConfig is not initialized.');
+      }
+      config = { ...this.cdApiAxiosConfig, data: params };
+    }
+
+    CdLog.debug(`HttpService::proc()/params:${inspect(params, { depth: 5 })}`);
+    return this.request<ICdResponse>(config, profileName);
+  }
+
+  private async decryptProfileFields(details: IProfileDetails): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+
+    if (!details.cryptFields || !Array.isArray(details.cryptFields)) {
+      return result;
+    }
+
+    for (const fieldName of details.cryptFields) {
+      const field = details[fieldName];
+
+      if (field?.isEncrypted && field.encryptedValue && field.encryptionMeta) {
+        try {
+          const decryptedValue = await CdCliVaultController.decrypt(
+            field.encryptionMeta,
+            field.encryptedValue,
+          );
+          result[fieldName] = decryptedValue ?? '';
+        } catch (e) {
+          CdLog.error(`Failed to decrypt field '${fieldName}':${(e as Error).message}`);
+          result[fieldName] = ''; // Fail silently with empty string
+        }
+      } else if (typeof field?.value === 'string') {
+        result[fieldName] = field.value;
+      }
+    }
+
+    return result;
+  }
+
+}
+
+```
+
+```ts
+import { inspect } from 'util';
+import config from '../../../config';
+import CdLog from '../comm/controllers/cd-logger.controller';
+import { HttpService } from './http.service';
+import { CdFxReturn, ICdRequest, ICdWireExecutor, ICdWireOptions } from './i-base.js';
+
+export class RpcExecutor implements ICdWireExecutor {
+  readonly name = 'RpcExecutor';
+  readonly mode = 'rpc';
+
+  async execute<T = any>(cdRequest: ICdRequest, options?: ICdWireOptions): Promise<CdFxReturn<T>> {
+    switch (options?.transport?.protocol) {
+      case 'grpc':
+        return this.executeRpcGrpc(cdRequest);
+      case 'http':
+        return this.executeRpcHttp(cdRequest);
+      default:
+        return this.executeRpcHttp(cdRequest);
+    }
+  }
+
+  async executeRpcGrpc<T = any>(cdRequest: ICdRequest): Promise<CdFxReturn<T>> {
+    // Implement gRPC client logic here
+    // This is a placeholder and would require a gRPC client library and proto definitions
+    throw new Error('gRPC execution not implemented yet');
+  }
+
+  async executeRpcHttp<T = any>(cdRequest: ICdRequest): Promise<CdFxReturn<T>> {
+    CdLog.debug('[CdRpc][RpcExecutor][executeRpcHttp] 01');
+    CdLog.debug(`[CdRpc][RpcExecutor][executeRpcHttp] Request: ${JSON.stringify(cdRequest)}`);
+    CdLog.debug(`[CdRpc][RpcExecutor][executeRpcHttp] endPoint: ${inspect(config.rpc.endpoint)}`);
+    const svServer = new HttpService();
+    console.log('remoteCdRequest()/cdRequest:', JSON.stringify(cdRequest));
+    return svServer.proc(cdRequest) as Promise<CdFxReturn<T>>;
+  }
+}
+
+```
+
+/////////////////////////////////////////
+
+HttpService.setEndpoint() is working but, ooks like we need some correction on the logics.
+We are still ending up with:
+url: 'https://localhost:3001/api',
+instead of:
+'https://localhost:3010/rpc'
+which is being set by the executor.
+
+```sh
+[2026-05-16 09:05:50] 🛠️ [CdCli][CdWire] Executing request with options: | Context: [object Object]
+[2026-05-16 09:05:50] 🛠️ [CdCli][CdWire] Using RpcExecutor for transport mode: rpc
+[2026-05-16 09:05:50] 🛠️ [CdRpc][RpcExecutor][executeRpcHttp] 01
+[2026-05-16 09:05:50] 🛠️ [CdRpc][RpcExecutor][executeRpcHttp] Request:{"ctx":"app","m":"app-craft","c":"CdModel","a":"update","dat":{"f_vals":[{"data":null}],"token":""},"args":{"actionTargetName":"model","name":"cd-rfc","oEnv":"ci-cd","repo":"cd-api","src-path":"\"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md\""}}
+[2026-05-16 09:05:50] 🛠️ [CdRpc][RpcExecutor][executeRpcHttp] endpoint:'https://localhost:3010/rpc'
+[2026-05-16 09:05:50] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-16 09:05:50] ℹ️ Preset Axios instance for profile: cdApiLocal
+[2026-05-16 09:05:50] 🛠️ [HttpService][setEndPoint()] endpoint:'https://localhost:3010/rpc'
+[2026-05-16 09:05:50] ℹ️ [HttpService][setEndPoint()] Runtime endpoint registered for profile:runtime
+remoteCdRequest()/cdRequest: {"ctx":"app","m":"app-craft","c":"CdModel","a":"update","dat":{"f_vals":[{"data":null}],"token":""},"args":{"actionTargetName":"model","name":"cd-rfc","oEnv":"ci-cd","repo":"cd-api","src-path":"\"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md\""}}
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] 01
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] operationalProfile:runtime
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] isRuntimeMode:true
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] Runtime endpoint mode enabled.
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] runtimeEndpoint:'https://localhost:3010/rpc'
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] decryptedFields:{}
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] Resolving session token...
+[2026-05-16 09:05:50] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-16 09:05:50] 🛠️ CdCliProfileController::getSessionData()/starting...
+[2026-05-16 09:05:50] 🛠️ The profile is not initialized. Trying to initialize...
+[2026-05-16 09:05:50] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-16 09:05:50] 🛠️ extractVaultValue()/profile: {"cdCliProfileName":"cd-api-local","cdCliProfileData":{"owner":{"userId":1010,"groupId":0},"cdVault":[{"name":"cd_token","value":"d33bb2d3-f4d5-42b4-8e31-44fed3e29826","description":"cd-api token","isEncrypted":false,"encryptedValue":null,"encryptionMeta":null},{"name":"consumerToken","value":"B0B3DA99-1859-A499-90F6-1E3F69575DCD","description":"cd-api consumerToken","isEncrypted":false,"encryptedValue":null,"encryptionMeta":null}],"details":{"session":{"jwt":null,"ttl":600,"userId":1010,"cd_token":"#cdVault['cd_token']"},"cdEndpoint":"https://localhost:3001/api","permissions":{"userPermissions":[{"read":true,"field":"cdCliProfileData","write":true,"hidden":false,"userId":1000,"execute":false}],"groupPermissions":[{"read":true,"field":"cdCliProfileData","write":false,"hidden":false,"execute":false,"groupId":0}]},"consumerToken":"#cdVault['consumerToken']"}},"cdCliProfileTypeId":10,"cdCliProfileGuid":"7e972f45-528e-4cac-ad02-6bdb100f901f","userId":1010,"cdCliProfileEnabled":1}
+[2026-05-16 09:05:50] 🛠️ extractVaultValue()/key: cd_token
+[2026-05-16 09:05:50] 🛠️ extractVaultValue()/vaultItem: {
+  name: 'cd_token',
+  value: 'd33bb2d3-f4d5-42b4-8e31-44fed3e29826',
+  description: 'cd-api token',
+  isEncrypted: false,
+  encryptedValue: null,
+  encryptionMeta: null
+}
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] token injected.
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] Using preset cdApiAxiosConfig.
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] finalAxiosConfig:{
+  method: 'POST',
+  url: 'https://localhost:3001/api',
+  data: {
+    ctx: 'app',
+    m: 'app-craft',
+    c: 'CdModel',
+    a: 'update',
+    dat: {
+      f_vals: [ { data: null } ],
+      token: 'd33bb2d3-f4d5-42b4-8e31-44fed3e29826'
+    },
+    args: {
+      actionTargetName: 'model',
+      name: 'cd-rfc',
+      oEnv: 'ci-cd',
+      repo: 'cd-api',
+      'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+    }
+  }
+}
+[2026-05-16 09:05:50] 🛠️ [HttpService][proc()] finalParams:{
+  ctx: 'app',
+  m: 'app-craft',
+  c: 'CdModel',
+  a: 'update',
+  dat: {
+    f_vals: [ { data: null } ],
+    token: 'd33bb2d3-f4d5-42b4-8e31-44fed3e29826'
+  },
+  args: {
+    actionTargetName: 'model',
+    name: 'cd-rfc',
+    oEnv: 'ci-cd',
+    repo: 'cd-api',
+    'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+  }
+}
+[2026-05-16 09:05:50] 🛠️ HttpService::request() | Context: [object Object]
+[2026-05-16 09:05:51] 🛠️ HttpService::response() | Context: [object Object]
+[2026-05-16 09:05:51] 🛠️ [HttpService][proc()] response:{
+  state: true,
+  data: {
+    app_state: {
+      success: false,
+      info: {
+        messages: [],
+        code: 'BaseService:resolveCls',
+        app_msg: "Error at BaseService:resolveCls: Missing controller file:Error:Error: Cannot find module '../services/cd-model.service.js'\n" +
+          'Require stack:\n' +
+          '- /home/emp-12/cd-projects/cd-api/src/CdApi/app/app-craft/controllers/cd-model.controller.ts\n' +
+          '- /home/emp-12/cd-projects/cd-api/src/CdApi/sys/base/base.service.ts\n' +
+          '- /home/emp-12/cd-projects/cd-api/src/CdApi/CdExec.ts\n' +
+          '- /home/emp-12/cd-projects/cd-api/src/CdApi/init.ts\n' +
+          '- /home/emp-12/cd-projects/cd-api/src/main.ts\n' +
+          '- /home/emp-12/cd-projects/cd-api/src/index.ts'
+      },
+      sess: { cd_token: '', jwt: null, ttl: 600 },
+      cache: {},
+      sConfig: { usePush: true, usePolling: true, useCacheStore: true }
+    },
+    data: []
+  },
+  message: 'Request succeeded.'
+}
+[2026-05-16 09:05:51] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-16 09:05:51] 🛠️ starting CdCliProfileController::loadProfiles()
+handleCommandResponse()/start
+handleCommandResponse()/isNotArray-04
+Request succeeded.
+handleCommandResponse()/end
+[2026-05-16 09:05:51] 🛠️ SessionController::getSession()/profileName: | Context: [object Object]
+[2026-05-16 09:05:51] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-16 09:05:51] 🛠️ starting CdCliProfileController::loadProfiles()
+'✅ Executed 1 command(s).'
+```
+
+/////////////////////////////////////////////
+It is now hanging with url set to ''.
+Evaen as we continue debuging the issue we should also implement some mitigation against invalid requests. 
+Below are the current logs.
+```sh
+[2026-05-16 09:47:09] 🛠️ [CdCli][CdWire] Executing request with options: | Context: [object Object]
+[2026-05-16 09:47:09] 🛠️ [CdCli][CdWire] Using RpcExecutor for transport mode: rpc
+[2026-05-16 09:47:09] 🛠️ [CdRpc][RpcExecutor][executeRpcHttp] 01
+[2026-05-16 09:47:09] 🛠️ [CdRpc][RpcExecutor][executeRpcHttp] Request:{"ctx":"app","m":"app-craft","c":"CdModel","a":"update","dat":{"f_vals":[{"data":null}],"token":""},"args":{"actionTargetName":"model","name":"cd-rfc","oEnv":"ci-cd","repo":"cd-api","src-path":"\"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md\""}}
+[2026-05-16 09:47:09] 🛠️ [CdRpc][RpcExecutor][executeRpcHttp] endpoint:'https://localhost:3010/rpc'
+[2026-05-16 09:47:09] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-16 09:47:09] ℹ️ Preset Axios instance for profile: cdApiLocal
+[2026-05-16 09:47:09] 🛠️ [HttpService][setEndPoint()] endpoint:'https://localhost:3010/rpc'
+[2026-05-16 09:47:09] ℹ️ [HttpService][setEndPoint()] Runtime endpoint registered for profile:runtime
+remoteCdRequest()/cdRequest: {"ctx":"app","m":"app-craft","c":"CdModel","a":"update","dat":{"f_vals":[{"data":null}],"token":""},"args":{"actionTargetName":"model","name":"cd-rfc","oEnv":"ci-cd","repo":"cd-api","src-path":"\"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md\""}}
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] 01
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] operationalProfile:runtime
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] isRuntimeMode:true
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] Runtime endpoint mode enabled.
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] runtimeEndpoint:'https://localhost:3010/rpc'
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] decryptedFields:{}
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] Resolving session token...
+[2026-05-16 09:47:09] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-16 09:47:09] 🛠️ CdCliProfileController::getSessionData()/starting...
+[2026-05-16 09:47:09] 🛠️ The profile is not initialized. Trying to initialize...
+[2026-05-16 09:47:09] 🛠️ starting CdCliProfileController::loadProfiles()
+[2026-05-16 09:47:09] 🛠️ extractVaultValue()/profile: {"cdCliProfileName":"cd-api-local","cdCliProfileData":{"owner":{"userId":1010,"groupId":0},"cdVault":[{"name":"cd_token","value":"d33bb2d3-f4d5-42b4-8e31-44fed3e29826","description":"cd-api token","isEncrypted":false,"encryptedValue":null,"encryptionMeta":null},{"name":"consumerToken","value":"B0B3DA99-1859-A499-90F6-1E3F69575DCD","description":"cd-api consumerToken","isEncrypted":false,"encryptedValue":null,"encryptionMeta":null}],"details":{"session":{"jwt":null,"ttl":600,"userId":1010,"cd_token":"#cdVault['cd_token']"},"cdEndpoint":"https://localhost:3001/api","permissions":{"userPermissions":[{"read":true,"field":"cdCliProfileData","write":true,"hidden":false,"userId":1000,"execute":false}],"groupPermissions":[{"read":true,"field":"cdCliProfileData","write":false,"hidden":false,"execute":false,"groupId":0}]},"consumerToken":"#cdVault['consumerToken']"}},"cdCliProfileTypeId":10,"cdCliProfileGuid":"7e972f45-528e-4cac-ad02-6bdb100f901f","userId":1010,"cdCliProfileEnabled":1}
+[2026-05-16 09:47:09] 🛠️ extractVaultValue()/key: cd_token
+[2026-05-16 09:47:09] 🛠️ extractVaultValue()/vaultItem: {
+  name: 'cd_token',
+  value: 'd33bb2d3-f4d5-42b4-8e31-44fed3e29826',
+  description: 'cd-api token',
+  isEncrypted: false,
+  encryptedValue: null,
+  encryptionMeta: null
+}
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] token injected.
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] Using runtime endpoint request config.
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] finalAxiosConfig:{
+  method: 'POST',
+  url: '',
+  data: {
+    ctx: 'app',
+    m: 'app-craft',
+    c: 'CdModel',
+    a: 'update',
+    dat: {
+      f_vals: [ { data: null } ],
+      token: 'd33bb2d3-f4d5-42b4-8e31-44fed3e29826'
+    },
+    args: {
+      actionTargetName: 'model',
+      name: 'cd-rfc',
+      oEnv: 'ci-cd',
+      repo: 'cd-api',
+      'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+    }
+  }
+}
+[2026-05-16 09:47:09] 🛠️ [HttpService][proc()] finalParams:{
+  ctx: 'app',
+  m: 'app-craft',
+  c: 'CdModel',
+  a: 'update',
+  dat: {
+    f_vals: [ { data: null } ],
+    token: 'd33bb2d3-f4d5-42b4-8e31-44fed3e29826'
+  },
+  args: {
+    actionTargetName: 'model',
+    name: 'cd-rfc',
+    oEnv: 'ci-cd',
+    repo: 'cd-api',
+    'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+  }
+}
+[2026-05-16 09:47:09] 🛠️ HttpService::request() | Context: [object Object]
+```
+
+```ts
+/**
+ * 
+ * Usage Guide
+ * ***********************************************
+//  1. Using Preset Profile (cdApiLocal)
+const httpService = new HttpService(true); // Enable debugMode
+const postData: ICdRequest;
+const result = await httpService.proc(
+  postData,
+  'cdApiLocal', // Optional since it's the default
+);
+
+if (result.state) {
+  console.log('✅ Modules:', result.data);
+} else {
+  console.error('❌ Error:', result.message);
+}
+
+***************************************************
+
+// 2. Using profile:
+const httpService = new HttpService(true); // With debug logs
+// Optionally initialize the profile (skipped automatically if `request()` or `proc()` is called)
+await httpService.init('deepseek');
+
+const profileName = 'deepseek';
+
+const config: AxiosRequestConfig = {
+  method: 'POST',
+  url: '/chat/completions',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: 'Bearer #apiKey', // Will be decrypted automatically
+  },
+  data: {
+    model: 'deepseek-chat',
+    messages: [
+      { role: 'user', content: 'What is the capital of Kenya?' },
+    ],
+  },
+};
+
+// Make the request (profile must exist in your cd-cli profile list)
+const response = await httpService.request(config, profileName);
+
+if (response.state) {
+  console.log('✅ Response from Deepseek:', response.data);
+} else {
+  console.error('❌ Error calling Deepseek:', response.message);
+}
+
+*************************************************************************
+3.
+
+const profileDetails = profile.cdCliProfileData.details;
+const result = await httpService.request(profileDetails.httpConfig, 'deepseek');
+
+*******************************************************************************
+
+4. Typical profile with httpConfig
+
+{
+  "cdCliProfileName": "deepseek",
+  "cdCliProfileData": {
+    "details": {
+      "apiKey": {
+        "name": "apiKey",
+        "description": "Encrypted Deepseek API key",
+        "value": null,
+        "encryptedValue": "<long-encrypted-string>",
+        "isEncrypted": true,
+        "encryptionMeta": {
+          "name": "default",
+          "algorithm": "aes-256-cbc",
+          "encoding": "hex",
+          "ivLength": 16,
+          "iv": "<iv-hex>",
+          "encryptedAt": "2025-05-25T10:24:35.527Z"
+        }
+      },
+      "baseUrl": "https://api.deepseek.com/v1",
+      "defaultModel": "deepseek-chat",
+      "cryptFields": ["apiKey"],
+      "httpConfig": {
+        "method": "POST",
+        "url": "/chat/completions",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer #apiKey"
+        },
+        "data": null
+      },
+      "encrypted": true
+    }
+  }
+}
+
+
+
+
+ */
+
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import * as https from 'https';
+import { CdCliProfileController } from '../cd-cli/controllers/cd-cli-profile.cointroller.js';
+import CdLog from '../comm/controllers/cd-logger.controller.js';
+import type { CdFxReturn, ICdRequest, ICdResponse } from './i-base.js';
+import { IProfileDetails } from '../cd-cli/models/cd-cli-profile.model.js';
+import config from '../../../config.js';
+import CdCliVaultController from '../cd-cli/controllers/cd-cli-vault.controller.js';
+import { inspect } from 'util';
+
+export class HttpService {
+  private instances: Map<string, AxiosInstance> = new Map();
+  ctlCdCliProfile = new CdCliProfileController();
+  cdApiAxiosConfig?: AxiosRequestConfig;
+  cdToken = '';
+
+  /**
+   * Runtime override endpoint.
+   *
+   * This is typically injected by transport executors
+   * such as RpcExecutor, HttpExecutor, QueueExecutor etc.
+   *
+   * Highest priority endpoint.
+   */
+  private runtimeEndpoint?: string;
+
+  /**
+   * Runtime profile override.
+   *
+   * Useful for transport executors that may want
+   * to dynamically switch transport profiles.
+   */
+  private runtimeProfileName?: string;
+
+  constructor(private debugMode = false) {
+    this.presetConfigs();
+  }
+
+  presetConfigs() {
+    this.cdApiAxiosConfig = {
+      method: 'POST',
+      url: config.cdApi.endpoint,
+      data: null,
+    };
+
+    const defaultInstance = axios.create({
+      baseURL: config.cdApi.endpoint,
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+    });
+
+    this.instances.set('cdApiLocal', defaultInstance);
+    CdLog.info(`Preset Axios instance for profile: cdApiLocal`);
+  }
+
+  // async init(profileName = "cdApiLocal", endpoint?: string): Promise<boolean> {
+  //   const resolvedEndpoint =
+  //     endpoint || (await this.resolveEndpointFromProfile(profileName));
+  //   if (!resolvedEndpoint) {
+  //     CdLog.error(
+  //       `HttpService::init()/Preset Axios instance for profile: cdApiLocal`,
+  //     );
+  //     return false;
+  //   }
+
+  //   const axiosInstance = axios.create({
+  //     baseURL: resolvedEndpoint,
+  //     httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+  //   });
+
+  //   this.instances.set(profileName, axiosInstance);
+  //   CdLog.info(
+  //     `Initialized Axios for profile: ${profileName} (${resolvedEndpoint})`,
+  //   );
+  //   return true;
+  // }
+  async init(profileName = 'cdApiLocal', endpoint?: string): Promise<boolean> {
+    /**
+     * Runtime endpoint has highest priority.
+     */
+    const resolvedEndpoint =
+      this.runtimeEndpoint || endpoint || (await this.resolveEndpointFromProfile(profileName));
+
+    CdLog.debug(`[HttpService][init()] resolvedEndpoint:${inspect(resolvedEndpoint)}`);
+
+    if (!resolvedEndpoint) {
+      CdLog.error(`HttpService::init()/Unable to resolve endpoint.`);
+
+      return false;
+    }
+
+    const axiosInstance = axios.create({
+      baseURL: resolvedEndpoint,
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+      }),
+    });
+
+    this.instances.set(profileName, axiosInstance);
+
+    CdLog.info(`Initialized Axios for profile: ${profileName} (${resolvedEndpoint})`);
+
+    return true;
+  }
+
+  /**
+   * Dynamically overrides the endpoint used by HttpService.
+   *
+   * This is primarily intended for transport executors
+   * (RpcExecutor, HttpExecutor, QueueExecutor, etc.)
+   * which determine the final operational endpoint.
+   *
+   * Resolution priority:
+   *
+   * 1. runtime endpoint (this method)
+   * 2. explicit init() endpoint
+   * 3. profile endpoint
+   * 4. preset/default endpoint
+   */
+  setEndPoint(endpoint: string, profileName = 'runtime'): void {
+    CdLog.debug(`[HttpService][setEndPoint()] endpoint:${inspect(endpoint)}`);
+
+    this.runtimeEndpoint = endpoint;
+    this.runtimeProfileName = profileName;
+
+    const axiosInstance = axios.create({
+      baseURL: endpoint,
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+      }),
+    });
+
+    this.instances.set(profileName, axiosInstance);
+
+    CdLog.info(
+      `[HttpService][setEndPoint()] Runtime endpoint registered for profile:${profileName}`,
+    );
+  }
+
+  /**
+   * Clears runtime endpoint override.
+   */
+  clearEndPoint(): void {
+    CdLog.debug('[HttpService][clearEndPoint()]');
+
+    if (this.runtimeProfileName) {
+      this.instances.delete(this.runtimeProfileName);
+    }
+
+    this.runtimeEndpoint = undefined;
+    this.runtimeProfileName = undefined;
+  }
+
+  async resolveEndpointFromProfile(profileName: string): Promise<string | null> {
+    const result = await this.ctlCdCliProfile.loadProfiles();
+    // CdLog.debug(
+    //   `HttpService::resolveEndpointFromProfile()/profile:${inspect(result, {
+    //     depth: 3,
+    //   })}`,
+    // );
+    if (!result.state || !result.data) {
+      CdLog.error(`HttpService::resolveEndpointFromProfile()/Unable to load profiles.`);
+      return null;
+    }
+
+    const profile = result.data.items.find((item: any) => item.cdCliProfileName === profileName);
+
+    CdLog.debug(`HttpService::resolveEndpointFromProfile()/profileName:${profileName}`);
+
+    // CdLog.debug(
+    //   `HttpService::resolveEndpointFromProfile()/profile:${inspect(profile, {
+    //     depth: 2,
+    //   })}`,
+    // );
+
+    const details: IProfileDetails = profile?.cdCliProfileData?.details || {};
+    const endpoint = details.endpoint || details.cdEndpoint;
+
+    CdLog.debug(
+      `HttpService::resolveEndpointFromProfile()/details:${inspect(details, {
+        depth: 2,
+      })}`,
+    );
+
+    if (!endpoint) {
+      CdLog.error(
+        `HttpService::resolveEndpointFromProfile()/Profile '${profileName}' is missing a valid endpoint.`,
+      );
+      return null;
+    }
+
+    return endpoint;
+  }
+
+  resolveEndpointFromDetails(details: IProfileDetails): string {
+    if (!details.endpoint) {
+      throw new Error(
+        "HttpService::resolveEndpointFromDetails()/Missing required 'endpoint' in profile details.",
+      );
+    }
+    return details.endpoint;
+  }
+
+  async getCdApiUrl(profileName = 'cdApiLocal'): Promise<string | null> {
+    CdLog.debug('HttpService::getCdApiUrl():01');
+    const result = await this.ctlCdCliProfile.loadProfiles();
+    CdLog.debug('HttpService::getCdApiUrl():02');
+
+    if (!result.state || !result.data) {
+      CdLog.error(`HttpService::getCdApiUrl()/Unable to load profiles.`);
+      return null;
+    }
+    CdLog.debug('HttpService::getCdApiUrl():03');
+    const profile = result.data.items.find((item: any) => item.cdCliProfileName === profileName);
+
+    const endpoint = profile?.cdCliProfileData?.details?.cdEndpoint;
+    if (!endpoint) {
+      CdLog.error(`HttpService::getCdApiUrl()/Profile '${profileName}' is missing a cdEndpoint.`);
+      return null;
+    }
+    CdLog.debug('HttpService::getCdApiUrl():04');
+    return endpoint;
+  }
+
+  /**
+   * Resolves the operational profile name.
+   *
+   * If runtime endpoint exists, runtime profile wins.
+   */
+  private resolveOperationalProfile(profileName?: string): string {
+    if (this.runtimeProfileName) {
+      return this.runtimeProfileName;
+    }
+
+    return profileName || 'cdApiLocal';
+  }
+
+  /**
+   * Generic HTTP request
+   */
+  async request<T = any>(
+    config: AxiosRequestConfig,
+    profileName = 'cdApiLocal',
+  ): Promise<CdFxReturn<T>> {
+    const instance = this.instances.get(profileName);
+    if (!instance) {
+      return {
+        state: false,
+        data: null,
+        message: `Axios instance for '${profileName}' not initialized.`,
+      };
+    }
+
+    try {
+      if (this.debugMode) {
+        CdLog.debug(`HttpService::request()`, config);
+      }
+
+      const response = await instance.request<T>(config);
+
+      if (this.debugMode) {
+        CdLog.debug('HttpService::response()', {
+          status: response.status,
+          data: response.data,
+        });
+      }
+
+      return {
+        state: true,
+        data: response.data,
+        message: 'Request succeeded.',
+      };
+    } catch (e: any) {
+      const message = e.response?.data?.app_state?.info?.app_msg || e.response?.data || e.message;
+
+      CdLog.error('HttpService::request()/Error', message);
+
+      return {
+        state: false,
+        data: null,
+        message: `HTTP Request Failed: ${inspect(message, { depth: 3 })}`,
+      };
+    }
+  }
+
+  // /**
+  //  * Profile-aware proc wrapper with support for httpConfig from profile.details
+  //  */
+
+  // async proc(
+  //   params: ICdRequest,
+  //   profileName = "cd-api-local",
+  // ): Promise<CdFxReturn<ICdResponse>> {
+  //   if (!this.instances.has(profileName)) {
+  //     const initialized = await this.init(profileName);
+  //     if (!initialized) {
+  //       throw new Error(`Profile '${profileName}' could not be initialized.`);
+  //     }
+  //   }
+
+  //   const result = await this.ctlCdCliProfile.loadProfiles();
+
+  //   if (!result.state || !result.data) {
+  //     throw new Error("Unable to load profiles.");
+  //   }
+
+  //   const profile = result.data.items.find(
+  //     (item: any) => item.cdCliProfileName === profileName,
+  //   );
+
+  //   const details: IProfileDetails = profile?.cdCliProfileData?.details || {};
+  //   let config: AxiosRequestConfig;
+
+  //   CdLog.debug(`HttpService::proc()/profileName:${profileName}`);
+  //   CdLog.debug(
+  //     `HttpService::proc()/profileDetails:${inspect(details, {
+  //       depth: 3,
+  //     })}`,
+  //   );
+
+  //   // 🔐 Decrypt crypt fields (e.g. apiKey) before using them
+  //   const decryptedFields = await this.decryptProfileFields(details);
+
+  //   CdLog.debug(
+  //     `HttpService::proc()/decryptedFields:${inspect(decryptedFields, {
+  //       depth: 3,
+  //     })}`,
+  //   );
+
+  //   const createCdCliProfile = new CdCliProfileController();
+  //   // const ctlSession = new SessonController();
+  //   const sidRet =
+  //     (await createCdCliProfile.getSessionData()) as CdFxReturn<string>;
+  //   this.cdToken = sidRet.data as string;
+  //   params.dat.token = this.cdToken;
+
+  //   if (details.httpConfig) {
+  //     config = JSON.parse(JSON.stringify(details.httpConfig));
+  //     config.data = params;
+
+  //     // 🔁 Replace placeholders like #apiKey in all headers
+  //     if (config.headers && typeof config.headers === "object") {
+  //       for (const [key, val] of Object.entries(config.headers)) {
+  //         if (typeof val === "string") {
+  //           config.headers[key] = val.replace(
+  //             /#(\w+)/g,
+  //             (_, token) => decryptedFields[token] || "",
+  //           );
+  //         }
+  //       }
+  //     }
+  //   } else {
+  //     if (!this.cdApiAxiosConfig) {
+  //       throw new Error("cdApiAxiosConfig is not initialized.");
+  //     }
+  //     config = { ...this.cdApiAxiosConfig, data: params };
+  //   }
+
+  //   CdLog.debug(`HttpService::proc()/params:${inspect(params, { depth: 5 })}`);
+  //   return this.request<ICdResponse>(config, profileName);
+  // }
+  /**
+   * Profile-aware proc wrapper with support for:
+   *
+   * 1. Runtime executor endpoint injection via setEndPoint()
+   * 2. Profile-based endpoint resolution
+   * 3. httpConfig usage from profile.details
+   * 4. Dynamic token injection
+   * 5. Crypt field decryption
+   * 6. Backward compatibility with existing cd-api-local usage
+   *
+   * Resolution Priority:
+   *
+   * 1. Runtime endpoint (setEndPoint())
+   * 2. Profile endpoint
+   * 3. Preset/default endpoint
+   *
+   * Notes:
+   * ------
+   * - Runtime endpoint mode is primarily used by transport executors
+   *   such as RpcExecutor, HttpExecutor, QueueExecutor, etc.
+   *
+   * - In runtime endpoint mode:
+   *    - profile loading becomes optional
+   *    - endpoint already exists
+   *    - request executes directly using injected transport endpoint
+   *
+   * - In profile mode:
+   *    - profiles are loaded
+   *    - endpoint/config resolved dynamically
+   *    - crypt fields decrypted
+   */
+  async proc(params: ICdRequest, profileName = 'cdApiLocal'): Promise<CdFxReturn<ICdResponse>> {
+    CdLog.debug('[HttpService][proc()] 01');
+
+    /**
+     * -------------------------------------------------------
+     * Resolve operational profile
+     * -------------------------------------------------------
+     *
+     * If runtime endpoint exists, runtime profile wins.
+     */
+    profileName = this.resolveOperationalProfile(profileName);
+
+    CdLog.debug(`[HttpService][proc()] operationalProfile:${profileName}`);
+
+    /**
+     * -------------------------------------------------------
+     * Ensure Axios instance exists
+     * -------------------------------------------------------
+     */
+    if (!this.instances.has(profileName)) {
+      CdLog.debug(
+        `[HttpService][proc()] Axios instance missing. Initializing profile:${profileName}`,
+      );
+
+      const initialized = await this.init(profileName);
+
+      if (!initialized) {
+        CdLog.error(`[HttpService][proc()] Failed to initialize profile:${profileName}`);
+
+        throw new Error(`Profile '${profileName}' could not be initialized.`);
+      }
+    }
+
+    /**
+     * -------------------------------------------------------
+     * Runtime endpoint mode detection
+     * -------------------------------------------------------
+     *
+     * If runtime endpoint exists:
+     * - skip profile loading
+     * - skip endpoint resolution
+     *
+     * Executor already determined transport destination.
+     */
+    const isRuntimeMode = !!this.runtimeEndpoint;
+
+    CdLog.debug(`[HttpService][proc()] isRuntimeMode:${isRuntimeMode}`);
+
+    /**
+     * -------------------------------------------------------
+     * Profile details container
+     * -------------------------------------------------------
+     */
+    let details: IProfileDetails = {};
+
+    /**
+     * -------------------------------------------------------
+     * Load profile only when NOT in runtime mode
+     * -------------------------------------------------------
+     */
+    if (!isRuntimeMode) {
+      CdLog.debug('[HttpService][proc()] Loading profile details...');
+
+      const result = await this.ctlCdCliProfile.loadProfiles();
+
+      if (!result.state || !result.data) {
+        CdLog.error('[HttpService][proc()] Unable to load profiles.');
+
+        throw new Error('Unable to load profiles.');
+      }
+
+      const profile = result.data.items.find((item: any) => item.cdCliProfileName === profileName);
+
+      if (!profile) {
+        CdLog.error(`[HttpService][proc()] Profile not found:${profileName}`);
+
+        throw new Error(`Profile '${profileName}' not found.`);
+      }
+
+      details = profile?.cdCliProfileData?.details || {};
+
+      CdLog.debug(
+        `[HttpService][proc()] profileDetails:${inspect(details, {
+          depth: 5,
+        })}`,
+      );
+    } else {
+      /**
+       * Runtime mode:
+       * endpoint already injected by executor.
+       */
+
+      CdLog.debug(`[HttpService][proc()] Runtime endpoint mode enabled.`);
+
+      CdLog.debug(`[HttpService][proc()] runtimeEndpoint:${inspect(this.runtimeEndpoint)}`);
+    }
+
+    /**
+     * -------------------------------------------------------
+     * Decrypt profile fields
+     * -------------------------------------------------------
+     *
+     * Runtime mode may not have encrypted fields.
+     */
+    const decryptedFields = await this.decryptProfileFields(details);
+
+    CdLog.debug(
+      `[HttpService][proc()] decryptedFields:${inspect(decryptedFields, {
+        depth: 3,
+      })}`,
+    );
+
+    /**
+     * -------------------------------------------------------
+     * Resolve session token
+     * -------------------------------------------------------
+     */
+    try {
+      CdLog.debug('[HttpService][proc()] Resolving session token...');
+
+      const createCdCliProfile = new CdCliProfileController();
+
+      const sidRet = await createCdCliProfile.getSessionData();
+
+      this.cdToken = sidRet.data as string;
+
+      /**
+       * Ensure dat exists before token injection.
+       */
+      if (!params.dat) {
+        params.dat = {} as any;
+      }
+
+      params.dat.token = this.cdToken;
+
+      CdLog.debug(`[HttpService][proc()] token injected.`);
+    } catch (e) {
+      CdLog.error(`[HttpService][proc()] Failed to resolve session token:${(e as Error).message}`);
+    }
+
+    /**
+     * -------------------------------------------------------
+     * Build Axios request config
+     * -------------------------------------------------------
+     */
+    let axiosConfig: AxiosRequestConfig;
+
+    /**
+     * -------------------------------------------------------
+     * Use profile-defined httpConfig when available
+     * -------------------------------------------------------
+     */
+    if (details.httpConfig) {
+      CdLog.debug('[HttpService][proc()] Using profile httpConfig.');
+
+      /**
+       * Deep clone to avoid mutating source profile.
+       */
+      axiosConfig = JSON.parse(JSON.stringify(details.httpConfig));
+
+      /**
+       * Inject request payload.
+       */
+      axiosConfig.data = params;
+
+      /**
+       * ---------------------------------------------------
+       * Replace encrypted placeholders
+       * ---------------------------------------------------
+       *
+       * Example:
+       * Authorization: Bearer #apiKey
+       */
+      if (axiosConfig.headers && typeof axiosConfig.headers === 'object') {
+        for (const [key, val] of Object.entries(axiosConfig.headers)) {
+          if (typeof val === 'string') {
+            axiosConfig.headers[key] = val.replace(
+              /#(\w+)/g,
+              (_, token) => decryptedFields[token] || '',
+            );
+          }
+        }
+      }
+    }
+    // } else {
+    //   /**
+    //    * ---------------------------------------------------
+    //    * Fallback to preset config
+    //    * ---------------------------------------------------
+    //    */
+
+    //   CdLog.debug("[HttpService][proc()] Using preset cdApiAxiosConfig.");
+
+    //   if (!this.cdApiAxiosConfig) {
+    //     CdLog.error("[HttpService][proc()] cdApiAxiosConfig missing.");
+
+    //     throw new Error("cdApiAxiosConfig is not initialized.");
+    //   }
+
+    //   axiosConfig = {
+    //     ...this.cdApiAxiosConfig,
+    //     data: params,
+    //   };
+    // }
+    else {
+      /**
+       * ---------------------------------------------------
+       * Runtime endpoint mode
+       * ---------------------------------------------------
+       *
+       * IMPORTANT:
+       *
+       * Do NOT inherit preset URL because that would
+       * override runtime executor endpoint.
+       *
+       * Instead build a minimal config and let the
+       * Axios instance baseURL handle routing.
+       */
+      if (isRuntimeMode) {
+        CdLog.debug('[HttpService][proc()] Using runtime endpoint request config.');
+
+        axiosConfig = {
+          method: 'POST',
+
+          /**
+           * IMPORTANT:
+           *
+           * Use relative path ONLY.
+           *
+           * Axios instance already contains:
+           *   https://localhost:3010/rpc
+           */
+          url: '',
+
+          data: params,
+        };
+      } else {
+        /**
+         * -------------------------------------------------
+         * Fallback preset config
+         * -------------------------------------------------
+         */
+
+        CdLog.debug('[HttpService][proc()] Using preset cdApiAxiosConfig.');
+
+        if (!this.cdApiAxiosConfig) {
+          CdLog.error('[HttpService][proc()] cdApiAxiosConfig missing.');
+
+          throw new Error('cdApiAxiosConfig is not initialized.');
+        }
+
+        axiosConfig = {
+          ...this.cdApiAxiosConfig,
+          data: params,
+        };
+      }
+    }
+
+    /**
+     * -------------------------------------------------------
+     * Debug outgoing request
+     * -------------------------------------------------------
+     */
+    CdLog.debug(
+      `[HttpService][proc()] finalAxiosConfig:${inspect(axiosConfig, {
+        depth: 5,
+      })}`,
+    );
+
+    CdLog.debug(
+      `[HttpService][proc()] finalParams:${inspect(params, {
+        depth: 5,
+      })}`,
+    );
+
+    /**
+     * -------------------------------------------------------
+     * Execute request
+     * -------------------------------------------------------
+     */
+    const response = await this.request<ICdResponse>(axiosConfig, profileName);
+
+    /**
+     * -------------------------------------------------------
+     * Final response debug
+     * -------------------------------------------------------
+     */
+    CdLog.debug(
+      `[HttpService][proc()] response:${inspect(response, {
+        depth: 5,
+      })}`,
+    );
+
+    return response;
+  }
+
+  private async decryptProfileFields(details: IProfileDetails): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+
+    if (!details.cryptFields || !Array.isArray(details.cryptFields)) {
+      return result;
+    }
+
+    for (const fieldName of details.cryptFields) {
+      const field = details[fieldName];
+
+      if (field?.isEncrypted && field.encryptedValue && field.encryptionMeta) {
+        try {
+          const decryptedValue = await CdCliVaultController.decrypt(
+            field.encryptionMeta,
+            field.encryptedValue,
+          );
+          result[fieldName] = decryptedValue ?? '';
+        } catch (e) {
+          CdLog.error(`Failed to decrypt field '${fieldName}':${(e as Error).message}`);
+          result[fieldName] = ''; // Fail silently with empty string
+        }
+      } else if (typeof field?.value === 'string') {
+        result[fieldName] = field.value;
+      }
+    }
+
+    return result;
+  }
+
+}
+
+```
+
+///////////////////////////////////////////
+
+The seemingly illogical and deterministic behaviour is still persisting.
+Below is the execution log where the following are observable:
+Expected log:
+All logs are as per the codes up to CdModelService.updateRpc() on the line:
+
+```ts
+this.logger.logDebug(
+        `CdModelService::updateRpc()/args: ${inspect(args, { depth: 2 })}`,
+      );
+```
+
+After this the logs 'jumps' to CdModuleDescriptorService.constructor() at:
+```ts
+if (!this.extension || this.extension === '') {
+      this.extension = extensionResult.data || '.ts';
+      this.b.logWithContext(
+        this,
+        'constructor:extension-set',
+        { extension: this.extension },
+        'debug',
+      );
+    }
+
+```
+
+This also means that there were log lines that were skipped (eg CdLog.debug('[CdRpc][CdModuleDescriptorService][constructor] Starting constructor');)
+
+After this, the process is reported to fail with: "CdModelService::updateLocal()/ No valid workflowModel".
+
+For this to have happened, it means the process must have come from CdModelService.updateRpc(), move to CdModelService.updateEntry() before landing on CdModelService.updateLocal().
+
+I have not found any convincing explanation on how this could have happened without showing the logs that are paraded along the execution path.
+
+```ts
+[5/21/2026, 11:11:17 AM] [DEBUG]: CdModelService::updateRpc()/(req as any).post.args: {
+  actionTargetName: 'model',
+  name: 'cd-rfc',
+  oEnv: 'ci-cd',
+  repo: 'cd-api',
+  'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+} [CONTEXT] -> {}
+[5/21/2026, 11:11:17 AM] [DEBUG]: CdModelService::updateRpc()/args: {
+  actionTargetName: 'model',
+  name: 'cd-rfc',
+  oEnv: 'ci-cd',
+  repo: 'cd-api',
+  'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"'
+} [CONTEXT] -> {}
+[21/05/2026, 11:11:17] [CdModuleDescriptorService::CiCdRunnerService():414]: constructor:extension-set — { extension: '.ts' }
+[21/05/2026, 11:11:17] [CdModuleDescriptorService::new():229]: registerValidationPolicy:policy — 'policyOverrideDefault'
+[21/05/2026, 11:11:17] [CdModuleDescriptorService::new():230]: registerValidationPolicy:policy — 'policyAssignEntitySuffixes'
+[21/05/2026, 11:11:17] [CdModuleDescriptorService::new():231]: registerValidationPolicy:policy — 'policyNamingValidation'
+[21/05/2026, 11:11:17] [CdModuleDescriptorService::new():232]: registerValidationPolicy:policy — 'policyEnsureSuffixCounterparts'
+[21/05/2026, 11:11:17] [CdModuleDescriptorService::new():233]: registerValidationPolicy:policy — 'policyDeduplicateEntities'
+[21/05/2026, 11:11:17] [CdModuleDescriptorService::new():234]: registerValidationPolicy:policy — 'policyDependencyValidation'
+[21/05/2026, 11:11:17] [CdModuleDescriptorService::CiCdRunnerService():414]: constructor:end
+[5/21/2026, 11:11:17 AM] [DEBUG]: **********starting respond(res)********* [CONTEXT] -> {}
+[5/21/2026, 11:11:17 AM] [DEBUG]: BaseService::respond(res)/this.pl: [CONTEXT] -> 
+[object Object]
+[5/21/2026, 11:11:17 AM] [DEBUG]: BaseService::respond(res)/this.cdResp: [CONTEXT] -> 
+[object Object]
+[5/21/2026, 11:11:17 AM] [DEBUG]: **********starting preFlight(res)********* [CONTEXT] -> {}
+[5/21/2026, 11:11:17 AM] [DEBUG]: BaseService::preFlight()/this.cdResp: [CONTEXT] -> 
+{"app_state":{"success":true,"info":{"messages":[],"code":"","app_msg":"","respState":{"cdLevel":-99,"cdDescription":"","httpCode":204,"httpDescription":""}},"sess":{"cd_token":"dfe7a2e9-b87e-436e-afb8-5fee241c2da8","jwt":null,"ttl":0},"cache":{},"sConfig":{"usePush":true,"usePolling":true,"useCacheStore":true}},"data":{"state":false,"data":null,"message":"CdModelService::updateLocal()/ No valid workflowModel"}}
+```
+
+```ts
+export class CdModuleDescriptorService {
+constructor() {
+    CdLog.debug('[CdRpc][CdModuleDescriptorService][constructor] Starting constructor');
+    const extensionResult = getExtensionByLangProfile(
+      LanguageName.TypeScript,
+      languages,
+      'tsSource',
+    );
+    if (extensionResult.state === false) {
+      throw new Error(`Failed to get extension for TypeScript: ${extensionResult.message}`);
+    }
+    const language = getLanguageByName(LanguageName.TypeScript, languages);
+
+    // Ensure extension is set early
+    if (!this.extension || this.extension === '') {
+      this.extension = extensionResult.data || '.ts';
+      this.b.logWithContext(
+        this,
+        'constructor:extension-set',
+        { extension: this.extension },
+        'debug',
+      );
+    }
+
+    // -----------------------------
+    // Register validation policies in order
+    // -----------------------------
+    this.registerValidationPolicy(this.policyOverrideDefault);
+    this.registerValidationPolicy(this.policyAssignEntitySuffixes); // ensure all entities have a suffix
+    this.registerValidationPolicy(this.policyNamingValidation);
+    this.registerValidationPolicy(this.policyEnsureSuffixCounterparts);
+    this.registerValidationPolicy(this.policyDeduplicateEntities);
+    this.registerValidationPolicy(this.policyDependencyValidation);
+
+    this.b.logWithContext(this, 'constructor:end', null, 'debug');
+  }
+}
+```
+
+```ts
+export class CdModelService extends GenericService<CdModelModel> {
+  cdToken;
+  private svCiCdRunner: CiCdRunnerService;
+  // svDevDescriptors;
+  svTestBed: TestBedService = new TestBedService();
+  postData: ICdRequest = DEFAULT_ENVELOPE_CREATE;
+  serviceModel = CdModelModel;
+  docName: string = "";
+
+  constructor() {
+    super(CdModelModel);
+    // this.svDevDescriptors = new DevDescriptorService();
+    this.svCiCdRunner = new CiCdRunnerService();
+  }
+
+  init(): this {
+    this.svCiCdRunner = new CiCdRunnerService();
+    return this;
+  }
+async updateRpc(req: Request, res: Response): Promise<void> {
+    /////////////////////////////////////////////////
+
+    try {
+      /**
+     * Set the params for this.updateEntry() from request args
+      actionTargetName: string,
+      moduleName: string,
+      oEnv: string,
+      repoName: string,
+      srcPath?: string,
+     * Then call this.updateEntry() with those params
+     * The params should be extracted from the request in a way that they can be used to route to the correct workflow for updating the CdModel entries in the database.
+     */
+
+      // const b = new BaseService();
+      // const args = await b.getPlArgs(req);
+
+      const request = (req as any).post as ICdRequest;
+      this.logger.logDebug(
+        `CdModelService::updateRpc()/(req as any).post.args: ${inspect(request.args, { depth: 2 })}`,
+      );
+
+      const args = request.args;
+      this.logger.logDebug(
+        `CdModelService::updateRpc()/args: ${inspect(args, { depth: 2 })}`,
+      );
+
+      if (!args) {
+        const i = {
+          messages: this.b.err,
+          code: "CdModelService:updateRpc",
+          app_msg: "Invalid arguments provided for update operation",
+        };
+        await this.b.setAppState(false, i, null);
+        const r = await this.b.respond(req, res);
+      }
+
+      /**
+       * {  
+       *    actionTargetName: 'model',
+            name: 'cd-rfc',
+            oEnv: 'ci-cd',
+            repo: 'cd-api',
+            'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"' 
+            }
+       */
+      // const { actionTargetName, moduleName, oEnv, repoName, srcPath } = args;
+      const actionTargetName = args.actionTargetName;
+      const moduleName = args.name;
+      const oEnv = args.oEnv || args["o-env"];
+      const repoName = args.repo || args.repoName;
+      const srcPath = args["src-path"] || args.srcPath;
+
+      CdLog.debug(
+        `CdModelService::updateRpc()/extracted params - actionTargetName: ${actionTargetName}, moduleName: ${moduleName}, oEnv: ${oEnv}, repoName: ${repoName}, srcPath: ${srcPath}`,
+      );
+
+      /**
+       * Call this.updateLocal() with the params set from request
+       */
+      const ret = await this.updateEntry(
+        actionTargetName,
+        moduleName,
+        oEnv,
+        repoName,
+        srcPath,
+      );
+
+      this.b.cdResp.data = ret;
+      this.b.cdResp.app_state.success = true;
+      await this.b.respond(req, res);
+    } catch (e) {
+      CdLog.error(`CdModelService::updateRpc()/error: ${(e as Error).message}`);
+      const i = {
+        messages: this.b.err,
+        code: "CdModelService:updateRpc",
+        app_msg: "Failed to update RPC data",
+      };
+      await this.b.setAppState(false, i, null);
+      const r = await this.b.respond(req, res);
+    }
+  }
+
+  async updateEntry(
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    srcPath?: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug(
+      "Starting [CdRpc][CdModelController][update] → Starting update...",
+    );
+    CdLog.debug("Starting CdModuleService::update()");
+    CdLog.debug(
+      `[CdRpc][CdModelController][update] → actionTargetName: ${actionTargetName}`,
+    );
+    CdLog.debug(
+      `[CdRpc][CdModelController][update] → moduleName: ${moduleName}`,
+    );
+    CdLog.debug(`[CdRpc][CdModelController][update] → oEnv: ${oEnv}`);
+    CdLog.debug(`[CdRpc][CdModelController][update] → repoName: ${repoName}`);
+    CdLog.debug(`[CdRpc][CdModelController][update] → srcPath: ${srcPath}`);
+    switch (oEnv) {
+      case "workshop":
+        CdLog.debug(`[CdRpc][CdModelController][update] → case:workshop`);
+        return this.updateLocal(
+          actionTargetName,
+          moduleName,
+          oEnv,
+          repoName,
+          srcPath,
+        );
+      /**
+       * ci-cd is an entry point from BaseService.invokeCdRequest() via cli command or ai invocation.
+       * It is meant to trigger workflows that are not necessarily tied to the current environment (workshop or test-bed)
+       * but are related to CI/CD processes.
+       * The routing is done based on the actionTargetName which should be provided in the request.
+       * This allows for more flexibility in triggering specific workflows that may involve multiple environments or are specific to CI/CD operations.
+       */
+      case "ci-cd":
+        CdLog.debug(
+          `[CdRpc][CdModelController][update] → case:ci-cd with actionTargetName: ${actionTargetName}`,
+        );
+        return this.updateLocal(
+          actionTargetName,
+          moduleName,
+          oEnv,
+          repoName,
+          srcPath,
+        );
+      case "test-bed":
+        CdLog.debug(`[CdRpc][CdModelController][update] → case:test-bed`);
+        return this.svTestBed.update(
+          actionTargetName,
+          moduleName,
+          oEnv,
+          repoName,
+        );
+      // /**
+      //  * This case is specifically for handling updates that are triggered from CI/CD processes that are routed to cd-api backend.
+      //  * It allows for updates to be processed in the workshop environment as part of CI/CD workflows, which may include tasks such as automated testing, deployment, or other operations that are initiated from CI/CD pipelines. The routing is based on the oEnv value being 'ci-cd', which indicates that the request is coming from a CI/CD context and should be handled accordingly.
+      //  */
+      // case 'cd-api-route':
+      //   CdLog.debug(`CdModelController::update()/case:cd-api-route`);
+      //   return this.svCdModel.update(actionTargetName, moduleName, oEnv, repoName, srcPath);
+    }
+
+    return {
+      state: false,
+      data: null,
+      message: `CdModelController::update: could not route the process to appropriate workflow. Check your configuration`,
+    };
+  }
+
+  async updateLocal(
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    srcPath?: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    CdLog.debug("Starting CdModelService::update()");
+    CdLog.debug(
+      `CdModelService::update()/actionTargetName: ${actionTargetName}`,
+    );
+    CdLog.debug(`CdModelService::update()/moduleName: ${moduleName}`);
+    CdLog.debug(`CdModelService::update()/oEnv: ${oEnv}`);
+    CdLog.debug(`CdModelService::update()/repoName: ${repoName}`);
+    CdLog.debug(`CdModelService::update()/srcPath: ${srcPath}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    const runner = new CiCdRunnerService();
+    const { descriptor, workflowModel } =
+      await runner.loadModelDescriptorAndWorkflow(
+        DevModeAction.UPDATE,
+        cdObjType,
+        moduleName,
+        oEnv,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdModuleDescriptor",
+          cdToken: "", // Pass the cdToken if needed
+          repoName: repoName,
+          appType: AppType.CdApiModule,
+          srcPath: srcPath,
+        },
+      );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdModelService::updateLocal()/ No valid workflowModel`,
+      };
+    }
+    this.init();
+    return await this.svCiCdRunner.run(descriptor, workflowModel);
+  }
+}
+```
+
+////////////////////////////////////////////
+
+
+The tree below shows what we have so far. It is still in development and POC stages.
+We can either make use of the environment.service.ts to house these facilities or create a dedicated runtime-descriptor.service.ts
+```sh
+emp-12@emp-12 ~/cd-rpc (main) [2]> tree src/CdRpc/sys/dev-descriptor/ -L 2
+src/CdRpc/sys/dev-descriptor/
+├── controllers
+│   ├── cd-app.controller.ts
+│   ├── ci-cd.controller.ts
+│   ├── ci-cd-runner.controller.ts
+│   ├── dev-descriptor.controller.ts
+│   ├── environment.controller.ts
+│   ├── os.controller.ts
+│   ├── service.controller.ts
+│   ├── version.controller.ts
+│   └── workstation-access.controller.ts
+├── generate-index.sh
+├── index.ts
+├── models
+│   ├── base-descriptor.model.ts
+│   ├── cd-app.model.ts
+│   ├── cd-controller-descriptor.model.ts
+│   ├── cd-model-descriptor.model.ts
+│   ├── cd-module-descriptor.model.ts
+│   ├── cd-service-descriptor.model.ts
+│   ├── cicd-descriptor.model.ts
+│   ├── component-descriptor.model.ts
+│   ├── container-manager.model.descriptor.ts
+│   ├── contributor.model.ts
+│   ├── datastore-descriptor.model.ts
+│   ├── dependancy-descriptor.model.ts
+│   ├── dev-descriptor.model.ts
+│   ├── environment.model.ts
+│   ├── function-descriptor.model.ts
+│   ├── language.model.ts
+│   ├── license.model.ts
+│   ├── migration-descriptor.model.ts
+│   ├── network-descriptor.model copy.ts
+│   ├── network-descriptor.model.ts
+│   ├── os.model.ts
+│   ├── permissions.model.ts
+│   ├── service-descriptor.model.ts
+│   ├── service-provider.model.ts
+│   ├── software-store.model.ts
+│   ├── testing-framework.model.ts
+│   ├── ui-concept-descriptor.model.ts
+│   ├── ui-dom-descriptor.model.ts
+│   ├── ui-system-descriptor.model.ts
+│   ├── ui-theme-descriptor.model.ts
+│   ├── version-control.model.ts
+│   ├── view-model-descriptor.model.ts
+│   └── workstations.model.ts
+├── module.json
+└── services
+    ├── cd-app.service.ts
+    ├── cd-ci-runner.service.ts
+    ├── cd-module-descriptor.service.ts
+    ├── ci-cd.service.ts
+    ├── dependency-descriptor.service.ts
+    ├── dev-descriptor.service.ts
+    ├── environment.service.ts
+    ├── service.service.ts
+    ├── ssh.service.ts
+    ├── version.service.ts
+    ├── workstation-access.service.ts
+    └── workstation.service.ts
+
+4 directories, 57 files
+emp-12@emp-12 ~/cd-rpc (main)> 
+```
+
+/////////////////////////////////////////////////
+These are what we have so far integrated.
+Question:
+ISessResp and IAppState are subsection of ICdResponse.
+What if we just had ICdResponse as part of the ICdExecutionContext.
+If this is agreed, it would be an improved version of the idea we talked about earlier where, as the data is processed, there is always a context reference. 
+At that time we visualize it as req, res. It would then confrom with availability of ICdRequest and ICdRespons in the ICdExecutionContext.
+You can also:
+- scrutinize what we have so far and recommend any necessary improvement
+
+```ts
+// src/CdRpc/sys/dev-descriptor/models/runtime-descriptor.model.ts
+
+import { IAppState, ICdRequest, ISessResp } from "../../base/i-base";
+
+export interface RuntimeDescriptor {
+
+  /**
+   * Execution strategy inside the host system
+   */
+  mode: 'sync' | 'async' | 'deferred' | 'stream' | 'unknown';
+
+  /**
+   * Concurrency model for execution
+   */
+  concurrency?: {
+    type: 'single' | 'multi' | 'parallel' | 'worker-pool' | 'event-loop';
+    limit?: number;
+  };
+
+  /**
+   * Isolation boundary
+   * - useful for AI agents, sandboxed execution, plugins
+   */
+  isolation?: {
+    level: 'none' | 'process' | 'thread' | 'container' | 'vm' | 'sandbox';
+  };
+
+  /**
+   * Execution priority within runtime scheduler
+   */
+  priority?: 'low' | 'normal' | 'high' | 'critical';
+
+  /**
+   * Lifecycle behavior of execution
+   */
+  lifecycle?: {
+    ephemeral?: boolean;     // destroyed after execution
+    persistent?: boolean;    // long-running context
+    reusable?: boolean;      // cached execution context
+  };
+}
+
+export interface ICdExecutionContext {
+  requestId: string;
+
+  transport: 'cli' | 'rpc' | 'http';
+
+  payload: ICdRequest;
+
+  sess?: ISessResp;
+
+  appState?: IAppState;
+
+  runtime?: {
+    workflow?: any;
+    descriptor?: any;
+    cache?: Map<string, any>;
+  };
+}
+```
+
+```ts
+// src/CdRpc/sys/dev-descriptor/services/version.service.ts
+
+export class VersionService {
+  versionDescriptor?: VersionControlDescriptor;
+  constructor(private svCdAutoGit = new CdAutoGitService()) {}
+
+  async init(versionDescriptor: VersionControlDescriptor): Promise<void> {
+    await this.svCdAutoGit.init();
+    this.versionDescriptor = versionDescriptor;
+  }
+
+  async getVersionControl(
+    cdObjName: string,
+    cdObjTypeName: string,
+    appType: AppType,
+    oEnv: string,
+  ): Promise<CdFxReturn<VersionControlDescriptor>> {
+    CdLog.debug(`VersionService::getVersioncontrol()/01`);
+    CdLog.debug(`VersionService::getVersioncontrol()/cdObjName:${cdObjName}`);
+    CdLog.debug(
+      `VersionService::getVersioncontrol()/cdObjTypeName:${cdObjTypeName}`,
+    );
+    CdLog.debug(`VersionService::getVersioncontrol()/appType:${appType}`);
+    CdLog.debug(`VersionService::getVersioncontrol()/oEnv:${oEnv}`);
+    try {
+      // Convert to dashedName, e.g. cdAi → cd-ai
+      const dashedName = cdObjName.toLowerCase();
+      const camelName = toCamelCase(cdObjName);
+
+      let aType = "";
+      if (oEnv === "cd-app") {
+        aType = "cd-app";
+      } else {
+        aType = appType;
+      }
+
+      // const modelFilePath = join(
+      //   MOD_CRAFT_WORKSHOP_DIR,
+      //   appType,
+      //   "workflow",
+      //   oEnv,
+      //   `${dashedName}-workshop.model.${runtime.extension}`,
+      // );
+
+      const modelFilePath = join(
+        WORKSHOP_ROOT,
+        appType,
+        "workflow",
+        oEnv,
+        `${dashedName}-workshop.model${RUNTIME_EXTENSION}`,
+      );
+
+      CdLog.debug(`VersionService::getVersioncontrol()/02`);
+      CdLog.debug(
+        `VersionService::getVersioncontrol()/modelFilePath:${modelFilePath}`,
+      );
+      const modelUrl = pathToFileURL(modelFilePath).href;
+      CdLog.debug(`VersionService::getVersioncontrol()/modelUrl:${modelUrl}`);
+      const importedModule = await import(modelUrl);
+      CdLog.debug(`VersionService::getVersioncontrol()/03`);
+      // The exported constant is expected to be named consistently, e.g. cdAiVersionControl
+      const exportName = `${camelName}VersionControl`;
+      CdLog.debug(`VersionService::getVersioncontrol()/04`);
+      CdLog.debug(
+        `VersionService::getVersioncontrol()/exportName:${exportName}`,
+      );
+      const versionControl = importedModule[
+        exportName
+      ] as VersionControlDescriptor;
+      CdLog.debug(
+        `VersionService::getVersioncontrol()/versionControl:${inspect(versionControl, { depth: 2 })}`,
+      );
+      if (!versionControl) {
+        CdLog.debug(`VersionService::getVersioncontrol()/05`);
+        return {
+          state: false,
+          message: `VersionControlDescriptor '${exportName}' not found in ${modelFilePath}`,
+          data: null,
+        };
+      }
+
+      CdLog.debug(`VersionService::getVersioncontrol()/06`);
+      return {
+        state: true,
+        message: "VersionControlDescriptor loaded successfully.",
+        data: versionControl,
+      };
+    } catch (error: any) {
+      CdLog.debug(`VersionService::getVersioncontrol()/07`);
+      CdLog.debug(
+        `VersionService::getVersioncontrol()/error.message: ${error.message}`,
+      );
+      return {
+        state: false,
+        message: `Failed to load VersionControlDescriptor: ${error.message}`,
+        data: null,
+      };
+    }
+  }
+}
+```
+
+```ts
+// src/CdRpc/sys/dev-descriptor/services/cd-module-descriptor.service copy.ts
+
+import { CdModuleDescriptor } from '../models/cd-module-descriptor.model';
+import { ICdExecutionContext, RuntimeDescriptor } from '../models/runtime-descriptor.model';
+
+export class RuntimeDescriptorService {
+  resolveRuntime(module: CdModuleDescriptor, context: ICdExecutionContext): RuntimeDescriptor {
+    return {
+      mode: this.inferMode(context),
+      concurrency: this.resolveConcurrency(module),
+      isolation: this.resolveIsolation(module),
+      priority: this.resolvePriority(module),
+      lifecycle: this.resolveLifecycle(module),
+    };
+  }
+  resolveLifecycle(
+    module: CdModuleDescriptor,
+  ): { ephemeral?: boolean; persistent?: boolean; reusable?: boolean } | undefined {
+    throw new Error('Method not implemented.');
+  }
+  resolvePriority(module: CdModuleDescriptor): 'low' | 'normal' | 'high' | 'critical' | undefined {
+    throw new Error('Method not implemented.');
+  }
+  resolveIsolation(
+    module: CdModuleDescriptor,
+  ): { level: 'none' | 'process' | 'thread' | 'container' | 'vm' | 'sandbox' } | undefined {
+    throw new Error('Method not implemented.');
+  }
+  resolveConcurrency(
+    module: CdModuleDescriptor,
+  ):
+    | { type: 'single' | 'multi' | 'parallel' | 'worker-pool' | 'event-loop'; limit?: number }
+    | undefined {
+    throw new Error('Method not implemented.');
+  }
+
+  private inferMode(ctx: any): RuntimeDescriptor['mode'] {
+    if (ctx.stream) return 'stream';
+    if (ctx.async) return 'async';
+    return 'sync';
+  }
+}
+
+```
+
+```ts
+export interface ICdRequest {
+  ctx: string; // can be either "Sys" or "App"
+  m: string; // target module name. Note that at the source codes, the full name has "Module" word following the given name here.
+  c: string; // target controler name. Note that at the source codes, the full name has "Controller" word following the given name here.
+  a: string; // target action name
+  dat: EnvelopDat; // payload data
+  args: any | null; // for future or forseable extension. Was set at design time but has not been used so far. Recommended to be kept as is
+}
+
+export interface EnvelopDat {
+  f_vals: EnvelopFValItem[]; // settings for the command. The array dimension was meant to have capacity for sending multiple commands in the future
+  token: string | null; // session token.
+}
+
+export interface EnvelopFValItem {
+  query?: IQuery; // see  IQuery notes
+  data?: any; // set according to the interface of a given Corpdesk controller interface. This is synonimous with model of a given entity targeting a database table or similar
+  extData?: any; // for use in scenario where extra data is used to complete the command. For example when the target action need pre or post process. The details are set by develper at the controller action
+  /**
+   * Developer-specific objects (like cdObj, userObj, etc.)
+   * Any additional property is allowed here.
+   */
+  [key: string]: any;
+}
+
+export interface ICdResponse {
+  app_state: {
+    success: boolean; // tels whether the process was successfull or not
+    info: IRespInfo; // status messages including error details if any or standard message of success
+    sess: ISessResp; // session status data
+    cache: object;
+    sConfig?: IServerConfig;
+  };
+  data: object;
+}
+
+export interface IRespInfo {
+  messages: string[]; // array of errors encountered
+  code: string; // error code. Corpdesk uses this to code the exact spot of error by controller and action
+  app_msg: any; // general response message (can be set with string, or null)
+
+  // Merged state into a single property `respState`
+  respState?: {
+    cdLevel: CdResponseState; // -1 for error, 0 for success, 1 for warning, etc.
+    cdDescription?: string; // Custom description for Corpdesk-specific state
+
+    httpCode: HttpState; // HTTP status code (e.g., 200, 400, etc.)
+    httpDescription?: string; // HTTP status description (e.g., "OK", "Bad Request")
+  };
+}
+
+export interface ISessResp {
+  cd_token?: string; // corpdesk token
+  userId?: number | null; // current user id
+  jwt: {
+    jwtToken: string;
+    checked: boolean;
+    checkTime: number;
+    authorized: boolean;
+  } | null; // jwt data
+  ttl: number; // server settings for session lifetime
+  initUuid?: string; // initialization guid of session
+  initTime?: string; // when the session started
+  clientId?: any; // OPtonal. for diagnosis for server view of the client.
+}
+
+export interface ISessionDataExt {
+  currentUser: UserModel;
+  currentUserProfile: IUserProfile;
+  currentSession: SessionModel;
+  currentConsumer: ConsumerModel;
+  currentCompany: CompanyModel;
+}
+
+export interface IAppState {
+  success: boolean;
+  info: IRespInfo | null;
+  sess: ISessResp | null;
+  cache: object | null;
+  sConfig?: IServerConfig;
+}
+
+export interface IServerConfig {
+  usePush: boolean;
+  usePolling: boolean;
+  useCacheStore: boolean;
+}
+```
+
+```ts
+// src/config.ts
+export const APP_ROOT = process.cwd();
+
+export const IS_TS_RUNTIME =
+  process.argv.some((a) => a.includes("ts-node")) ||
+  !!process[Symbol.for("ts-node.register.instance")];
+
+export const RUNTIME_EXTENSION =
+  IS_TS_RUNTIME ? ".ts" : ".js";
+
+export const WORKSHOP_ROOT = resolve(
+  APP_ROOT,
+  IS_TS_RUNTIME
+    ? "src/CdRpc/app/app-craft/workshop"
+    : "dist/src/CdRpc/app/app-craft/workshop",
+);
+```
+
+////////////////////////////////////////
+
+Below the current entry point method that processes all the controllers.
+I guess it is the right place to integrate the RuntimeContextService.run().
+Give me a refactored version of resolveCls() that is durable for production.
+It does not have to be perfect but should have stong foundation.
+```ts
+export class BaseService{
+  async resolveCls(req: Request, res: Response, clsCtx: any) {
+    const svSess = new SessionService();
+
+    try {
+      this.logger.logDebug("BaseService::resolveCls()/01:");
+      this.logger.logDebug("BaseService::resolveCls/clsCtx.path:", clsCtx.path);
+
+      // 1. Import controller module safely
+      let eImport: any;
+      try {
+        eImport = await import(clsCtx.path);
+      } catch (err) {
+        this.logger.logDebug("BaseService::resolveCls()/02:");
+        const eCode = "BaseService:resolveCls";
+        const i = {
+          messages: [
+            `Controller file not found at path: ${clsCtx.path};Error:${(err as Error).toString()}`,
+          ],
+          code: eCode,
+          app_msg: `Error at ${eCode}: Error:${(err as Error).toString()}`,
+        };
+        await this.setAppState(false, i, svSess.sessResp);
+        return await this.respond(req, res);
+      }
+
+      this.logger.logDebug("BaseService::resolveCls()/03:");
+
+      // 2. Validate controller class
+      const eCls = eImport[clsCtx.clsName];
+      if (!eCls) {
+        this.logger.logDebug("BaseService::resolveCls()/04:");
+        const eCode = "BaseService:resolveCls";
+        const i = {
+          messages: [
+            `Controller class '${clsCtx.clsName}' not found in ${clsCtx.path}`,
+          ],
+          code: eCode,
+          app_msg: `Error at ${eCode}: Invalid controller class.`,
+        };
+        await this.setAppState(false, i, svSess.sessResp);
+        return await this.respond(req, res);
+      }
+
+      this.logger.logDebug("BaseService::resolveCls()/05:");
+
+      // 3. Instantiate controller
+      const cls = new eCls();
+      this.ds = clsCtx.dataSource;
+
+      this.logger.logDebug(
+        `BaseService::resolveCls()/(req as any).post:${inspect((req as any).post)}`,
+      );
+      this.logger.logDebug("BaseService::resolveCls()/06:");
+
+      // 4. Add session data if available
+      if (this.sess) {
+        (req as any).post.sessData = this.sess;
+      }
+
+      // 5. Validate action existence
+      if (typeof cls[clsCtx.action] !== "function") {
+        this.logger.logDebug("BaseService::resolveCls()/07:");
+        const eCode = "BaseService:resolveCls";
+        const i = {
+          messages: [
+            `Action '${clsCtx.action}' not found in controller '${clsCtx.clsName}'`,
+          ],
+          code: eCode,
+          app_msg: `Error at ${eCode}: Invalid controller action.`,
+        };
+        await this.setAppState(false, i, svSess.sessResp);
+        return await this.respond(req, res);
+      }
+      this.logger.logDebug("BaseService::resolveCls()/08:");
+      // 6. Execute controller action
+      await cls[clsCtx.action](req, res);
+    } catch (e: any) {
+      await this.serviceErr(req, res, e, "BaseService:resolveCls");
+    }
+  }
+}
+```
+
+////////////////////////////////////////////////////
+
+Below are some of the primitive processes for cd-rpc and cd-api.
+Note the file src/CdRpc/sys/utils/request.ts.
+Note how post data is placed in a custom req.post property.2
+This happens early before the BaseService.resolveCls() is executed.
+```ts
+// src/CdRpc/init.ts
+import { Request, Response } from "express";
+import { CdRequest } from './sys/utils/request';
+const cdr = new CdRequest()
+import { CdExec } from './CdExec';
+export async function CdInit(req: Request, res: Response, ds?:any) {
+    const r = await cdr.processPost(req, res, async () => {
+        const cb = new CdExec();
+        await cb.exec(req, res, ds);
+    });
+};
+```
+
+```ts
+// src/CdRpc/CdExec.ts
+import { Request, Response } from "express";
+import { BaseService } from './sys/base/base.service';
+import { IRespInfo } from './sys/base/i-base';
+import { Logging } from "./sys/base/winston.log";
+// import { Logging } from './sys/base/winston.log';
+
+export class CdExec {
+    b: BaseService<any>;
+    logger: Logging;
+    constructor() {
+        this.b = new BaseService();
+        this.logger = new Logging();
+    }
+    async exec(req: Request, res: Response, ds=null) {
+        this.logger.logInfo('CdExec::exec()/01');
+        if (await this.b.valid(req, res)) {
+            this.logger.logInfo('CdExec::exec()/02');
+            try {
+                const pl = (req as any).post; // payload;
+                const ePath = this.b.entryPath(pl);
+                const clsCtx = {
+                    path: ePath,
+                    clsName: `${pl.c}Controller`,
+                    action: pl.a,
+                    dataSource: ds
+                }
+                // this.logger.logInfo('CdExec::exec()/clsCtx:', clsCtx)
+                await this.b.resolveCls(req, res, clsCtx);
+            } catch (e: any) {
+                this.logger.logInfo('CdExec::exec()/03');
+                const i: IRespInfo = {
+                    messages: e,
+                    code: 'CdExec:exec:01',
+                    app_msg: ''
+                }
+                await this.b.returnErr(req, res, i);
+            }
+        } else {
+            this.logger.logInfo('CdExec::exec()/04');
+            this.b.err.push('invalid request');
+            const i: IRespInfo = {
+                messages: this.b.err,
+                code: 'CdExec:exec:02',
+                app_msg: ''
+            }
+            await this.b.returnErr(req, res, i);
+        }
+    }
+}
+```
+
+```ts
+// src/CdRpc/sys/utils/request.ts
+import { Request, Response } from "express";
+import { Logging } from "../base/winston.log";
+
+export class CdRequest {
+  logger: Logging;
+  constructor() {
+    this.logger = new Logging();
+  }
+
+  async processPost(req: Request, resp: Response, callback: () => void) {
+    this.logger.logInfo("CdRequest::processPost()/01");
+    let contentType;
+    if (req.method === "POST") {
+      this.logger.logInfo("CdRequest::processPost()/02");
+      contentType = req.headers["content-type"];
+      (req as any).post = req.body;
+      const inp = await (req as any).post;
+      callback();
+    } else {
+      this.logger.logInfo("CdRequest::processPost()/04");
+      return {};
+    }
+  }
+}
+
+```
+
+////////////////////////////////////////////
+
+I have updated CdRequest.processPost() with the ICdExecutionContext integration.
+I have then done a test run. It seem to have integrated well, it just works like before but one can notice the new requestId in last log line:
+`[5/23/2026, 7:05:29 AM] [INFO]: CdRequest::processPost()/runtime-end requestId:aba99b90-4e22-492e-9f23-bf7a5a933f4a [CONTEXT] -> {}`
+
+I believe we have make some modifications to BaseSersvice.resolveCls() that can now allow the controllers to make use of the ICdExecutionContext at the controller level.
+While making this changes, it should be such that there is still backward compatibility so the controllers that still have Controller.method(req,res) still work normally.
+At the end of this I would like to test how ICdExecutionContext can be used in processing request using CdModelController and CdModelService with the sample update-rpc request.
+
+```ts
+export class CdModelController{}
+async UpdateRpc(req: Request, res: Response) {
+    try {
+      await this.service.updateRpc(req, res);
+    } catch (e: any) {
+      await this.b.serviceErr(req, res, e, "CdModelController:UpdateRpc");
+    }
+  }
+}
+```
+
+```ts
+export class CdModelService{
+  async updateEntry(
+    req: Request,
+    res: Response,
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    srcPath?: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    this.logger.logDebug(
+      "Starting [CdRpc][CdModelController][updateEntry] → Starting update...",
+    );
+    this.logger.logDebug(
+      `CdModelService::updateEntry()/(req as any).post.args: ${inspect((req as any).post, { depth: 2 })}`,
+    );
+    this.logger.logDebug("Starting CdModuleService::update()");
+    this.logger.logDebug(
+      `[CdRpc][CdModelController][updateEntry] → actionTargetName: ${actionTargetName}`,
+    );
+    this.logger.logDebug(
+      `[CdRpc][CdModelController][updateEntry] → moduleName: ${moduleName}`,
+    );
+    this.logger.logDebug(`[CdRpc][CdModelController][updateEntry] → oEnv: ${oEnv}`);
+    this.logger.logDebug(
+      `[CdRpc][CdModelController][updateEntry] → repoName: ${repoName}`,
+    );
+    this.logger.logDebug(
+      `[CdRpc][CdModelController][updateEntry] → srcPath: ${srcPath}`,
+    );
+    switch (oEnv) {
+      case "workshop":
+        this.logger.logDebug(`[CdRpc][CdModelController][updateEntry] → case:workshop`);
+        return this.updateLocal(
+          req,
+          res,
+          actionTargetName,
+          moduleName,
+          oEnv,
+          repoName,
+          srcPath,
+        );
+      /**
+       * ci-cd is an entry point from BaseService.invokeCdRequest() via cli command or ai invocation.
+       * It is meant to trigger workflows that are not necessarily tied to the current environment (workshop or test-bed)
+       * but are related to CI/CD processes.
+       * The routing is done based on the actionTargetName which should be provided in the request.
+       * This allows for more flexibility in triggering specific workflows that may involve multiple environments or are specific to CI/CD operations.
+       */
+      case "ci-cd":
+        this.logger.logDebug(
+          `[CdRpc][CdModelController][updateEntry] → case:ci-cd with actionTargetName: ${actionTargetName}`,
+        );
+        return this.updateLocal(
+          req,
+          res,
+          actionTargetName,
+          moduleName,
+          oEnv,
+          repoName,
+          srcPath,
+        );
+      case "test-bed":
+        this.logger.logDebug(`[CdRpc][CdModelController][updateEntry] → case:test-bed`);
+        return this.svTestBed.update(
+          req,
+          res,
+          actionTargetName,
+          moduleName,
+          oEnv,
+          repoName,
+        );
+      // /**
+      //  * This case is specifically for handling updates that are triggered from CI/CD processes that are routed to cd-api backend.
+      //  * It allows for updates to be processed in the workshop environment as part of CI/CD workflows, which may include tasks such as automated testing, deployment, or other operations that are initiated from CI/CD pipelines. The routing is based on the oEnv value being 'ci-cd', which indicates that the request is coming from a CI/CD context and should be handled accordingly.
+      //  */
+      // case 'cd-api-route':
+      //   this.logger.logDebug(`CdModelController::update()/case:cd-api-route`);
+      //   return this.svCdModel.update(actionTargetName, moduleName, oEnv, repoName, srcPath);
+    }
+
+    return {
+      state: false,
+      data: null,
+      message: `CdModelController::updateEntry: could not route the process to appropriate workflow. Check your configuration`,
+    };
+  }
+
+  async updateCommon() {}
+
+  async updateLocal(
+    req: Request,
+    res: Response,
+    actionTargetName: string,
+    moduleName: string,
+    oEnv: string,
+    repoName: string,
+    srcPath?: string,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    this.logger.logDebug("Starting CdModelService::update()");
+    this.logger.logDebug(
+      `CdModelService::updateLocal()/(req as any).post.args1: ${inspect((req as any).post, { depth: 2 })}`,
+    );
+    this.logger.logDebug(
+      `CdModelService::updateLocal()/actionTargetName: ${actionTargetName}`,
+    );
+    this.logger.logDebug(`CdModelService::updateLocal()/moduleName: ${moduleName}`);
+    this.logger.logDebug(`CdModelService::updateLocal()/oEnv: ${oEnv}`);
+    this.logger.logDebug(`CdModelService::updateLocal()/repoName: ${repoName}`);
+    this.logger.logDebug(`CdModelService::updateLocal()/srcPath: ${srcPath}`);
+    const cdObjType = inferCdObjType(this.constructor.name);
+    this.logger.logDebug(
+      `CdModelService::updateLocal()/(req as any).post.args2: ${inspect((req as any).post, { depth: 2 })}`,
+    );
+    const runner = new CiCdRunnerService();
+    this.logger.logDebug(
+      `CdModelService::updateLocal()/(req as any).post.args3: ${inspect((req as any).post, { depth: 2 })}`,
+    );
+    const { descriptor, workflowModel } =
+      await runner.loadModelDescriptorAndWorkflow(
+        req,
+        res,
+        DevModeAction.UPDATE,
+        cdObjType,
+        moduleName,
+        oEnv,
+        {
+          actionTargetName: actionTargetName,
+          descriptor: "CdModuleDescriptor",
+          cdToken: "", // Pass the cdToken if needed
+          repoName: repoName,
+          appType: AppType.CdApiModule,
+          srcPath: srcPath,
+        },
+      );
+
+    if (!workflowModel) {
+      return {
+        state: false,
+        data: null,
+        message: `CdModelService::updateLocal()/ No valid workflowModel`,
+      };
+    }
+    // this.init();
+    // const svCiCdRunner = new CiCdRunnerService();
+    return await runner.run(descriptor, workflowModel);
+  }
+
+  async updateRpc(req: Request, res: Response): Promise<void> {
+    /////////////////////////////////////////////////
+
+    try {
+      /**
+     * Set the params for this.updateEntry() from request args
+      actionTargetName: string,
+      moduleName: string,
+      oEnv: string,
+      repoName: string,
+      srcPath?: string,
+     * Then call this.updateEntry() with those params
+     * The params should be extracted from the request in a way that they can be used to route to the correct workflow for updating the CdModel entries in the database.
+     */
+
+      // const b = new BaseService();
+      // const args = await b.getPlArgs(req);
+
+      const request = (req as any).post as ICdRequest;
+      this.logger.logDebug(
+        `CdModelService::updateRpc()/(req as any).post.args: ${inspect(request.args, { depth: 2 })}`,
+      );
+
+      const args = request.args;
+      this.logger.logDebug(
+        `CdModelService::updateRpc()/args: ${inspect(args, { depth: 2 })}`,
+      );
+
+      if (!args) {
+        const i = {
+          messages: this.b.err,
+          code: "CdModelService:updateRpc",
+          app_msg: "Invalid arguments provided for update operation",
+        };
+        await this.b.setAppState(false, i, null);
+        const r = await this.b.respond(req, res);
+      }
+
+      /**
+       * {  
+       *    actionTargetName: 'model',
+            name: 'cd-rfc',
+            oEnv: 'ci-cd',
+            repo: 'cd-api',
+            'src-path': '"https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md"' 
+            }
+       */
+      // const { actionTargetName, moduleName, oEnv, repoName, srcPath } = args;
+      const actionTargetName = args.actionTargetName;
+      const moduleName = args.name;
+      const oEnv = args.oEnv || args["o-env"];
+      const repoName = args.repo || args.repoName;
+      const srcPath = args["src-path"] || args.srcPath;
+
+      this.logger.logDebug(
+        `CdModelService::updateRpc()/extracted params - actionTargetName: ${actionTargetName}, moduleName: ${moduleName}, oEnv: ${oEnv}, repoName: ${repoName}, srcPath: ${srcPath}`,
+      );
+
+      /**
+       * Call this.updateLocal() with the params set from request
+       */
+      const ret = await this.updateEntry(
+        req,
+        res,
+        actionTargetName,
+        moduleName,
+        oEnv,
+        repoName,
+        srcPath,
+      );
+
+      this.b.cdResp.data = ret;
+      this.b.cdResp.app_state.success = true;
+      await this.b.respond(req, res);
+    } catch (e) {
+      this.logger.logError(`CdModelService::updateRpc()/error: ${(e as Error).message}`);
+      const i = {
+        messages: this.b.err,
+        code: "CdModelService:updateRpc",
+        app_msg: "Failed to update RPC data",
+      };
+      await this.b.setAppState(false, i, null);
+      const r = await this.b.respond(req, res);
+    }
+  }
+}
+```
+
+```ts
+export class BaseSersvice{
+async resolveCls(req: Request, res: Response, clsCtx: any) {
+    const svSess = new SessionService();
+
+    try {
+      this.logger.logDebug("BaseService::resolveCls()/01:");
+      this.logger.logDebug("BaseService::resolveCls/clsCtx.path:", clsCtx.path);
+
+      // 1. Import controller module safely
+      let eImport: any;
+      try {
+        eImport = await import(clsCtx.path);
+      } catch (err) {
+        this.logger.logDebug("BaseService::resolveCls()/02:");
+        const eCode = "BaseService:resolveCls";
+        const i = {
+          messages: [
+            `Controller file not found at path: ${clsCtx.path};Error:${(err as Error).toString()}`,
+          ],
+          code: eCode,
+          app_msg: `Error at ${eCode}: Error:${(err as Error).toString()}`,
+        };
+        await this.setAppState(false, i, svSess.sessResp);
+        return await this.respond(req, res);
+      }
+
+      this.logger.logDebug("BaseService::resolveCls()/03:");
+
+      // 2. Validate controller class
+      const eCls = eImport[clsCtx.clsName];
+      if (!eCls) {
+        this.logger.logDebug("BaseService::resolveCls()/04:");
+        const eCode = "BaseService:resolveCls";
+        const i = {
+          messages: [
+            `Controller class '${clsCtx.clsName}' not found in ${clsCtx.path}`,
+          ],
+          code: eCode,
+          app_msg: `Error at ${eCode}: Invalid controller class.`,
+        };
+        await this.setAppState(false, i, svSess.sessResp);
+        return await this.respond(req, res);
+      }
+
+      this.logger.logDebug("BaseService::resolveCls()/05:");
+
+      // 3. Instantiate controller
+      const cls = new eCls();
+      this.ds = clsCtx.dataSource;
+
+      this.logger.logDebug(
+        `BaseService::resolveCls()/(req as any).post:${inspect((req as any).post)}`,
+      );
+      this.logger.logDebug("BaseService::resolveCls()/06:");
+
+      // 4. Add session data if available
+      if (this.sess) {
+        (req as any).post.sessData = this.sess;
+      }
+
+      // 5. Validate action existence
+      if (typeof cls[clsCtx.action] !== "function") {
+        this.logger.logDebug("BaseService::resolveCls()/07:");
+        const eCode = "BaseService:resolveCls";
+        const i = {
+          messages: [
+            `Action '${clsCtx.action}' not found in controller '${clsCtx.clsName}'`,
+          ],
+          code: eCode,
+          app_msg: `Error at ${eCode}: Invalid controller action.`,
+        };
+        await this.setAppState(false, i, svSess.sessResp);
+        return await this.respond(req, res);
+      }
+      this.logger.logDebug("BaseService::resolveCls()/08:");
+      // 6. Execute controller action
+      await cls[clsCtx.action](req, res);
+    } catch (e: any) {
+      await this.serviceErr(req, res, e, "BaseService:resolveCls");
+    }
+  }
+}
+```
+
+///////////////////////////////////////
+
+Help me identify where this problem is coming from and how to resolve.
+
+```log
+[5/24/2026, 8:39:43 AM] [DEBUG]: CiCdRunnerService::loadModelDescriptorAndWorkflow()/gwf-03 [CONTEXT] -> {}
+[5/24/2026, 8:39:43 AM] [DEBUG]: CiCdRunnerService::loadModelDescriptorAndWorkflow()/workflowFile:/home/emp-12/cd-rpc/dist/src/CdRpc/app/app-craft/workshop/cd-api/workflow/ci-cd/cd-rfc.workflow.js [CONTEXT] -> {}
+[5/24/2026, 8:39:43 AM] [DEBUG]: CiCdRunnerService::loadModelDescriptorAndWorkflow()/descriptor:[object Object] [CONTEXT] -> {}
+[5/24/2026, 8:39:43 AM] [DEBUG]: CiCdRunnerService::loadModelDescriptorAndWorkflow()/pascalName:CdRfc [CONTEXT] -> {}
+[5/24/2026, 8:39:43 AM] [DEBUG]: CiCdRunnerService::loadModelDescriptorAndWorkflow()/switch/case:update [CONTEXT] -> {}
+[5/24/2026, 8:39:43 AM] [DEBUG]: Starting CiCdRunnerService::run() [CONTEXT] -> {}
+[5/24/2026, 8:39:43 AM] [ERROR]: CdModelService::updateRpc()/error:require() of ES Module /home/emp-12/cd-rpc/node_modules/ora/index.js from /home/emp-12/cd-rpc/dist/src/CdRpc/sys/dev-descriptor/services/cd-ci-runner.service.js not supported.
+Instead change the require of index.js in /home/emp-12/cd-rpc/dist/src/CdRpc/sys/dev-descriptor/services/cd-ci-runner.service.js to a dynamic import() which is available in all CommonJS modules. [CONTEXT] -> {}
+[5/24/2026, 8:39:43 AM] [DEBUG]: BaseService::resolveCls()/completed requestId:45acf89c-6f35-4224-88bb-f6006e9d347c [CONTEXT] -> {}
+[5/24/2026, 8:39:43 AM] [INFO]: CdRequest::processPost()/runtime-end requestId:45acf89c-6f35-4224-88bb-f6006e9d347c [CONTEXT] -> {}
+```
+
+```ts
+/** Runner responsible for executing CICdTask logic */
+export class CiCdRunnerService {
+  logger: Logging;
+  private b = new BaseService();
+  currentPipelineName = "";
+  currentStageName = "";
+
+  constructor() {
+    this.logger = new Logging();
+  }
+
+  async loadModelDescriptorAndWorkflow(
+    cdCtx: ICdExecutionContext,
+    action: DevModeAction,
+    cdObjType: string,
+    cdObjName: string,
+    oEnv: string,
+    extraParams?: any,
+  ): Promise<{
+    descriptor: any;
+    workflowModel: CiCdDescriptor | null;
+    extraParams?: any;
+  }> {
+    this.logger.logDebug("Starting CiCdRunnerService::loadModelDescriptorAndWorkflow()");
+
+    this.logger.logDebug(
+      `CiCdRunnerService::loadModelDescriptorAndWorkflow()/cdCtx.request: ${inspect(cdCtx.request, { depth: 2 })}`,
+    );
+
+
+    const dashedName = cdObjName.toLowerCase();
+    this.logger.logDebug(
+      `CiCdRunnerService::loadModelDescriptorAndWorkflow()/dashedName:${dashedName}`,
+    );
+    const pascalName = dashedName
+      .split("-")
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join("");
+
+    this.logger.logDebug(
+      `CiCdRunnerService::loadModelDescriptorAndWorkflow()/pascalName:${pascalName}`,
+    );
+
+    this.logger.logDebug(
+      `CiCdRunnerService::loadModelDescriptorAndWorkflow()/DEV_DESCRIPTORS_SERVICE_DIR:${DEV_DESCRIPTORS_SERVICE_DIR}`,
+    );
+
+    this.logger.logDebug(`CiCdRunnerService::loadModelDescriptorAndWorkflow()/gwf-01-0`);
+    const workflowFileResult = await this.getWorkFlow(
+      cdCtx,
+      action,
+      cdObjType,
+      cdObjName,
+      oEnv,
+      extraParams,
+    );
+
+    if (!workflowFileResult || !workflowFileResult.state) {
+      this.logger.logDebug(
+        `CiCdRunnerService::loadModelDescriptorAndWorkflow()/gwf-01-1`,
+      );
+      return {
+        descriptor: null,
+        workflowModel: null,
+        extraParams: null,
+      };
+    }
+
+    if (!workflowFileResult.data) {
+      this.logger.logDebug(`CiCdRunnerService::loadModelDescriptorAndWorkflow()/gwf-02`);
+      return {
+        descriptor: null,
+        workflowModel: null,
+        extraParams: null,
+      };
+    }
+    this.logger.logDebug(`CiCdRunnerService::loadModelDescriptorAndWorkflow()/gwf-03`);
+    const workflowFile = workflowFileResult.data.path;
+    const descriptor = workflowFileResult.data.descriptor;
+
+    // descriptor = result.data;
+
+    this.logger.logDebug(
+      `CiCdRunnerService::loadModelDescriptorAndWorkflow()/workflowFile:${workflowFile}`,
+    );
+
+    this.logger.logDebug(
+      `CiCdRunnerService::loadModelDescriptorAndWorkflow()/descriptor:${descriptor}`,
+    );
+
+    this.logger.logDebug(
+      `CiCdRunnerService::loadModelDescriptorAndWorkflow()/pascalName:${pascalName}`,
+    );
+    // Dynamically import workflow module and instantiate
+    if (!workflowFile || typeof workflowFile !== "string") {
+      throw new Error("Workflow file path is not defined or not a string.");
+    }
+
+    // const workflowModule = await import(pathToFileURL(workflowFile).href);
+    const workflowModule = require(workflowFile);
+    const WorkflowClass = workflowModule[`${pascalName}WorkFlow`];
+    const workflowInstance = new WorkflowClass();
+    let workflowModel;
+    switch (action) {
+      case DevModeAction.CREATE:
+        this.logger.logDebug(
+          `CiCdRunnerService::loadModelDescriptorAndWorkflow()/switch/case:create`,
+        );
+        workflowModel = workflowInstance.createWorkFlow(
+          descriptor,
+          oEnv,
+          extraParams,
+        );
+        break;
+      case DevModeAction.READ:
+        this.logger.logDebug(
+          `CiCdRunnerService::loadModelDescriptorAndWorkflow()/switch/case:read`,
+        );
+        workflowModel = workflowInstance.readWorkFlow(
+          descriptor,
+          oEnv,
+          extraParams,
+        );
+        break;
+      case DevModeAction.UPDATE:
+        this.logger.logDebug(
+          `CiCdRunnerService::loadModelDescriptorAndWorkflow()/switch/case:update`,
+        );
+        workflowModel = workflowInstance.updateWorkFlow(
+          descriptor,
+          oEnv,
+          extraParams,
+        );
+        break;
+      case DevModeAction.DELETE:
+        this.logger.logDebug(
+          `CiCdRunnerService::loadModelDescriptorAndWorkflow()/switch/case:delete`,
+        );
+        workflowModel = workflowInstance.deleteWorkFlow(
+          descriptor,
+          oEnv,
+          extraParams,
+        );
+        break;
+      case DevModeAction.TEST:
+        this.logger.logDebug(
+          `CiCdRunnerService::loadModelDescriptorAndWorkflow()/switch/case:test`,
+        );
+        workflowModel = workflowInstance.testWorkFlow(
+          descriptor,
+          oEnv,
+          extraParams,
+        );
+        break;
+      case DevModeAction.DERIVE:
+        this.logger.logDebug(
+          `CiCdRunnerService::loadModelDescriptorAndWorkflow()/switch/case:derive`,
+        );
+        workflowModel = workflowInstance.deriveWorkFlow(
+          descriptor,
+          oEnv,
+          extraParams,
+        );
+        break;
+      case DevModeAction.UPGRADE:
+        this.logger.logDebug(
+          `CiCdRunnerService::loadModelDescriptorAndWorkflow()/switch/case:upgrade`,
+        );
+        workflowModel = workflowInstance.upgradeWorkFlow(
+          descriptor,
+          oEnv,
+          extraParams,
+        );
+        break;
+      case DevModeAction.MIGRATE:
+        this.logger.logDebug(
+          `CiCdRunnerService::loadModelDescriptorAndWorkflow()/switch/case:migrate`,
+        );
+        workflowModel = workflowInstance.migrateWorkFlow(
+          descriptor,
+          oEnv,
+          extraParams,
+        );
+        break;
+    }
+
+    return {
+      descriptor,
+      workflowModel,
+      extraParams,
+    };
+  }
+
+  
+  async getWorkFlow(
+    cdCtx: ICdExecutionContext,
+    action: DevModeAction,
+    cdObjType: string,
+    cdObjName: string,
+    oEnv: string,
+    extraParams?: any,
+  ): Promise<CdFxReturn<{ path: string; descriptor: any }>> {
+    try {
+      this.logger.logDebug(
+        `CiCdRunnerService::getWorkFlow()/cdCtx.request: ${inspect(cdCtx.request, { depth: 2 })}`,
+      );
+      // 1. Maintain legacy side-effects on the original object
+      extraParams.oEnv = oEnv;
+      const dashedName = cdObjName.toLowerCase();
+      this.logger.logDebug(`CiCdRunnerService::getWorkFlow()/dashedName:${dashedName}`);
+
+      // const svCdAutoGit = new CdAutoGitService();
+      const svVersion = new VersionService();
+      const appType = svVersion.getAppTypeFromRepoName(
+        cdCtx,
+        extraParams.repoName,
+        repoRegistry,
+      );
+      this.logger.logDebug(`CiCdRunnerService::getWorkFlow()/appType:${appType}`);
+
+      let aType = "";
+      if (extraParams.actionTargetName === "cd-app") {
+        aType = "cd-app";
+      } else {
+        aType = appType ?? "";
+      }
+
+      const workflowFile = join(
+        MOD_CRAFT_WORKSHOP_DIR,
+        aType,
+        "workflow",
+        oEnv,
+        `${dashedName}.workflow.js`,
+      );
+
+      this.logger.logDebug(
+        `CiCdRunnerService::getWorkFlow()/workflowFile: ${workflowFile}`,
+      );
+
+      /**
+       * 2. Semantic Isolation
+       * We create a local copy to map the string property to 'descriptorName'.
+       * This ensures 'descriptor' (the object below) does not conflict with the logic.
+       */
+      const localParams = {
+        ...extraParams,
+        descriptorName: extraParams?.descriptor,
+      };
+
+      let descriptor: any; // The Resulting Data Object
+      let result: CdFxReturn<any>;
+
+      /**
+       * 3. Process resolution based on the unambiguous descriptorName
+       */
+      switch (localParams.descriptorName) {
+        case "CdModuleDescriptor":
+          this.logger.logDebug(
+            `CiCdRunnerService::getWorkFlow()/case:CdModuleDescriptor-01`,
+          );
+          const svCdModuleDescriptor = new CdModuleDescriptorService();
+          this.logger.logDebug(
+            `CiCdRunnerService::getWorkFlow()/case:CdModuleDescriptor-02`,
+          );
+
+          // We pass the original extraParams to the service for legacy support
+          result = await svCdModuleDescriptor.cdApiModuleData(
+            cdObjName,
+            cdObjType,
+            extraParams,
+            action,
+          );
+
+          if (!result || !result.state) {
+            this.logger.logDebug(
+              `CiCdRunnerService::getWorkFlow()/Failed to load module descriptor: ${result.message}`,
+            );
+            throw new Error(
+              `Failed to load module descriptor: ${result.message}`,
+            );
+          }
+
+          descriptor = result.data;
+
+          // Logging the resolved descriptor properties
+          this.logger.logDebug(
+            `CiCdRunnerService::getWorkFlow()/descriptor.models:${inspect(descriptor.models, { depth: 4 })}`,
+          );
+          this.b.logWithContext(
+            this,
+            "getWorkFlow()/descriptor.models[0]3",
+            descriptor.models[0],
+            "debug",
+          );
+          this.b.logWithContext(
+            this,
+            "cdApiModuleData:cdApiModuleData.descriptor[0].dependencies",
+            descriptor.controllers[0].dependencies,
+            "debug",
+          );
+          break;
+
+        case "CdAppDescriptor":
+          if (!appType) {
+            throw new Error("appType is required and must be of type AppType.");
+          }
+          const svCdAppDescriptor = new CdAppService();
+          result = await svCdAppDescriptor.deriveCdAppDescriptor(
+            DevModeAction.DERIVE,
+            cdObjName,
+            appType,
+            oEnv,
+            extraParams,
+          );
+
+          if (!result || !result.state) {
+            this.logger.logDebug(
+              `CiCdRunnerService::getWorkFlow()/Failed to load module descriptor: ${result.message}`,
+            );
+            throw new Error(
+              `Failed to load module descriptor: ${result.message}`,
+            );
+          }
+
+          if (!result.data) {
+            this.logger.logDebug(
+              `CiCdRunnerService::getWorkFlow()/No module descriptor data returned.`,
+            );
+            throw new Error(`No module descriptor data returned.`);
+          }
+
+          descriptor = result.data;
+          break;
+      }
+
+      if (!workflowFile) {
+        return {
+          state: false,
+          data: null,
+          message: `CiCdRunnerService::getWorkFlowPath: could not resolve the location of the workflow file.`,
+        };
+      }
+
+      return {
+        state: true,
+        data: { path: workflowFile, descriptor: descriptor },
+      };
+    } catch (e) {
+      return {
+        state: false,
+        data: null,
+        message: `CiCdRunnerService::getWorkFlowPath: Error:${(e as Error).message}`,
+      };
+    }
+  }
+
+
+  async sendFailureAlert(
+    message: string,
+    meta?: {
+      pipeline?: string;
+      stage?: string;
+      task?: string;
+      contextDump?: any;
+    },
+    config?: FailureAlertConfig,
+  ): Promise<CdFxReturn<FailureAlertResult>> {
+    const methodName = "CiCdRunnerService::sendFailureAlert";
+    this.logger.logDebug(`${methodName}/start`);
+    this.logger.logDebug(`${methodName}/message: ${message}`);
+
+    const alertConfig: FailureAlertConfig = config ?? {
+      enabled: true,
+      channels: {
+        log: { enabled: true, level: "error" },
+        system: { enabled: true },
+      },
+    };
+
+    if (!alertConfig.enabled) {
+      return {
+        state: CdFxStateLevel.Info,
+        message: "Alerting disabled",
+        data: {
+          alertSent: false,
+          channelsAttempted: [],
+          channelsSucceeded: [],
+          channelsFailed: [],
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+
+    const result: FailureAlertResult = {
+      alertSent: false,
+      channelsAttempted: [],
+      channelsSucceeded: [],
+      channelsFailed: [],
+      timestamp: new Date().toISOString(),
+      context: meta,
+    };
+
+    try {
+      // ─────────────────────────────
+      // LOG CHANNEL (always safest)
+      // ─────────────────────────────
+      if (alertConfig.channels.log?.enabled) {
+        result.channelsAttempted.push("log");
+
+        try {
+          CdLog.error(`[ALERT] ${message}`);
+          if (meta?.contextDump) {
+            this.logger.logDebug(
+              `[ALERT_CONTEXT] ${JSON.stringify(meta.contextDump, null, 2)}`,
+            );
+          }
+
+          result.channelsSucceeded.push("log");
+        } catch (err: any) {
+          result.channelsFailed.push({ channel: "log", error: err.message });
+        }
+      }
+
+      // ─────────────────────────────
+      // SYSTEM CHANNEL (Corpdesk internal)
+      // ─────────────────────────────
+      if (alertConfig.channels.system?.enabled) {
+        result.channelsAttempted.push("system");
+
+        try {
+          // 🔥 Placeholder for internal event bus
+          // await this.systemNotifier.publish({ message, meta });
+
+          this.logger.logDebug(`${methodName}/system alert simulated`);
+
+          result.channelsSucceeded.push("system");
+        } catch (err: any) {
+          result.channelsFailed.push({ channel: "system", error: err.message });
+        }
+      }
+
+      // ─────────────────────────────
+      // EMAIL (future)
+      // ─────────────────────────────
+      if (alertConfig.channels.email?.enabled) {
+        result.channelsAttempted.push("email");
+
+        try {
+          // await this.emailService.send(...)
+          result.channelsSucceeded.push("email");
+        } catch (err: any) {
+          result.channelsFailed.push({ channel: "email", error: err.message });
+        }
+      }
+
+      // ─────────────────────────────
+      // FINAL STATE RESOLUTION
+      // ─────────────────────────────
+
+      result.alertSent = result.channelsSucceeded.length > 0;
+
+      const finalState = result.alertSent
+        ? CdFxStateLevel.Success
+        : CdFxStateLevel.Warning; // 🔥 important: alert failure != pipeline failure
+
+      return {
+        state: finalState,
+        message: result.alertSent
+          ? "Failure alert processed"
+          : "Alert attempted but no channel succeeded",
+        data: result,
+      };
+    } catch (error: any) {
+      CdLog.error(`${methodName}/fatal: ${error.message}`);
+
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: `Failure alert crashed: ${error.message}`,
+        data: result,
+      };
+    }
+  }
+
+  async run(
+    descriptor: any,
+    workflowData: CiCdDescriptor,
+    extraParams?: any,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    this.logger.logDebug("Starting CiCdRunnerService::run()");
+
+    const ctx: PipelineContext = {
+      inputs: extraParams ?? {},
+      outputs: {},
+      vars: {},
+      meta: {},
+    };
+
+    const pipeline = workflowData?.cICdPipeline;
+    this.currentPipelineName = pipeline?.name ?? "";
+
+    if (!pipeline?.stages?.length) {
+      return {
+        state: CdFxStateLevel.Error,
+        message: "No pipeline stages defined.",
+      };
+    }
+
+    const taskMap = new Map<string, CICdTask>();
+    for (const stage of pipeline.stages) {
+      for (const task of stage.tasks) {
+        taskMap.set(`${stage.name}/${task.name}`, task);
+      }
+    }
+
+    let currentStage = pipeline.stages[0];
+    let currentTask = currentStage.tasks[0];
+    this.currentStageName = currentStage.name;
+
+    const visited = new Set<string>();
+    const taskResults: any[] = [];
+
+    while (currentTask) {
+      const taskKey = `${this.currentStageName}/${currentTask.name}`;
+
+      if (visited.has(taskKey)) {
+        return {
+          state: CdFxStateLevel.SystemError,
+          message: `Loop detected at ${taskKey}`,
+          data: taskResults,
+        };
+      }
+      visited.add(taskKey);
+
+      currentTask.status = "running";
+
+      // 🔥 Resolve dynamic args
+      if (currentTask.cdRequest) {
+        currentTask.cdRequest = this.resolveCdRequest(
+          currentTask.cdRequest,
+          ctx,
+        );
+      }
+
+      // 🔥 Execute with guard
+      const rawResult = await this.executeTaskWithPolicies(
+        currentTask,
+        descriptor,
+        ctx,
+      );
+      const result = this.normalizeTaskResult(rawResult, currentTask);
+
+      // 🔥 Layered interpretation
+      const transportState = this.normalizeState(result);
+      const business = this.extractBusinessState(result);
+      const finalState = this.resolveFinalState(transportState, business);
+
+      // 🔥 DATA BUS STORAGE
+      ctx.outputs[currentTask.name] = {
+        transport: {
+          state: transportState,
+          message: result.message ?? "",
+        },
+        business,
+        data: result.data,
+        raw: result,
+      };
+
+      ctx.outputs[taskKey] = ctx.outputs[currentTask.name];
+
+      taskResults.push({
+        stage: this.currentStageName,
+        task: currentTask.name,
+        state: finalState,
+        message: business?.message ?? result.message ?? "",
+      });
+
+      currentTask.status =
+        finalState === CdFxStateLevel.Success ? "completed" : "failed";
+
+      const nextRef = this.resolveNextTask(currentTask, finalState);
+      if (!nextRef) break;
+
+      if (
+        (nextRef.pipelineName ?? this.currentPipelineName) !==
+        this.currentPipelineName
+      ) {
+        return {
+          state: CdFxStateLevel.SystemError,
+          message: `Cross-pipeline transition not supported`,
+          data: taskResults,
+        };
+      }
+
+      const nextKey = `${nextRef.stageName ?? this.currentStageName}/${nextRef.taskName}`;
+      const nextTask = taskMap.get(nextKey);
+
+      if (!nextTask) {
+        return {
+          state: CdFxStateLevel.SystemError,
+          message: `Next task not found: ${nextKey}`,
+          data: taskResults,
+        };
+      }
+
+      this.currentStageName = nextRef.stageName ?? this.currentStageName;
+      currentTask = nextTask;
+    }
+
+    // const hasFailure = taskResults.some((r) => r.state !== CdFxStateLevel.Success);
+    const hasFailure = taskResults.some(
+      (r) => r.task !== "NotifyFailure" && r.state !== CdFxStateLevel.Success,
+    );
+
+    return hasFailure
+      ? {
+          state: CdFxStateLevel.LogicalFailure,
+          message: "One or more tasks failed.",
+          data: taskResults,
+        }
+      : {
+          state: CdFxStateLevel.Success,
+          message: "Pipeline executed successfully.",
+          data: taskResults,
+        };
+  }
+
+  // ─────────────────────────────────────────────
+  // ⚙️ EXECUTION WITH POLICIES + SPINNER
+  // ─────────────────────────────────────────────
+
+  private async executeTaskWithPolicies(
+    task: CICdTask,
+    descriptor: CdModuleDescriptor,
+    ctx: PipelineContext,
+  ): Promise<CdFxReturn<any>> {
+    const { default: ora } = await import("ora");
+    // const { default: ora } = require("ora");
+    let attempts = 0;
+    const maxAttempts = task.retryCount ?? 1;
+    const timeout = task.timeout ?? 60000;
+
+    while (attempts < maxAttempts) {
+      const spinner = ora(
+        `⏳ ${task.name} (${attempts + 1}/${maxAttempts})`,
+      ).start();
+
+      try {
+        const raw = await Promise.race([
+          this.executeTask(task, descriptor, ctx),
+          new Promise<CdFxReturn<any>>((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout")), timeout),
+          ),
+        ]);
+
+        const result = this.normalizeTaskResult(raw, task);
+
+        if (result.state === CdFxStateLevel.Success) {
+          spinner.succeed(`✅ ${task.name}`);
+        } else {
+          spinner.fail(`❌ ${task.name}: ${result.message}`);
+        }
+
+        return result;
+      } catch (e: any) {
+        spinner.fail(`❌ ${task.name}: ${e.message}`);
+        attempts++;
+
+        if (attempts < maxAttempts && task.retryDelay) {
+          await this.sleep(task.retryDelay);
+        }
+      }
+    }
+
+    return {
+      state: CdFxStateLevel.SystemError,
+      message: `Failed after ${maxAttempts} attempts`,
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // 🧩 TASK EXECUTION
+  // ─────────────────────────────────────────────
+
+  async executeTask(
+    task: CICdTask,
+    descriptor: CdModuleDescriptor,
+    ctx: PipelineContext,
+  ): Promise<CdFxReturn<any>> {
+    try {
+      const b = new BaseService();
+      switch (task.type) {
+        case "script-inline":
+          return this.runScript(task.executor, task.script);
+
+        case "script-file":
+          return this.runScriptFromFile(task.executor, task.scriptFile);
+
+        case "method":
+          if (!task.cdRequest) {
+            return {
+              state: CdFxStateLevel.Error,
+              message: "cdRequest missing",
+            };
+          }
+          return this.callMethodFromCdRequest(task.cdRequest);
+
+        /**
+         * @deprecated
+         * Use localCdRequest or
+         */
+        case "cdRequest":
+          return b.invokeCdRequest(task.cdRequest);
+
+        case "localCdRequest":
+          return b.invokeCdRequest(task.cdRequest);
+
+        case "remoteCdRequest":
+          return await this.remoteCdRequest(task.cdRequest as ICdRequest);
+
+        default:
+          return {
+            state: CdFxStateLevel.Error,
+            message: `Unknown task type`,
+          };
+      }
+    } catch (err: any) {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: err.message,
+      };
+    }
+  }
+
+  async remoteCdRequest(
+    cdRequest: ICdRequest,
+  ): Promise<CdFxReturn<ICdResponse>> {
+    const svServer = new HttpService();
+    console.log("remoteCdRequest()/cdRequest:", JSON.stringify(cdRequest));
+    return svServer.proc(cdRequest);
+  }
+
+  // ─────────────────────────────────────────────
+  // 🔥 NORMALIZATION (CRITICAL)
+  // ─────────────────────────────────────────────
+
+  private normalizeTaskResult(raw: any, task: CICdTask): CdFxReturn<any> {
+    if (!raw) {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: `Task '${task.name}' returned undefined/null`,
+        data: null,
+      };
+    }
+
+    if (typeof raw !== "object") {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: `Invalid return type from '${task.name}'`,
+        data: raw,
+      };
+    }
+
+    if (raw.state === undefined) {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: `Task '${task.name}' missing 'state'`,
+        data: raw,
+      };
+    }
+
+    if (typeof raw.state === "boolean") {
+      raw.state = raw.state ? CdFxStateLevel.Success : CdFxStateLevel.Error;
+    }
+
+    return raw;
+  }
+
+  private normalizeState(result: CdFxReturn<any>): CdFxStateLevel {
+    if (typeof result.state === "boolean") {
+      return result.state ? CdFxStateLevel.Success : CdFxStateLevel.Error;
+    }
+    return result.state ?? CdFxStateLevel.Unknown;
+  }
+
+  private extractBusinessState(result: CdFxReturn<any>) {
+    const appState = result?.data?.app_state;
+
+    if (!appState) return undefined;
+
+    return {
+      success: appState.success,
+      code: appState?.info?.code,
+      message: appState?.info?.app_msg,
+    };
+  }
+
+  private resolveFinalState(
+    transport: CdFxStateLevel,
+    business?: { success: boolean },
+  ): CdFxStateLevel {
+    if (business && business.success === false) {
+      return CdFxStateLevel.LogicalFailure;
+    }
+    return transport;
+  }
+
+  // ─────────────────────────────────────────────
+  // 🔁 FLOW CONTROL
+  // ─────────────────────────────────────────────
+
+  private resolveNextTask(
+    task: CICdTask,
+    state: CdFxStateLevel,
+  ): WFNext | null {
+    if (!task.onResult) return null;
+
+    for (const rule of task.onResult) {
+      const match = Array.isArray(rule.ifState)
+        ? rule.ifState.includes(state)
+        : rule.ifState === state;
+
+      if (match) {
+        return this.normalizeWFNext(rule.toTask, {
+          currentPipeline: this.currentPipelineName,
+          currentStage: this.currentStageName,
+        });
+      }
+    }
+
+    return null;
+  }
+
+  normalizeWFNext(
+    next: WFNextRef,
+    context: { currentPipeline: string; currentStage: string },
+  ): WFNext {
+    if (typeof next === "string") {
+      return {
+        pipelineName: context.currentPipeline,
+        stageName: context.currentStage,
+        taskName: next,
+      };
+    }
+
+    return {
+      pipelineName: next.pipelineName ?? context.currentPipeline,
+      stageName: next.stageName ?? context.currentStage,
+      taskName: next.taskName,
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // 🔥 ARG RESOLUTION
+  // ─────────────────────────────────────────────
+
+  private resolveCdRequest(
+    cdRequest: ICdRequest,
+    ctx: PipelineContext,
+  ): ICdRequest {
+    return {
+      ...cdRequest,
+      args: this.resolveObject(cdRequest.args, ctx),
+      dat: this.resolveObject(cdRequest.dat, ctx),
+    };
+  }
+
+  private resolveObject(obj: any, ctx: PipelineContext): any {
+    if (!obj) return obj;
+
+    if (typeof obj === "string") return this.resolveValue(obj, ctx);
+
+    if (Array.isArray(obj)) return obj.map((v) => this.resolveObject(v, ctx));
+
+    if (typeof obj === "object") {
+      return Object.fromEntries(
+        Object.entries(obj).map(([k, v]) => [k, this.resolveObject(v, ctx)]),
+      );
+    }
+
+    return obj;
+  }
+
+  private resolveValue(value: string, ctx: PipelineContext): any {
+    if (!value.startsWith("$")) return value;
+
+    const path = value.slice(1).split(".");
+    const root = path.shift();
+
+    let source: any;
+
+    switch (root) {
+      case "outputs":
+        source = ctx.outputs;
+        break;
+      case "vars":
+        source = ctx.vars;
+        break;
+      case "inputs":
+        source = ctx.inputs;
+        break;
+      default:
+        return value;
+    }
+
+    // Special handling for outputs
+    if (root === "outputs" && path.length > 0) {
+      const taskName = path.shift()!;
+      const taskOutput = source?.[taskName];
+
+      if (!taskOutput) {
+        CdLog.error(`resolveValue(): output task '${taskName}' not found`);
+        return undefined;
+      }
+
+      source = taskOutput.data ?? taskOutput;
+    }
+
+    return path.reduce((acc, key) => acc?.[key], source);
+  }
+
+  // ─────────────────────────────────────────────
+
+  private async runScript(executor: any, script?: string) {
+    console.log(`[${executor}] ${script}`);
+    return { state: true, message: "Script executed" };
+  }
+
+  private async runScriptFromFile(executor: any, scriptFile?: string) {
+    console.log(`[${executor}] file: ${scriptFile}`);
+    return { state: true, message: "Script file executed" };
+  }
+
+  private sleep(ms: number) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  // ─────────────────────────────────────────────
+  // 🔌 CD REQUEST INVOCATION (SAFE)
+  // ─────────────────────────────────────────────
+
+  async callMethodFromCdRequest<T = any>(
+    cdRequest: ICdRequest,
+  ): Promise<CdFxReturn<T>> {
+    this.logger.logDebug(
+      `CdCiRunnerService::callMethodFromCdRequest() → cdRequest received: ${inspect(cdRequest, { depth: 5 })}`,
+    );
+    let { ctx, m, c, a, args, dat } = cdRequest;
+
+    if (!ctx || !m || !c || !a) {
+      return {
+        state: CdFxStateLevel.Error,
+        message: "Incomplete cdRequest",
+        data: null,
+      };
+    }
+
+    try {
+      const ctlDashedName = toDashedFileName(c, "controller");
+      const controllerPath = `../../../${ctx}/${m}/controllers/${ctlDashedName}`;
+      // const controllerModule = await import(controllerPath);
+      const controllerModule = require(controllerPath);
+
+      c = `${c}Controller`;
+
+      if (!controllerModule?.[c]) {
+        return {
+          state: CdFxStateLevel.Error,
+          message: `Controller not found`,
+          data: null,
+        };
+      }
+
+      const instance = new controllerModule[c]();
+
+      if (typeof instance.init === "function") {
+        await instance.init();
+      }
+
+      if (typeof instance[a] !== "function") {
+        return {
+          state: CdFxStateLevel.Error,
+          message: `Method not found`,
+          data: null,
+        };
+      }
+
+      const argValues = args ? Object.values(args) : [];
+      const raw = await instance[a](...argValues, dat);
+
+      return this.normalizeTaskResult(raw, { name: a } as any);
+    } catch (e: any) {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: e.message,
+        data: null,
+      };
+    }
+  }
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
