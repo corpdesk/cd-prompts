@@ -35024,9 +35024,7 @@ export class RuntimeDescriptorService {
     | undefined {
     throw new Error("Method not implemented.");
   }
-  resolveConcurrency(
-    module: CdModuleDescriptor,
-  ):
+  resolveConcurrency(module: CdModuleDescriptor):
     | {
         type: "single" | "multi" | "parallel" | "worker-pool" | "event-loop";
         limit?: number;
@@ -36831,6 +36829,7 @@ I have shared services directory which expose what has been impleneted as per SN
 Reference to SNP: https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/13.%20snp-documentation.md
 I have also shared interfaces associated with SNP.
 Show how initialization can be implemented as per the protocol documentation and the design below.
+
 ```ts
 export class RuntimeBootstrapService {
   static async initialize(
@@ -36882,6 +36881,7 @@ export class RuntimeBootstrapService {
 Below are the set of services associated with the current implementation of SNP.
 Note that we still dont have implementation of SnpAdapterRegistry.
 What is there is adapter factory.
+
 ```sh
 emp-12@emp-12 ~/cd-node (main)> tree src/CdNode/sys/base/services/
 src/CdNode/sys/base/services/
@@ -36930,7 +36930,6 @@ export interface SnpInstruction {
   conditions?: any;
 }
 
-
 export interface ISnpRootTarget {
   isRoot: true;
   value: any;
@@ -36953,7 +36952,6 @@ export interface ISnpExecutionResult {
   reads: any[];
   errors: string[];
 }
-
 
 export interface ISnpDataSource {
   load(): Promise<any>;
@@ -36990,23 +36988,23 @@ export interface ISnpCrudResult {
   readValue?: any;
   root?: any;
 }
-
 ```
 
 /////////////////////////////////////////////
 We need to implement initializeProfiles().
 I have arranged the initialization sequence in RuntimeBootstrapService.initialize() so that cach and snp are ready before initializeProfiles().
-If the profile file is available, I am thinking we need to set what should happen. 
+If the profile file is available, I am thinking we need to set what should happen.
 For example:
+
 1. Use SNP to read selectively if necessary.
 2. Perform validation
 3. Save what needs to be done to cache.
-From this introduction, I leave it up to you to also contribute.
-Some suggestion:
-I am thinking that eventually all initializeX() methods details should be implemented in some parent class so that RuntimeBootstrapService remains clean and lean.
-For example, the details for profile initilization can be in something like ProfileService.
-Then they get called from RuntimeBootstrapService inside RuntimeBootstrapService.initialize().
-But this can follow after we work out the basic processes as is righ now.
+   From this introduction, I leave it up to you to also contribute.
+   Some suggestion:
+   I am thinking that eventually all initializeX() methods details should be implemented in some parent class so that RuntimeBootstrapService remains clean and lean.
+   For example, the details for profile initilization can be in something like ProfileService.
+   Then they get called from RuntimeBootstrapService inside RuntimeBootstrapService.initialize().
+   But this can follow after we work out the basic processes as is righ now.
 
 ```ts
 export class RuntimeBootstrapService {
@@ -37026,7 +37024,6 @@ export class RuntimeBootstrapService {
       warnings: [],
       errors: [],
     };
-
 
     await this.initializeCache(role);
 
@@ -37097,7 +37094,7 @@ export class RuntimeBootstrapService {
 We have a standard for corpdesk profile data.
 The data takes shape of the interface ProfileContainer (see reference)
 In the ProfileContainer, you notice list of profiles under items property.
-As an example we have a profile called cd-api-local. I have used it as an example  to show how profile is used in the system and more particularly, how the vault system (CdVault) is used to securely save and extract secrets only when needed.
+As an example we have a profile called cd-api-local. I have used it as an example to show how profile is used in the system and more particularly, how the vault system (CdVault) is used to securely save and extract secrets only when needed.
 
 So in the corpdesk config file we have the following, to identify the profile for cd-api.
 cdApiLocal: "cd-api-local",
@@ -37107,10 +37104,10 @@ const r = await ctlSession.getSession(config?.cdApiLocal);
 
 I have shared how the getSession() method is implemented. Note the following line:
 const resolved =
-        await CdCliVaultController.resolveVaultReferencesInObject(
-          profile.cdCliProfileData.details,
-          profile.cdCliProfileData.cdVault,
-        );
+await CdCliVaultController.resolveVaultReferencesInObject(
+profile.cdCliProfileData.details,
+profile.cdCliProfileData.cdVault,
+);
 I have further shown the details of resolveVaultReferencesInObject().
 
 I would like you to do a documentation targeting developers who would be responsible for developing corpdesk and needs to know that there is a standard for saving profiles and within a given profile there are ways of saving and resolving secrets via CdVault.
@@ -37118,8 +37115,9 @@ I would like you to do a documentation targeting developers who would be respons
 You can use examples given here in a more professional and very easy to understand and use.
 The format should also be consistent with RFC documentaton and patent claims.
 Use George Oremo of EMP Services as the author and innovator under corpdesk system project.
+
 ```ts
-export class SessionController{
+export class SessionController {
   /**
    * Retrieve the current session.
    */
@@ -37196,20 +37194,20 @@ export class SessionController{
 ```
 
 ```ts
-export class CdCliVaultController{
+export class CdCliVaultController {
   static async resolveVaultReferencesInObject<T>(
     input: T,
     cdVault: CdVaultItem[] = [],
   ): Promise<T> {
     const isVaultRef = (val: unknown): val is string =>
-      typeof val === 'string' && /#cdVault\['(.+?)'\]/.test(val);
+      typeof val === "string" && /#cdVault\['(.+?)'\]/.test(val);
 
     const recursiveResolve = async (obj: any): Promise<any> => {
       if (Array.isArray(obj)) {
         return Promise.all(obj.map(recursiveResolve));
       }
 
-      if (typeof obj === 'object' && obj !== null) {
+      if (typeof obj === "object" && obj !== null) {
         const result: any = {};
         for (const key of Object.keys(obj)) {
           result[key] = await recursiveResolve(obj[key]);
@@ -37221,9 +37219,13 @@ export class CdCliVaultController{
         const key = obj.match(/#cdVault\['(.+?)'\]/)?.[1];
         const vaultEntry = cdVault.find((v) => v.name === key);
         if (vaultEntry) {
-          return vaultEntry.isEncrypted ? await this.decryptValue(vaultEntry) : vaultEntry.value;
+          return vaultEntry.isEncrypted
+            ? await this.decryptValue(vaultEntry)
+            : vaultEntry.value;
         } else {
-          CdCliVaultController.logger.logWarn(`Vault reference key '${key}' not found.`);
+          CdCliVaultController.logger.logWarn(
+            `Vault reference key '${key}' not found.`,
+          );
           return obj;
         }
       }
@@ -37235,7 +37237,9 @@ export class CdCliVaultController{
   }
 }
 ```
+
 Extracts from the profile file.
+
 ```ts
 {
       cdCliProfileName: 'cd-api-local',
@@ -37477,18 +37481,2530 @@ export enum CdCliProfileTypes {
 
 // Enum for ACL Scope for coops module. Coops is a module to manage cooperative entities
 export const enum CdClisAclScope {
-    COOPS_GUEST = 11,
-    COOPS_USER = 12,
-    COOPS_MEMBER = 13,
-    COOPS_SACCO_ADMIN = 14,
-    COOPS_REGIONAL_ADMIN = 15,
-    COOPS_NATIONAL_ADMIN = 16,
-    COOPS_CONTINENTAL_ADMIN = 17,
-    COOPS_GLOBAL_ADMIN = 18
+  COOPS_GUEST = 11,
+  COOPS_USER = 12,
+  COOPS_MEMBER = 13,
+  COOPS_SACCO_ADMIN = 14,
+  COOPS_REGIONAL_ADMIN = 15,
+  COOPS_NATIONAL_ADMIN = 16,
+  COOPS_CONTINENTAL_ADMIN = 17,
+  COOPS_GLOBAL_ADMIN = 18,
 }
 
 export interface ICdsCliAcl {
-    scope: CdClisAclScope;
-    geoLocationId: number | null;
+  scope: CdClisAclScope;
+  geoLocationId: number | null;
 }
+```
+
+/////////////////////////////
+
+I have reduced CdCliProfileService and ProfileStoreService to just stubs just to communicate the desig and capacity.
+They will ofcourse need improvments based on new corpdesk feature.
+Also note how cd-node is working now (very important) for every component, developers has to be aware that the same feature has capacity to works in different modes/roles eg cd-api, cd-cli, cd-rpc etc.
+
+```ts
+// cd-cli-profile.service.ts - STUB
+// Purpose: Manage CLI profiles - CRUD operations, local caching, session/credential extraction, vault encryption
+
+export class CdCliProfileService extends GenericService<CdCliProfileModel> {
+  // SINGLETON
+  static getInstance(): CdCliProfileService;
+
+  // PROFILE LOADING & INIT
+  initializeProfiles(): Promise<CdFxReturn<void>>;
+  loadProfiles(): Promise<CdFxReturn<ProfileContainer>>;
+  checkProfileAndLogin(): Promise<CdFxReturn<void>>;
+  fetchAndSaveProfiles(cdToken: string): Promise<void>;
+
+  // PROFILE CRUD OPERATIONS (Local & Remote)
+  createProfile(profileFilePath: string): Promise<void>;
+  createCdCliProfile(newCdCliProfile: any, cdToken: string): Promise<any>;
+  getCdCliProfileEdge(q: IQuery, cdToken: string): Promise<any>;
+  updateCdCliProfileData(
+    q: IQuery,
+    jsonUpdate: SnpInstruction[],
+    cdToken: string,
+  ): Promise<any>;
+  deleteCdCliProfile(q: IQuery, cdToken: string): Promise<any>;
+  saveCdCliProfileLocal(
+    profile: ProfileModel,
+    name?: string,
+    id?: number,
+  ): Promise<boolean>;
+
+  // PROFILE RETRIEVAL & EXTRACTION
+  getProfileByName(profileName: string): Promise<CdFxReturn<ProfileModel>>;
+  listProfiles(): Promise<void>;
+  showProfile(profileName: string): Promise<void>;
+  removeProfile(profileName: string): Promise<void>;
+
+  // SESSION / TOKEN EXTRACTION
+  getSessionData(): Promise<CdFxReturn<string>>;
+  getConsumerToken(): Promise<CdFxReturn<string>>;
+  getEndPoint(): Promise<CdFxReturn<string>>;
+  getUserPermissions(): Promise<CdFxReturn<string[]>>;
+
+  // VAULT / ENCRYPTION
+  sanitizeProfileDetails(detailsPath: string): Promise<CdFxReturn<string[]>>;
+  extractVaultValue(profile: ProfileModel, key: string): CdFxReturn<string>;
+
+  // API ENVELOPE BUILDERS
+  setEnvelopeCreateCdCliProfile(d: any, cdToken: string): ICdRequest;
+  setEnvelopeGetCountCdCliProfile(q: IQuery, cdToken: string): ICdRequest;
+  setEnvelopeUpdateCdCliProfileData(
+    q: IQuery,
+    jUpdate: SnpInstruction[],
+    cdToken: string,
+  ): ICdRequest;
+  setEnvelopeDelete(q: IQuery, cdToken: string): ICdRequest;
+
+  // REQUEST HANDLERS (Express)
+  create(req: Request, res: Response): Promise<void>;
+  read(
+    req: Request,
+    res: Response,
+    serviceInput: IServiceInput<any>,
+  ): Promise<any>;
+  update(req: Request, res: Response): Promise<void>;
+  updateCdCliProfile(req: Request, res: Response): Promise<void>;
+  delete(req: Request, res: Response): Promise<void>;
+  getCdCliProfile(req: Request, res: Response, q?: IQuery): Promise<void>;
+  getCdCliProfileCount(req: Request, res: Response): Promise<void>;
+
+  // VALIDATION HELPERS
+  validateCreate(req: Request, res: Response): Promise<boolean>;
+  validateExistence(
+    req: Request,
+    res: Response,
+    validationParams: any,
+  ): Promise<boolean>;
+  validateUpdateProfileData(req: Request, res: Response): Promise<boolean>;
+  validateProfileData(
+    req: Request,
+    res: Response,
+    profileData: any,
+  ): Promise<boolean>;
+
+  // BEFORE/AFTER HOOKS
+  beforeCreate(req: Request, res: Response): Promise<any>;
+  afterCreate(req: Request, res: Response): Promise<void>;
+  beforeUpdate(q: any): any;
+
+  // INTERNAL HELPERS
+  getCdCliProfileI(
+    req: Request,
+    res: Response,
+    q?: IQuery,
+  ): Promise<CdCliProfileViewModel[]>;
+  isMember(req: Request, res: Response, q: IQuery): Promise<boolean>;
+}
+```
+
+```ts
+// profile-store.service.ts - STUB
+// Purpose: Singleton cache for profile data, tokens, and base URL - loads once and provides accessors
+
+export class ProfileStoreService {
+  // Static logger instance
+  static logger: Logging;
+
+  // Cached data (loaded once, static)
+  private static profilesRet: CdFxReturn<ProfileContainer> | null;
+  private static cdTokenRet: CdFxReturn<string> | null;
+  private static baseUrl: string;
+
+  // INITIALIZATION - loads profiles, session token, and base URL
+  static async init(): Promise<CdFxReturn<ProfileContainer>>;
+
+  // GETTERS - return cached data (must call init() first)
+  static getProfiles(): CdFxReturn<ProfileContainer>;
+  static getCdToken(): CdFxReturn<string>;
+  static getBaseUrl(): string;
+
+  // RELOAD - refresh cached data (e.g. after profile updates)
+  static async reload(): Promise<CdFxReturn<ProfileContainer>>;
+}
+```
+
+/////////////////////////
+
+With what we have now, we have to revisit the test objective.
+In this case, we need to use SNP in it new design, to process the method initAiRuntime() below.
+The new design should be able to process the folloing lines as a pipeline:
+
+1. ProfileStoreService.getProfile():
+   Note that inside ProfileStoreService.getProfile(), we are meant to pick profile from cache.
+   This should be followed by extracting 'open-ai' from the profile and return it.
+   I have shared the existing codes.
+
+2. const resultApiKey = SnpService.execute(openAiProfile, serviceInput);
+
+Suggest how we move from here.
+
+```ts
+export class CdAiController {
+  /**
+   * Initializes the AI runtime environment, including starting the queue watcher and initializing all registered AI services.
+   * Also checks the budget status of each service and logs warnings if budgets are low.
+   * This method should be called once during application startup to ensure the AI runtime is ready to handle requests.
+   */
+  static async initAiRuntime(): Promise<void> {
+    this.logger.logDebug("[CdAiController][initAiRuntime()] start...");
+
+    /**
+     * Configure serviceInput to fetch open-ai profile from the system cache.
+     */
+    const serviceInput = {
+      serviceModel: CdAiModel,
+      docName: "CdAiController::initAiRuntime",
+      dsType: DsType.CACHE,
+      cacheKey: "runtime:profiles", // this name should be automated or to come from config file
+      snpAdapterInstance: new JSnpAdapter(),
+      cmd: {
+        action: "read",
+        /**
+         * set up an IQuery to fetch open-ai profile
+         */
+        query: {
+          /**
+           * select target data
+           */
+          snpWhere: [
+            {
+              path: [
+                "items",
+                {
+                  path: ["cdCliProfileName"],
+                  op: SnpOperator.Equals,
+                  value: "open-ai",
+                },
+                // "cdCliProfileData",
+                // "details",
+                // "apiKey",
+              ],
+              modelField: "apiKey",
+            },
+          ],
+          /**
+           * define action to do to the data
+           */
+          snpCrud: [
+            {
+              path: [
+                {
+                  path: ["data", "cdCliProfileData", "details", "apiKey"],
+                  modelField: "apiKey",
+                },
+              ],
+              action: "read",
+            },
+          ],
+        },
+        dsType: DsType.CACHE,
+      },
+      dSource: 1,
+    } as IServiceInput<any>;
+    const ret = (await ProfileStoreService.getProfile(
+      null,
+      null,
+      serviceInput,
+    )) as CdFxReturn<ProfileModel>;
+
+    this.logger.logDebug(
+      `[CdAiController][initAiRuntime()] ret: ${inspect(ret, { depth: 2 })}`,
+    );
+
+    const openAiProfile = ret.data;
+    SnpService.adapter = serviceInput.snpAdapterInstance;
+    const resultApiKey = SnpService.execute(openAiProfile, serviceInput);
+    this.logger.logDebug(
+      `[CdAiController][initAiRuntime()] resultApiKey: ${inspect(resultApiKey, { depth: 2 })}`,
+    );
+    await QueueWatcherService.start();
+
+    const services = AiServiceRegistry.getAllServices();
+    for (const service of services) {
+      await service.init();
+      const budget = await service.getBudgetStatus();
+
+      if (budget.remaining < 10) {
+        this.logger.logWarn(`[${service.name}] Budget running low!`);
+      } else {
+        this.logger.logDebug(
+          `[${service.name}] Budget OK. Remaining: ${budget.remaining}`,
+        );
+      }
+    }
+
+    BudgetGuardService.start(); // if it still serves general monitoring
+  }
+}
+```
+
+```ts
+export class ProfileStoreService {
+  static async getProfile(
+    req: Request | null,
+    res: Response | null,
+    serviceInput: IServiceInput<ProfileModel>,
+  ): Promise<CdFxReturn<any>> {
+    this.logger.logDebug(`[ProfileStore][getProfile()] start...`);
+
+    try {
+      const b = BaseService.getInstance();
+      const profileService = CdCliProfileService.getInstance();
+      let profileModel: any = {};
+
+      /**
+       * get role from cache
+       * the cache key name should be deduced or comes from a constant in a config file
+       */
+      const role = this.svSysCache.get("runtime.role") as ICdNodeRole;
+
+      this.logger.logDebug(
+        `[ProfileStore][getProfile()] ret: ${inspect(role, { depth: 2 })}`,
+      );
+
+      let profile: any = {};
+
+      // cd-node has different runtime modes, so...
+      if (role.name === "cd-api" && req && res) {
+        // it means runtime is no backend, so use req to get profile from the database via profileService.getCdCliProfileI()
+        const plData = this.b.getPlData(req);
+        const profileName = plData.cdCliProfileName;
+
+        const q = { where: { cdCliProfileName: profileName } } as IQuery;
+        profile = profileService.getCdCliProfileI(req, res, q);
+      } else {
+        // all other modes should be able to use cache as a datasource
+        // examine RuntimeBootstrapService.cacheProfiles() to tell how the retrieval should be queried.
+        const fullCache = this.svSysCache.getAll(); // just for debugging purposes
+        this.logger.logDebug(
+          `[ProfileStore][getProfile()] fullCache: ${inspect(fullCache, { depth: 3 })}`,
+        );
+
+        /**
+         * We are getting the profiles then filtering what we need.
+         * This would be repeated by multiple services.
+         * It should be possible to use SNP to manage this process because the workflow is the same as SNP ([get target via snpWhere] -> perform 'action' on the result via snpCrud)
+         */
+        profile = this.svSysCache.get(serviceInput.cacheKey as string); // naming of items in cache should be automated and predictable
+
+        this.logger.logDebug(
+          `[ProfileStore][getProfile()] profile: ${inspect(profile, { depth: 2 })}`,
+        );
+
+        // Now use SNP to extract the required data
+        // const fetchedData = (await b.fetchBySnpFilters(
+        //   req,
+        //   res,
+        //   serviceInput,
+        // ));
+        const snpQuery = serviceInput.cmd?.query as IQuery;
+        const snpWhere = snpQuery?.snpWhere?.[0] as SnpInstruction | undefined;
+        let fetchedData: any = null;
+
+        if (snpWhere) {
+          // SnpService.adapter must be set before running snp operations
+          SnpService.adapter = serviceInput.snpAdapterInstance;
+
+          // do snp read
+          fetchedData = SnpService.read(profile, snpWhere);
+          profileModel = fetchedData.readValue as ProfileModel;
+          this.logger.logDebug(
+            `[ProfileStore][getProfile()] fetchedData: ${inspect(fetchedData, { depth: 2 })}`,
+          );
+        } else {
+          this.logger.logDebug(
+            `[ProfileStore][getProfile()] no snpWhere clause present in serviceInput.cmd.query`,
+          );
+        }
+
+        if (!profile) {
+          const message = `[ProfileStoreService][getProfile()] Failed to load profiles`;
+          this.logger.logError(message);
+          return { data: null, state: false, message };
+        }
+      }
+
+      return {
+        data: profileModel,
+        state: true,
+      };
+    } catch (e) {
+      this.logger.logError(
+        `[ProfileStoreService][getProfile()] failed: ${(e as Error).message}`,
+      );
+      return {
+        data: null,
+        state: false,
+        message: `Error retrieving profile: ${(e as Error).message}`,
+      };
+    }
+  }
+}
+```
+
+//////////////////////
+Now that we are thinking about it.
+I think what we were using earlier (extract shown below), if a form of precompiled, executable code based our current architacture.
+What do you think?
+
+```ts
+export class CdRfcWorkFlow {
+  updateWorkFlow(
+    cdModule: CdModuleDescriptor,
+    moduleType: string,
+    extraParam: any,
+  ): CiCdDescriptor {
+    this.logger.logDebug("Starting CdRfcWorkFlow::updateWorkFlow()");
+    this.logger.logDebug(
+      `CdRfcWorkFlow:: updateWorkFlow()/cdModule: ${inspect(cdModule, {
+        depth: 2,
+      })}, type: ${moduleType}, extraParam: ${inspect(extraParam, { depth: 2 })}`,
+    );
+    return {
+      cICdPipeline: {
+        name: "CdRfc Update Pipeline",
+        type: "dev-env-setup",
+        stages: [
+          {
+            name: "Update RFC Data",
+            description:
+              "Extract and Update RFC Data from documentation repository",
+            tasks: [
+              // ─────────────────────────────
+              // 1. FETCH
+              // ─────────────────────────────
+              {
+                name: "FetchRfcData",
+                type: "method",
+                executor: "cd-cli",
+                status: "pending",
+                cdRequest: {
+                  ctx: "app",
+                  m: "cd-auto-git",
+                  c: "CdAutoGit",
+                  a: "ReadDocBlock",
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    identifier: extraParam.srcPath,
+                    blockType: cdModule.versionControl?.repository.name,
+                  },
+                },
+                onResult: [
+                  {
+                    ifState: [
+                      CdFxStateLevel.Success,
+                      CdFxStateLevel.PartialSuccess,
+                    ],
+                    toTask: "UpdateRfcData",
+                  },
+                  {
+                    ifState: [
+                      CdFxStateLevel.LogicalFailure,
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                    ],
+                    toTask: "NotifyFailure",
+                  },
+                ],
+              },
+
+              // ─────────────────────────────
+              // 2. UPDATE (USES OUTPUT)
+              // ─────────────────────────────
+              {
+                name: "UpdateRfcData",
+                type: "remoteCdRequest",
+                executor: "cd-cli",
+                status: "pending",
+                cdRequest: {
+                  ctx: "app",
+                  m: "cd-bio-engine",
+                  c: "CdBioEngineDna",
+                  a: "SnpUpdate",
+                  dat: {
+                    f_vals: [
+                      {
+                        query: {
+                          snpWhere: [
+                            {
+                              path: ["url"],
+                              modelField: "cdBioEngineDnaSrc",
+                              op: SnpOperator.Equals,
+                              value: extraParam.srcPath,
+                            },
+                          ],
+                          snpCrud: [
+                            {
+                              path: [],
+                              action: "upsert",
+                              value: "$outputs.FetchRfcData.blocks",
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                    token: extraParam.cdToken,
+                  },
+                  args: {},
+                },
+                onResult: [
+                  {
+                    ifState: [
+                      CdFxStateLevel.Success,
+                      CdFxStateLevel.PartialSuccess,
+                    ],
+                    toTask: "GetRfcData",
+                  },
+                  {
+                    ifState: [
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: "NotifyFailure",
+                  },
+                ],
+              },
+              // ─────────────────────────────
+              // 3. TEST READING OF DNA
+              // ─────────────────────────────
+              {
+                name: "GetRfcData",
+                type: "remoteCdRequest",
+                executor: "cd-cli",
+                status: "pending",
+                cdRequest: {
+                  ctx: "app",
+                  m: "cd-bio-engine",
+                  c: "CdBioEngineDna",
+                  a: "SnpGet",
+                  dat: {
+                    f_vals: [
+                      {
+                        query: {
+                          snpWhere: [
+                            {
+                              path: ["url"],
+                              modelField: "cdBioEngineDnaSrc",
+                              op: SnpOperator.Equals,
+                              value: extraParam.srcPath,
+                            },
+                          ],
+                          snpCrud: [
+                            {
+                              modelField: "cdBioEngineDnaData",
+                              path: ["parsedContent"],
+                              action: "read",
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                    token: extraParam.cdToken,
+                  },
+                  args: {},
+                },
+                onResult: [
+                  {
+                    ifState: [
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: "NotifyFailure",
+                  },
+                ],
+              },
+
+              // ─────────────────────────────
+              // 3. FAILURE HANDLER
+              // ─────────────────────────────
+              {
+                name: "NotifyFailure",
+                type: "method",
+                executor: "cd-cli",
+                status: "pending",
+                cdRequest: {
+                  ctx: "sys",
+                  m: "dev-descriptor",
+                  c: "CiCdRunner",
+                  a: "SendFailureAlert",
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    message: `RFC update failed for module: ${cdModule.name}`,
+                    failedTask: "$outputs.UpdateRfcData",
+                    stage: "Update RFC Data",
+                    task: "UpdateRfcData",
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    };
+  }
+}
+```
+
+//////////////////////////////
+
+Based on what we have discussed so far, I am visualizing something like this:
+The sequence serialized below represent a process of a chain reaction that auto builds into a full execution plan before execution.
+The example is that of how CdAiService starts trigger a chain reaction that results in aquiring apiKey.
+Much as as what is illustrated below can be construed as normal methods chaining, it is meant to represent buildup of execution plan based on CICdPipeline interface. The end result is eventually executed to achieve the initial goal at the begining of the chain.
+
+<x-EP>:
+A method returning Execution plan(CICdPipeline).
+This method can return predefined output with parameters or auto generates what is required dynamically.
+
+<x-HANDLE>:
+Logical link to gven EP.
+Something like ProfileStoreService.assets.getProfile({snpWhere: {profileName: 'open-ai'}} as IQuery);
+serviceInput can also be used a input and it is the host to derive serviceInput.cmd.query.
+
+The process:
+
+1. CdAiService:
+   <api-key-EP> : A Pre-compiled execution plan to extract apiKey from 'open-ai' <profile-HANDLE>.
+   <profile-HANDLE>: is a handle to <profile-EP>
+
+2. ProfileStoreService:
+   <profile-EP> : A Pre-compiled execution plan to extract a named profile from <syc-cache-profile-HANDLE>.
+   <syc-cache-profile-HANDLE>: is a handle to <syc-cache-profile-EP>
+
+3. ProfileStoreService can also host <syc-cache-profile-EP>
+
+4. Accessing profile from SysCacheService can be just a conventional method.
+
+I am thinking when this model can be mapped against conventional processes of chaining methods, to operate at similar levels of convinience.
+With this in mind and knowing we are targeting ai as the main driver, it can be pushed to do much more than the conventional ways of coding abstructions.
+
+Let me know what you think? If you are ok with it, give me your suggestion for plan and implementation.
+
+///////////////////////////
+
+The following is a task(CICdTask) of a givne pipeline (CICdPipeline).
+Note that any task can target any method in a local or remote corpdesk instance using the conventions of ICdRequest and cd-wire.
+
+These targeted methods need not to know 'who' or 'what' is accessing them. They just have to be methods that conform to corpdesk coding standards.
+The ai also does not need full training, there are searchable RFCs/DNA managed by cd-bio-engine for any LLM to refer for context.
+
+Now back to the sample task below:
+A searchable data of this nature can also be persisted in a database.
+When the process is managed by LLM, it can search and auto-build a given execution plan intelligently without relying on the code base.
+The code base is eventually a target when the full execution plan is built.
+
+References:
+corpdesk coding standards: https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/1.%20corpdesk-rfc-0001_architecture_and_conventions.md
+cd-wire: https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/2.%20corpdesk-rfc-0003-cd-wire.md
+
+CICdPipeline sample task:
+```ts
+{
+                name: "FetchRfcData",
+                type: "method",
+                executor: "cd-cli",
+                status: "pending",
+                cdRequest: {
+                  ctx: "app",
+                  m: "cd-auto-git",
+                  c: "CdAutoGit",
+                  a: "ReadDocBlock",
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    identifier: extraParam.srcPath,
+                    blockType: cdModule.versionControl?.repository.name,
+                  },
+                },
+                onResult: [
+                  {
+                    ifState: [
+                      CdFxStateLevel.Success,
+                      CdFxStateLevel.PartialSuccess,
+                    ],
+                    toTask: "UpdateRfcData",
+                  },
+                  {
+                    ifState: [
+                      CdFxStateLevel.LogicalFailure,
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                    ],
+                    toTask: "NotifyFailure",
+                  },
+                ],
+              },
+```
+
+```ts
+export interface ICdRequest {
+  ctx: string | CdCtx; // can be either "Sys" or "App"
+  m: string; // target module name. Note that at the source codes, the full name has "Module" word following the given name here.
+  c: string; // target controler name. Note that at the source codes, the full name has "Controller" word following the given name here.
+  a: string; // target action name
+  dat: EnvelopDat; // payload data
+  args: any | null; // for future or forseable extension. Was set at design time but has not been used so far. Recommended to be kept as is
+}
+
+export interface EnvelopDat {
+  f_vals: EnvelopFValItem[]; // settings for the command. The array dimension was meant to have capacity for sending multiple commands in the future
+  token: string | null; // session token.
+}
+
+export interface EnvelopFValItem {
+  query?: IQuery; // see  IQuery notes
+  data?: any; // set according to the interface of a given Corpdesk controller interface. This is synonimous with model of a given entity targeting a database table or similar
+  extData?: any; // for use in scenario where extra data is used to complete the command. For example when the target action need pre or post process. The details are set by develper at the controller action
+  /**
+   * Developer-specific objects (like cdObj, userObj, etc.)
+   * Any additional property is allowed here.
+   */
+  [key: string]: any;
+}
+```
+
+////////////////////////////////////
+Take a look at the following.
+Illustration 4 is a working pipleline that can be executed by a class called CiCdRunnerService.
+Using the same method, I wish to make the building of the tasks in a given stage to be dynamic.
+Illustration 1-3 shows a set up that is not yet tested.
+The intention is that a given method can request for a facility without knowing how it is going to be executed.
+But a chain reaction will take place from one method to another cris-crossing relevant classes until it builds the full tasks in a given stage.
+I have just put a skeleton that represent the idea.
+I would like you to do a critic and recommend how this can be actualized.
+
+Illustration 1:
+```ts
+export class CdAiService{
+  static async addAssets(
+    serviceInput: IServiceInput<any>,
+    assetName: string,
+  ): Promise<IServiceInput<any>> {
+    const assetList = [
+      {
+        name: "GetApiKey",
+        type: "method",
+        executor: "cd-cli",
+        status: "pending",
+        cdRequest: {
+          ctx: "app",
+          m: "cd-ai",
+          c: "CdAi",
+          a: "GetApiKey",
+          dat: {
+            f_vals: [{ data: null }],
+            token: "",
+          },
+          args: {
+            serviceInput,
+          },
+        },
+        onResult: [
+          {
+            ifState: [CdFxStateLevel.Success, CdFxStateLevel.PartialSuccess],
+            toTask: null,
+          },
+          {
+            ifState: [
+              CdFxStateLevel.LogicalFailure,
+              CdFxStateLevel.Error,
+              CdFxStateLevel.Fatal,
+              CdFxStateLevel.SystemError,
+            ],
+            toTask: "NotifyFailure",
+          },
+        ],
+      },
+    ];
+
+    const thisTask = assetList.find(
+      (task) => task.name === assetName,
+    ) as CICdTask;
+    // add current task to parent stage
+    serviceInput.execPlanner?.tasks.push(thisTask);
+    // Set dependency
+    serviceInput = await ProfileStoreService.addAssets(serviceInput,"GetProfile");
+    return serviceInput;
+  }
+}
+```
+Illustration 2:
+```ts
+export class ProfileStoreService{
+  static async addAssets(
+    serviceInput: IServiceInput<any>,
+    assetName: string,
+  ): Promise<IServiceInput<any>> {
+    const assetList = [
+      {
+        name: "GetProfile",
+        type: "method",
+        executor: "cd-cli",
+        status: "pending",
+        cdRequest: {
+          ctx: "app",
+          m: "cd-cli",
+          c: "ProfileStore",
+          a: "GetProfile",
+          dat: {
+            f_vals: [{ data: null }],
+            token: "",
+          },
+          args: {
+            serviceInput,
+          },
+        },
+        onResult: [
+          {
+            ifState: [CdFxStateLevel.Success, CdFxStateLevel.PartialSuccess],
+            toTask: null,
+          },
+          {
+            ifState: [
+              CdFxStateLevel.LogicalFailure,
+              CdFxStateLevel.Error,
+              CdFxStateLevel.Fatal,
+              CdFxStateLevel.SystemError,
+            ],
+            toTask: "NotifyFailure",
+          },
+        ],
+      },
+    ];
+
+    const thisTask = assetList.find(
+      (task) => task.name === assetName,
+    ) as CICdTask;
+    // add current task to parent stage
+    await serviceInput.execPlanner?.tasks.push(thisTask);
+    // Set dependency
+    serviceInput = await SysCacheService.addAssets(serviceInput, "GetProfile");
+    return serviceInput;
+  }
+}
+```
+Illustration 3:
+```ts
+export class SysCacheService{
+  static async addAssets(
+    serviceInput: IServiceInput<any>,
+    assetName: string,
+  ): Promise<IServiceInput<any>> {
+    const assetList = [
+      {
+        name: "GetProfile",
+        type: "method",
+        executor: "cd-cli",
+        status: "pending",
+        cdRequest: {
+          ctx: "sys",
+          m: "moduleman",
+          c: "SysCache",
+          a: "GetProfile",
+          dat: {
+            f_vals: [{ data: null }],
+            token: "",
+          },
+          args: {
+            cacheKey: "runner.profile",
+          },
+        },
+        onResult: [
+          {
+            ifState: [CdFxStateLevel.Success, CdFxStateLevel.PartialSuccess],
+            toTask: null,
+          },
+          {
+            ifState: [
+              CdFxStateLevel.LogicalFailure,
+              CdFxStateLevel.Error,
+              CdFxStateLevel.Fatal,
+              CdFxStateLevel.SystemError,
+            ],
+            toTask: "NotifyFailure",
+          },
+        ],
+      },
+    ];
+
+    const thisTask = assetList.find(
+      (task) => task.name === assetName,
+    ) as CICdTask;
+    // add current task to parent stage
+    serviceInput.execPlanner?.tasks.push(thisTask);
+    // Set dependency
+    // Has no dependency
+    return serviceInput;
+  }
+}
+```
+Illustration 4:
+```ts
+export class CdRfcWorkFlow {
+  updateWorkFlow(
+    cdModule: CdModuleDescriptor,
+    moduleType: string,
+    extraParam: any,
+  ): CiCdDescriptor {
+    this.logger.logDebug("Starting CdRfcWorkFlow::updateWorkFlow()");
+    this.logger.logDebug(
+      `CdRfcWorkFlow:: updateWorkFlow()/cdModule: ${inspect(cdModule, {
+        depth: 2,
+      })}, type: ${moduleType}, extraParam: ${inspect(extraParam, { depth: 2 })}`,
+    );
+    return {
+      cICdPipeline: {
+        name: "CdRfc Update Pipeline",
+        type: "dev-env-setup",
+        stages: [
+          {
+            name: "Update RFC Data",
+            description:
+              "Extract and Update RFC Data from documentation repository",
+            tasks: [
+              // ─────────────────────────────
+              // 1. FETCH
+              // ─────────────────────────────
+              {
+                name: "FetchRfcData",
+                type: "method",
+                executor: "cd-cli",
+                status: "pending",
+                cdRequest: {
+                  ctx: "app",
+                  m: "cd-auto-git",
+                  c: "CdAutoGit",
+                  a: "ReadDocBlock",
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    identifier: extraParam.srcPath,
+                    blockType: cdModule.versionControl?.repository.name,
+                  },
+                },
+                onResult: [
+                  {
+                    ifState: [
+                      CdFxStateLevel.Success,
+                      CdFxStateLevel.PartialSuccess,
+                    ],
+                    toTask: "UpdateRfcData",
+                  },
+                  {
+                    ifState: [
+                      CdFxStateLevel.LogicalFailure,
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                    ],
+                    toTask: "NotifyFailure",
+                  },
+                ],
+              },
+
+              // ─────────────────────────────
+              // 2. UPDATE (USES OUTPUT)
+              // ─────────────────────────────
+              {
+                name: "UpdateRfcData",
+                type: "remoteCdRequest",
+                executor: "cd-cli",
+                status: "pending",
+                cdRequest: {
+                  ctx: "app",
+                  m: "cd-bio-engine",
+                  c: "CdBioEngineDna",
+                  a: "SnpUpdate",
+                  dat: {
+                    f_vals: [
+                      {
+                        query: {
+                          snpWhere: [
+                            {
+                              path: ["url"],
+                              modelField: "cdBioEngineDnaSrc",
+                              op: SnpOperator.Equals,
+                              value: extraParam.srcPath,
+                            },
+                          ],
+                          snpCrud: [
+                            {
+                              path: [],
+                              action: "upsert",
+                              value: "$outputs.FetchRfcData.blocks",
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                    token: extraParam.cdToken,
+                  },
+                  args: {},
+                },
+                onResult: [
+                  {
+                    ifState: [
+                      CdFxStateLevel.Success,
+                      CdFxStateLevel.PartialSuccess,
+                    ],
+                    toTask: "GetRfcData",
+                  },
+                  {
+                    ifState: [
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: "NotifyFailure",
+                  },
+                ],
+              },
+              // ─────────────────────────────
+              // 3. TEST READING OF DNA
+              // ─────────────────────────────
+              {
+                name: "GetRfcData",
+                type: "remoteCdRequest",
+                executor: "cd-cli",
+                status: "pending",
+                cdRequest: {
+                  ctx: "app",
+                  m: "cd-bio-engine",
+                  c: "CdBioEngineDna",
+                  a: "SnpGet",
+                  dat: {
+                    f_vals: [
+                      {
+                        query: {
+                          snpWhere: [
+                            {
+                              path: ["url"],
+                              modelField: "cdBioEngineDnaSrc",
+                              op: SnpOperator.Equals,
+                              value: extraParam.srcPath,
+                            },
+                          ],
+                          snpCrud: [
+                            {
+                              modelField: "cdBioEngineDnaData",
+                              path: ["parsedContent"],
+                              action: "read",
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                    token: extraParam.cdToken,
+                  },
+                  args: {},
+                },
+                onResult: [
+                  {
+                    ifState: [
+                      CdFxStateLevel.Error,
+                      CdFxStateLevel.Fatal,
+                      CdFxStateLevel.SystemError,
+                      CdFxStateLevel.LogicalFailure,
+                    ],
+                    toTask: "NotifyFailure",
+                  },
+                ],
+              },
+
+              // ─────────────────────────────
+              // 3. FAILURE HANDLER
+              // ─────────────────────────────
+              {
+                name: "NotifyFailure",
+                type: "method",
+                executor: "cd-cli",
+                status: "pending",
+                cdRequest: {
+                  ctx: "sys",
+                  m: "dev-descriptor",
+                  c: "CiCdRunner",
+                  a: "SendFailureAlert",
+                  dat: {
+                    f_vals: [{ data: null }],
+                    token: extraParam.cdToken,
+                  },
+                  args: {
+                    message: `RFC update failed for module: ${cdModule.name}`,
+                    failedTask: "$outputs.UpdateRfcData",
+                    stage: "Update RFC Data",
+                    task: "UpdateRfcData",
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    };
+  }
+}
+```
+Illustration 5:
+```ts
+// ─── Main Entry ─────────────────────────────────────────────
+export interface CiCdDescriptor extends BaseDescriptor {
+  dsFormart?: "json" | "csv" | "sql-db";
+  cICdPipeline?: CICdPipeline;
+  cICdTriggers?: CICdTrigger;
+  cICdEnvironment?: CICdEnvironment;
+  cICdNotifications?: CICdNotification;
+  cICdMetadata?: CICdMetadata;
+}
+
+// ─── Pipeline ───────────────────────────────────────────────
+export interface CICdPipeline extends BaseDescriptor {
+  name: string;
+  type:
+    | "integration"
+    | "delivery"
+    | "deployment"
+    | "dev-env-setup"
+    | "cd-module-development"
+    | "dev-roadmap";
+  stages: CICdStage[];
+  versionTag?: number; // e.g., "1.2"
+  completionRef?: string; // e.g., "abc123" for the last commit hash
+  mergePolicy?: "merge" | "rebase" | "squash" | "converge"; // ← NEW
+  changelog?: CdChangeLogDescriptor;
+  devDoc?: CdDocDescriptor[];
+  fileMeta?: CdFileDescriptor;
+}
+
+export type CdRoadmapDescriptor = CICdPipeline & { type: "dev-roadmap" };
+
+export interface CICdHistory extends BaseDescriptor {
+  changelogs?: CICdHistory[];
+  contributors?: SourceContributor[];
+  events?: CICdHistoryEvent[];
+  fileMeta?: CdFileDescriptor;
+}
+
+export type CdChangeLogDescriptor = CICdHistory;
+
+// export interface CICdHistory extends BaseDescriptor {
+//   changelogs?: CICdHistory[];
+//   contributors?: SourceContributor[];
+//   events?: CICdHistoryEvent[];
+// }
+
+export interface CICdHistoryEvent extends BaseDescriptor {
+  type: "commit" | "merge" | "tag" | "release";
+  actor: string;
+  description?: string;
+  date: string;
+  ref?: string;
+}
+
+// ─── Stage ──────────────────────────────────────────────────
+export interface CICdStage extends BaseDescriptor {
+  name: string;
+  description?: string;
+  tasks: CICdTask[];
+  orderId?: number; // represent minor version e.g., 1 for the first stage, 2 for the second
+  completionRef?: string; // e.g., "abc123" for the last commit hash
+}
+
+// ─── Task Interface ─────────────────────────────────────────
+export interface CICdTask<T = any> extends CdSchedulerTask<T> {
+  type:
+    | "script-inline"
+    | "script-file"
+    | "method"
+    | /*@depricated. Use localCdRequest or remoteCdRequest */ "cdRequest"
+    | "localCdRequest"
+    | "remoteCdRequest"
+    | "operation";
+  status: "pending" | "running" | "completed" | "failed";
+  completionRef?: string;
+  requires?: CICdTask;
+}
+
+export interface CiCdTaskResult {
+  stage: string;
+  task: string;
+  state: number | boolean; // numeric enum or boolean
+  message: string;
+}
+
+// ─── Triggers ───────────────────────────────────────────────
+export interface CICdTrigger extends BaseDescriptor {
+  type: "push" | "pull_request" | "schedule" | "manual" | "other";
+  schedule?: string;
+  branchFilters?: string[];
+  conditions?: CICdTriggerConditions;
+}
+
+// ─── Environment ────────────────────────────────────────────
+export interface CICdEnvironment extends BaseDescriptor {
+  name: string;
+  url: string;
+  type: "staging" | "production" | "testing" | "custom";
+  deploymentStrategy: "blue-green" | "canary" | "rolling" | "recreate";
+}
+
+// ─── Notification ───────────────────────────────────────────
+export interface CICdNotificationChannel extends BaseDescriptor {
+  name: string;
+  type: "slack" | "email" | "webhook" | "custom";
+  recipients?: string[];
+  messageFormat?: "text" | "json";
+}
+
+export interface CICdNotification extends BaseDescriptor {
+  channels: CICdNotificationChannel[];
+  onEvents: ("success" | "failure" | "start" | "end")[];
+}
+
+// ─── Metadata ───────────────────────────────────────────────
+export interface CICdMetadata extends BaseDescriptor {
+  createdBy?: string;
+  lastModified?: string;
+  version?: string;
+  repository?: string;
+}
+
+// ─── Trigger Conditions ─────────────────────────────────────
+export interface CICdTriggerConditions extends BaseDescriptor {
+  includeTags: boolean;
+  excludeBranches?: string[];
+}
+
+// ─── BashScript Extension ───────────────────────────────────
+export interface BashScriptDescriptor extends BaseDescriptor {
+  name: "bash";
+  scriptPath?: string;
+  inlineScript?: string;
+  environmentVariables?: Record<string, string>;
+}
+```
+
+///////////////////////////////
+This is the current implementation:
+```ts
+export class CiCdRunnerService{
+async run(
+    descriptor: any,
+    workflowData: CiCdDescriptor,
+    extraParams?: any,
+  ): Promise<CdFxReturn<null | CdAssertReturn[]>> {
+    this.logger.logDebug("Starting CiCdRunnerService::run()");
+
+    const ctx: PipelineContext = {
+      inputs: extraParams ?? {},
+      outputs: {},
+      vars: {},
+      meta: {},
+      execution: {},
+      serviceInput: {} as any,
+    };
+
+    const pipeline = workflowData?.cICdPipeline;
+    this.currentPipelineName = pipeline?.name ?? "";
+
+    if (!pipeline?.stages?.length) {
+      return {
+        state: CdFxStateLevel.Error,
+        message: "No pipeline stages defined.",
+      };
+    }
+
+    const taskMap = new Map<string, CICdTask>();
+    for (const stage of pipeline.stages) {
+      for (const task of stage.tasks) {
+        taskMap.set(`${stage.name}/${task.name}`, task);
+      }
+    }
+
+    let currentStage = pipeline.stages[0];
+    let currentTask = currentStage.tasks[0];
+    this.currentStageName = currentStage.name;
+
+    const visited = new Set<string>();
+    const taskResults: any[] = [];
+
+    while (currentTask) {
+      const taskKey = `${this.currentStageName}/${currentTask.name}`;
+
+      if (visited.has(taskKey)) {
+        return {
+          state: CdFxStateLevel.SystemError,
+          message: `Loop detected at ${taskKey}`,
+          data: taskResults,
+        };
+      }
+      visited.add(taskKey);
+
+      currentTask.status = "running";
+
+      // 🔥 Resolve dynamic args
+      if (currentTask.cdRequest) {
+        currentTask.cdRequest = this.resolveCdRequest(
+          currentTask.cdRequest,
+          ctx,
+        );
+      }
+
+      // 🔥 Execute with guard
+      const rawResult = await this.executeTaskWithPolicies(
+        currentTask,
+        descriptor,
+        ctx,
+      );
+      const result = this.normalizeTaskResult(rawResult, currentTask);
+
+      // 🔥 Layered interpretation
+      const transportState = this.normalizeState(result);
+      const business = this.extractBusinessState(result);
+      const finalState = this.resolveFinalState(transportState, business);
+
+      // 🔥 DATA BUS STORAGE
+      ctx.outputs[currentTask.name] = {
+        transport: {
+          state: transportState,
+          message: result.message ?? "",
+        },
+        business,
+        data: result.data,
+        raw: result,
+      };
+
+      ctx.outputs[taskKey] = ctx.outputs[currentTask.name];
+
+      taskResults.push({
+        stage: this.currentStageName,
+        task: currentTask.name,
+        state: finalState,
+        message: business?.message ?? result.message ?? "",
+      });
+
+      currentTask.status =
+        finalState === CdFxStateLevel.Success ? "completed" : "failed";
+
+      const nextRef = this.resolveNextTask(currentTask, finalState);
+      if (!nextRef) break;
+
+      if (
+        (nextRef.pipelineName ?? this.currentPipelineName) !==
+        this.currentPipelineName
+      ) {
+        return {
+          state: CdFxStateLevel.SystemError,
+          message: `Cross-pipeline transition not supported`,
+          data: taskResults,
+        };
+      }
+
+      const nextKey = `${nextRef.stageName ?? this.currentStageName}/${nextRef.taskName}`;
+      const nextTask = taskMap.get(nextKey);
+
+      if (!nextTask) {
+        return {
+          state: CdFxStateLevel.SystemError,
+          message: `Next task not found: ${nextKey}`,
+          data: taskResults,
+        };
+      }
+
+      this.currentStageName = nextRef.stageName ?? this.currentStageName;
+      currentTask = nextTask;
+    }
+
+    // const hasFailure = taskResults.some((r: any) => r.state !== CdFxStateLevel.Success);
+    const hasFailure = taskResults.some(
+      (r: any) =>
+        r.task !== "NotifyFailure" && r.state !== CdFxStateLevel.Success,
+    );
+
+    return hasFailure
+      ? {
+          state: CdFxStateLevel.LogicalFailure,
+          message: "One or more tasks failed.",
+          data: taskResults,
+        }
+      : {
+          state: CdFxStateLevel.Success,
+          message: "Pipeline executed successfully.",
+          data: taskResults,
+        };
+  }
+
+  // ─────────────────────────────────────────────
+  // ⚙️ EXECUTION WITH POLICIES + SPINNER
+  // ─────────────────────────────────────────────
+
+  private async executeTaskWithPolicies(
+    task: CICdTask,
+    descriptor: CdModuleDescriptor,
+    ctx: PipelineContext,
+  ): Promise<CdFxReturn<any>> {
+    /**
+     * IMPORTANT:
+     *
+     * ora is ESM-only.
+     *
+     * In CommonJS runtime:
+     * - require("ora") fails
+     * - transpiled TS dynamic import may also fail
+     *
+     * Therefore:
+     * - use safe lazy loader
+     * - gracefully degrade if spinner unavailable
+     */
+
+    type SpinnerLike = {
+      start: () => SpinnerLike;
+      succeed: (msg?: string) => void;
+      fail: (msg?: string) => void;
+      info?: (msg?: string) => void;
+      stop?: () => void;
+    };
+
+    let oraFactory: ((text?: string) => SpinnerLike) | undefined;
+
+    try {
+      /**
+       * eval(import())
+       *
+       * Prevents TypeScript transpiling
+       * import() into require()
+       * under CommonJS.
+       */
+      const oraModule = await (eval(`import("ora")`) as Promise<any>);
+
+      oraFactory = oraModule.default;
+    } catch (e: any) {
+      this.logger.logDebug(
+        `CiCdRunnerService::executeTaskWithPolicies()/ora unavailable:${e.message}`,
+      );
+    }
+
+    let attempts = 0;
+
+    const maxAttempts = task.retryCount ?? 1;
+
+    const timeout = task.timeout ?? 60000;
+
+    while (attempts < maxAttempts) {
+      const spinnerText = `⏳ ${task.name} (${attempts + 1}/${maxAttempts})`;
+
+      /**
+       * Safe spinner fallback
+       */
+      const spinner: SpinnerLike = oraFactory
+        ? oraFactory(spinnerText).start()
+        : {
+            start() {
+              const logger = new Logging();
+              logger.logInfo(spinnerText);
+              return this;
+            },
+
+            succeed: (msg?: string) => {
+              this.logger.logInfo(msg ?? `SUCCESS: ${task.name}`);
+            },
+
+            fail: (msg?: string) => {
+              this.logger.logError(msg ?? `FAILED: ${task.name}`);
+            },
+
+            info: (msg?: string) => {
+              this.logger.logInfo(msg ?? `INFO: ${task.name}`);
+            },
+
+            stop: () => {},
+          };
+
+      try {
+        const raw = await Promise.race([
+          this.executeTask(task, descriptor, ctx),
+
+          new Promise<CdFxReturn<any>>((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout")), timeout),
+          ),
+        ]);
+
+        const result = this.normalizeTaskResult(raw, task);
+
+        if (result.state === CdFxStateLevel.Success) {
+          spinner.succeed(`✅ ${task.name}`);
+        } else {
+          spinner.fail(`❌ ${task.name}: ${result.message}`);
+        }
+
+        return result;
+      } catch (e: any) {
+        spinner.fail(`❌ ${task.name}: ${e.message}`);
+
+        attempts++;
+
+        if (attempts < maxAttempts && task.retryDelay) {
+          await this.sleep(task.retryDelay);
+        }
+      } finally {
+        spinner.stop?.();
+      }
+    }
+
+    return {
+      state: CdFxStateLevel.SystemError,
+
+      message: `Failed after ${maxAttempts} attempts`,
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // 🧩 TASK EXECUTION
+  // ─────────────────────────────────────────────
+
+  async executeTask(
+    task: CICdTask,
+    descriptor: CdModuleDescriptor,
+    ctx: PipelineContext,
+  ): Promise<CdFxReturn<any>> {
+    try {
+      const b = new BaseService();
+      switch (task.type) {
+        case "script-inline":
+          return this.runScript(task.executor, task.script);
+
+        case "script-file":
+          return this.runScriptFromFile(task.executor, task.scriptFile);
+
+        case "method":
+          if (!task.cdRequest) {
+            return {
+              state: CdFxStateLevel.Error,
+              message: "cdRequest missing",
+            };
+          }
+          return this.callMethodFromCdRequest(task.cdRequest);
+
+        /**
+         * @deprecated
+         * Use localCdRequest or
+         */
+        case "cdRequest":
+          return b.invokeCdRequest(task.cdRequest as ICdRequest);
+
+        case "localCdRequest":
+          return b.invokeCdRequest(task.cdRequest as ICdRequest);
+
+        case "remoteCdRequest":
+          return await this.remoteCdRequest(task.cdRequest as ICdRequest);
+
+        default:
+          return {
+            state: CdFxStateLevel.Error,
+            message: `Unknown task type`,
+          };
+      }
+    } catch (err: any) {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: err.message,
+      };
+    }
+  }
+
+  async remoteCdRequest(
+    cdRequest: ICdRequest,
+  ): Promise<CdFxReturn<ICdResponse>> {
+    const svServer = new HttpService();
+    console.log("remoteCdRequest()/cdRequest:", JSON.stringify(cdRequest));
+    return svServer.proc(cdRequest);
+  }
+
+  // ─────────────────────────────────────────────
+  // 🔥 NORMALIZATION (CRITICAL)
+  // ─────────────────────────────────────────────
+
+  private normalizeTaskResult(raw: any, task: CICdTask): CdFxReturn<any> {
+    if (!raw) {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: `Task '${task.name}' returned undefined/null`,
+        data: null,
+      };
+    }
+
+    if (typeof raw !== "object") {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: `Invalid return type from "${task.name}'`,
+        data: raw,
+      };
+    }
+
+    if (raw.state === undefined) {
+      return {
+        state: CdFxStateLevel.SystemError,
+        message: `Task '${task.name}' missing 'state'`,
+        data: raw,
+      };
+    }
+
+    if (typeof raw.state === "boolean") {
+      raw.state = raw.state ? CdFxStateLevel.Success : CdFxStateLevel.Error;
+    }
+
+    return raw;
+  }
+
+  private normalizeState(result: CdFxReturn<any>): CdFxStateLevel {
+    if (typeof result.state === "boolean") {
+      return result.state ? CdFxStateLevel.Success : CdFxStateLevel.Error;
+    }
+    return result.state ?? CdFxStateLevel.Unknown;
+  }
+
+  private extractBusinessState(result: CdFxReturn<any>) {
+    const appState = result?.data?.app_state;
+
+    if (!appState) return undefined;
+
+    return {
+      success: appState.success,
+      code: appState?.info?.code,
+      message: appState?.info?.app_msg,
+    };
+  }
+
+  private resolveFinalState(
+    transport: CdFxStateLevel,
+    business?: { success: boolean },
+  ): CdFxStateLevel {
+    if (business && business.success === false) {
+      return CdFxStateLevel.LogicalFailure;
+    }
+    return transport;
+  }
+
+  // ─────────────────────────────────────────────
+  // 🔁 FLOW CONTROL
+  // ─────────────────────────────────────────────
+
+  private resolveNextTask(
+    task: CICdTask,
+    state: CdFxStateLevel,
+  ): WFNext | null {
+    if (!task.onResult) return null;
+
+    for (const rule of task.onResult) {
+      const match = Array.isArray(rule.ifState)
+        ? rule.ifState.includes(state)
+        : rule.ifState === state;
+
+      if (match) {
+        return this.normalizeWFNext(rule.toTask, {
+          currentPipeline: this.currentPipelineName,
+          currentStage: this.currentStageName,
+        });
+      }
+    }
+
+    return null;
+  }
+
+  normalizeWFNext(
+    next: WFNextRef,
+    context: { currentPipeline: string; currentStage: string },
+  ): WFNext {
+    if (!next || typeof next === "string") {
+      return {
+        pipelineName: context.currentPipeline,
+        stageName: context.currentStage,
+        taskName: typeof next === "string" ? next : "",
+      };
+    }
+
+    return {
+      pipelineName: next.pipelineName ?? context.currentPipeline,
+      stageName: next.stageName ?? context.currentStage,
+      taskName: next.taskName,
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // 🔥 ARG RESOLUTION
+  // ─────────────────────────────────────────────
+
+  private resolveCdRequest(
+    cdRequest: ICdRequest,
+    ctx: PipelineContext,
+  ): ICdRequest {
+    return {
+      ...cdRequest,
+      args: this.resolveObject(cdRequest.args, ctx),
+      dat: this.resolveObject(cdRequest.dat, ctx),
+    };
+  }
+
+  private resolveObject(obj: any, ctx: PipelineContext): any {
+    if (!obj) return obj;
+
+    if (typeof obj === "string") return this.resolveValue(obj, ctx);
+
+    if (Array.isArray(obj)) return obj.map((v) => this.resolveObject(v, ctx));
+
+    if (typeof obj === "object") {
+      return Object.fromEntries(
+        Object.entries(obj).map(([k, v]) => [k, this.resolveObject(v, ctx)]),
+      );
+    }
+
+    return obj;
+  }
+
+
+  private resolveValue(value: string, ctx: PipelineContext): any {
+    if (!value.startsWith("$")) return value;
+
+    const path = value.slice(1).split(".");
+    const root = path.shift();
+
+    let source: any;
+
+    switch (root) {
+      case "outputs":
+        source = ctx.outputs;
+        break;
+      case "vars":
+        source = ctx.vars;
+        break;
+      case "inputs":
+        source = ctx.inputs;
+        break;
+      default:
+        return value;
+    }
+
+    // Special handling for outputs
+    if (root === "outputs" && path.length > 0) {
+      const taskName = path.shift()!;
+      const taskOutput = source?.[taskName];
+
+      if (!taskOutput) {
+        CdLog.error(`resolveValue(): output task '${taskName}' not found`);
+        return undefined;
+      }
+
+      source = taskOutput.data ?? taskOutput;
+    }
+
+    return path.reduce((acc, key) => acc?.[key], source);
+  }
+}
+```
+
+//////////////////////////////////////
+
+You have suggested the following as the lines for building the stage data.
+It is now working ok.
+Now the next crucial part that I need you to assist is:
+1. What you recommend on how to execute CiCdRunnerService.run()
+2. How the eventual apiKey is retrieved.
+
+```ts
+// Inside your orchestration layer or Runner initialization:
+    const dynamicTasks = DynamicPipelineBuilder.buildStageForAsset("GetApiKey");
+
+    console.log(dynamicTasks.map((t) => t.name));
+    // Output guaranteed order: ['GetCacheProfile', 'GetProfile', 'GetApiKey']
+
+    const dynamicStage: CICdStage = {
+      name: "Dynamic Capability Resolution",
+      description:
+        "Stage built organically from dynamic dependency requirements.",
+      tasks: dynamicTasks,
+    };
+
+    this.logger.logDebug(
+      `[CdAiController][initAiRuntime()] dynamicStage:${inspect(dynamicStage, { depth: 3 })}`,
+    );
+```
+
+/////////////////////////////////////
+
+The idea behind the pipeline oriented execution was to have a dynamic ways of executing code.
+The kind of process that can allow ai to figure what needs to be done, construct pipelines dyanamically, execute, view logs, if error, analyse the cause, figure solution, and keep repeating such until a given requirement is met.
+In the process, we resolved that the logs need to be eleveted to 'Knowledge'.
+So we have the following interfaces.
+Can we create a simple POC level of testing the above concept using the 'getApiKey' example.
+Give me your suggestions.
+```ts
+export interface ISysKnowledge {
+  /**
+   * Unique observation id.
+   */
+  id?: string;
+
+  /**
+   * Time generated.
+   */
+  timestamp: Date;
+
+  /**
+   * Severity / importance.
+   */
+  level: SysKnowledgeLevel;
+
+  /**
+   * Category of knowledge.
+   */
+  category: SysKnowledgeCategory;
+
+  /**
+   * Human readable summary.
+   */
+  summary: string;
+
+  /**
+   * Longer explanation.
+   */
+  description?: string;
+
+  /**
+   * What component produced it.
+   */
+  producer: ISysKnowledgeProducer;
+
+  /**
+   * Pipeline location.
+   */
+  execution?: ISysExecutionKnowledge;
+
+  /**
+   * Runtime state.
+   */
+  runtime?: ISysRuntimeKnowledge;
+
+  /**
+   * Expected state.
+   */
+  expected?: any;
+
+  /**
+   * Actual state.
+   */
+  actual?: any;
+
+  /**
+   * Raw data.
+   */
+  payload?: any;
+
+  /**
+   * Recommendation.
+   */
+  recommendation?: ISysRecommendation[];
+
+  /**
+   * Arbitrary metadata.
+   */
+  metadata?: Record<string, any>;
+}
+
+export interface ISysKnowledgeProducer {
+  subsystem: string;
+
+  module?: string;
+
+  class?: string;
+
+  method?: string;
+}
+
+export interface ISysExecutionKnowledge {
+  pipeline?: string;
+
+  stage?: string;
+
+  task?: string;
+
+  retry?: number;
+}
+
+export interface ISysRuntimeKnowledge {
+  datasource?: DsType;
+
+  adapter?: string;
+
+  currentScope?: SnpScope;
+
+  currentPath?: SnpPathSegment[];
+
+  currentNodeType?: string;
+
+  parentNodeType?: string;
+}
+
+export interface ISysRecommendation {
+
+    priority:number;
+
+    title:string;
+
+    description?:string;
+
+    action?:string;
+
+}
+
+export enum SysKnowledgeCategory {
+
+    Navigation,
+
+    Selection,
+
+    Validation,
+
+    Transformation,
+
+    Compilation,
+
+    Optimization,
+
+    Runtime,
+
+    Adapter,
+
+    Datasource,
+
+    Security,
+
+    Performance,
+
+    Pipeline,
+
+    Exception,
+
+    Observation,
+
+    Learning,
+
+}
+
+/**
+ * CdFxStateLevel remains the canonical representation of operation state, 
+ * while SysKnowledgeLevel expresses the significance of individual knowledge items.
+ */
+export enum SysKnowledgeLevel {
+
+    Trace,
+
+    Debug,
+
+    Information,
+
+    Warning,
+
+    Error,
+
+    Critical,
+
+    Insight,
+
+}
+
+/**
+ * not every piece of knowledge will be a direct observation. 
+ * Some will be derived by analysis, some inferred by the Reasoner, 
+ * and some will represent decisions or recommendations. 
+ * SysKnowledgeKind provides an additional dimension.
+ * It allow the same ISysKnowledge model to represent the entire 
+ * lifecycle of knowledge without changing its shape.
+ */
+export enum SysKnowledgeKind {
+    Observation,
+    Fact,
+    Inference,
+    Metric,
+    Decision,
+    Recommendation,
+    Prediction,
+}
+
+export enum CdDiagnosticCategory {
+    VALIDATION = "VALIDATION",
+    NORMALIZATION = "NORMALIZATION",
+    EXPANSION = "EXPANSION",
+    OPTIMIZATION = "OPTIMIZATION",
+    GENERATION = "GENERATION",
+    ANNOTATION = "ANNOTATION",
+}
+```
+
+////////////////////////////////
+
+I have made some adjustment to the sample you had suggested.
+Should the factory also have the capacity to:
+1. log for various levels (allowing developer to observe progres eventhough the ai would be able to rely on persisted data as opposed to viewing console)
+2. option to persist the process in memory, redis or sql database
+Let me know what you think and how this class can be developed towards that direction.
+```ts
+import { ISysKnowledge, SysKnowledgeCategory, SysKnowledgeLevel } from "../../cd-compiler/models/cd-compiler.model.js";
+import { CICdTask, PipelineContext } from "../../dev-descriptor/index.js";
+
+// knowledge-factory.ts
+export class KnowledgeFactory {
+  public static createRuntimeError(
+    task: CICdTask, 
+    // stageName: string, 
+    // pipelineName: string, 
+    // actualValue: any
+    ctx: PipelineContext,
+  ): ISysKnowledge {
+    return {
+      timestamp: new Date(),
+      level: SysKnowledgeLevel.Error,
+      category: SysKnowledgeCategory.Pipeline,
+      summary: `Task ${task.name} validation failed due to invalid token format.`,
+      description: `The input token structure received from downstream data dependencies did not pass validation regex checks.`,
+      producer: {
+        subsystem: "ci-cd-engine",
+        module: task.cdRequest?.m,
+        class: task.cdRequest?.c,
+        method: task.cdRequest?.a
+      },
+      execution: {
+        pipeline: ctx.execution.pipelineName || "unknown",
+        stage: ctx.execution.currentStage?.name || "unknown",
+        task: ctx.execution.currentTask?.name || "unknown",
+        retry: ctx.execution.retry || 1
+      },
+      expected: "Bearer [A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+",
+      actual: "??",
+      payload: task.cdRequest
+    };
+  }
+}
+```
+
+///////////////////////////////////////////////
+
+The tasks are assembling properly, the first task is being processed successfully but the 2nd task is failing as described below.
+
+One of the design challenges that I noted is that the process expects that parameters for completing a given tasks will be available from the previous tasks.
+The second task is a typical example where profile name is available in the 3rd task (which has not been executed.)
+To resolve this, I am proposing introduction of exposedParams and desparateParams together with interface DataLink.
+As an example profileName required in the second task is a desparateParam. 
+The 3rd task is the one that initiated the proces. The developer or ai agent would recorgnize that an upstream process would require the profileName. So it publishes it as exposedParams.
+These params can then be resolved during resolution of next task.
+Assist me to configure output/input for the task FilterProfileByName and also to figure how exposedParams and desparateParams can be utilized to resolve desparate params issue.
+```log
+[7/4/2026, 1:47:22 PM] [DEBUG]: [CdAiController][initAiRuntime()] dynamicTasks: [
+  {
+    status: 'pending',
+    name: 'SysCache_GetDataByCacheKey',
+    type: 'method',
+    executor: 'cd-cli',
+    outputMappings: { 'f_vals[0].data': 'profile_cache' },
+    cdRequest: {
+      ctx: 'sys',
+      m: 'moduleman',
+      c: 'SysCache',
+      a: 'GetDataByCacheKey',
+      dat: { f_vals: [Array], token: '' },
+      args: { req: null, res: null, cacheKey: 'runtime:profiles' }
+    }
+  },
+  {
+    status: 'pending',
+    name: 'FilterProfileByName',
+    type: 'method',
+    executor: 'cd-cli',
+    outputMappings: { user: 'user_profile' },
+    cdRequest: {
+      ctx: 'app',
+      m: 'cd-cli',
+      c: 'ProfileStore',
+      a: 'FilterProfileByName',
+      dat: { f_vals: [Array], token: '' },
+      args: {
+        req: null,
+        res: null,
+        profileName: 'open-ai',
+        cacheData: '$outputs.profile_cache'
+      }
+    }
+  },
+  {
+    status: 'pending',
+    name: 'GetApiKeyFromProfile',
+    type: 'method',
+    executor: 'cd-cli',
+    cdRequest: {
+      ctx: 'app',
+      m: 'cd-ai',
+      c: 'CdAi',
+      a: 'GetApiKeyFromProfile',
+      dat: { f_vals: [Array], token: '' },
+      args: { profileName: '$outputs.user_profile.id' }
+    }
+  }
+] [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: [CdAiController][initAiRuntime()] dynamicStage: [object Object] [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: [CdAiController][initAiRuntime()] workflowPayload: [object Object] [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: Starting CiCdRunnerService::run() [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: CiCdRunnerService::executeTaskWithPolicies()/ora unavailable:Cannot find package 'ora' imported from /home/emp-12/cd-node/dist/CdNode/sys/dev-descriptor/services/cd-ci-runner.service.js [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: CdCiRunnerService::callMethodFromCdRequest() → cdRequest received: {
+  ctx: 'sys',
+  m: 'moduleman',
+  c: 'SysCache',
+  a: 'GetDataByCacheKey',
+  dat: { f_vals: [ { data: null } ], token: '' },
+  args: { req: null, res: null, cacheKey: 'runtime:profiles' }
+} [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: [CiCdRunnerService][callMethodFromCdRequest()] absoluteControllerURL: file:///home/emp-12/cd-node/dist/CdNode/sys/moduleman/controllers/sys-cache.controller.js [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [INFO]: [SysCacheController][GetProfile] cacheKey: runtime:profiles [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [INFO]: [SysCacheController][GetProfile] profileData: {
+  items: [
+    {
+      cdCliProfileName: 'devServer-ssh-profile',
+      cdCliProfileData: { owner: [Object], details: [Object], permissions: [Object] },
+      cdCliProfileTypeId: 2,
+      cdCliProfileGuid: 'a9246764-f6b7-4b63-93c1-12fb24f88c8f',
+      userId: 1010,
+      cdCliProfileEnabled: 1
+    },
+    {
+      cdCliProfileName: 'cd-git-config',
+      cdCliProfileData: {
+        owner: [Object],
+        cdVault: [Array],
+        details: [Object],
+        permissions: [Object]
+      },
+      cdCliProfileTypeId: 3,
+      cdCliProfileGuid: '3ff7f765-0bbf-4c6f-920c-14bcfa63da1d',
+      userId: 1010,
+      cdCliProfileEnabled: 1
+    },
+    {
+      cdCliProfileName: 'frontend-aws-prod',
+      cdCliProfileData: { owner: [Object], details: [Object], permissions: [Object] },
+      cdCliProfileTypeId: 3,
+      cdCliProfileGuid: '1baab097-4d34-4e12-a9c2-d5f8d1c73583',
+      userId: 1010,
+      cdCliProfileEnabled: 1
+    },
+    {
+      cdCliProfileName: 'cd-api-local',
+      cdCliProfileData: { owner: [Object], cdVault: [Array], details: [Object] },
+      cdCliProfileTypeId: 10,
+      cdCliProfileGuid: '7e972f45-528e-4cac-ad02-6bdb100f901f',
+      userId: 1010,
+      cdCliProfileEnabled: 1
+    },
+    {
+      cdCliProfileId: 6,
+      cdCliProfileGuid: '28c7e30f-f42b-47cd-811b-ba747cb0f83e',
+      cdCliProfileName: 'open-ai',
+      cdCliProfileDescription: 'open-ai access credetials',
+      cdCliProfileData: {
+        type: 'open-ai',
+        typeId: 11,
+        owner: [Object],
+        permissions: [Object],
+        details: [Object]
+      },
+      cdCliProfileTypeId: 11,
+      userId: 1010,
+      docId: 21753,
+      cdCliProfileEnabled: true
+    }
+  ],
+  count: 4
+} [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [INFO]: ✅ SysCache_GetDataByCacheKey [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] start... [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] task: {
+  status: 'completed',
+  name: 'SysCache_GetDataByCacheKey',
+  type: 'method',
+  executor: 'cd-cli',
+  outputMappings: { 'f_vals[0].data': 'profile_cache' },
+  cdRequest: {
+    ctx: 'sys',
+    m: 'moduleman',
+    c: 'SysCache',
+    a: 'GetDataByCacheKey',
+    dat: { f_vals: [Array], token: '' },
+    args: { req: null, res: null, cacheKey: 'runtime:profiles' }
+  }
+} [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] state: 1 [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] currentStage: {
+  name: 'Dynamic Capability Resolution',
+  description: 'Stage built organically from dynamic dependency requirements.',
+  tasks: [
+    {
+      status: 'completed',
+      name: 'SysCache_GetDataByCacheKey',
+      type: 'method',
+      executor: 'cd-cli',
+      outputMappings: [Object],
+      cdRequest: [Object]
+    },
+    {
+      status: 'pending',
+      name: 'FilterProfileByName',
+      type: 'method',
+      executor: 'cd-cli',
+      outputMappings: [Object],
+      cdRequest: [Object]
+    },
+    {
+      status: 'pending',
+      name: 'GetApiKeyFromProfile',
+      type: 'method',
+      executor: 'cd-cli',
+      cdRequest: [Object]
+    }
+  ]
+} [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] Applying implicit sequential fallbacks for 'SysCache_GetDataByCacheKey' [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [INFO]: [CiCdRunnerService][resolveNextTask()] Auto-advancing implicitly to next sequential task: FilterProfileByName [CONTEXT] -> {}
+[7/4/2026, 1:47:22 PM] [ERROR]: resolveValue(): output task target or alias 'profile_cache' not found [CONTEXT] -> {}
+```
+
+The first task is executing but the second one is failing with the error below:
+```log
+[7/4/2026, 1:47:22 PM] [ERROR]: resolveValue(): output task target or alias 'profile_cache' not found [CONTEXT] -> {}
+```
+
+
+```ts
+export interface CICdTask<T = any> extends CdSchedulerTask<T> {
+  type:
+    | "script-inline"
+    | "script-file"
+    | "method"
+    | /*@depricated. Use localCdRequest or remoteCdRequest */ "cdRequest"
+    | "localCdRequest"
+    | "remoteCdRequest"
+    | "operation";
+  status: "pending" | "running" | "completed" | "failed";
+  completionRef?: string;
+  // requires?: CICdTask;
+
+  /**
+   *  Used by a given task to exapose paramether that will be required during pipeline processing.
+   * Handle to external tasks/methods
+   * Sample:
+   * exposedParams: [{
+        originAddress?: { m: "cd-ai"; c: "CdAi"; a: "GetApiKeyFromProfile" };
+        targetAddress?: { m: "cd-cli"; c: "ProfileStore"; a: "FilterProfileByName" };
+        params: { profileName: "open-ai" };
+     }]
+   */
+  exposedParams?: DataLink[];
+
+  /**
+   * Used to register a parameter that will have to search pipline advertised exposedParams for a fitting value.
+   * For example when a given module is looking for its profile, a profile store can use exposedParams and provide results appropriately.
+   * Note that even if there are multiple exposures with different param value, there is origin address that can allow profile store to publish multiple results with specified targets.
+   */
+  desparateParams?: Record<string, string>;
+
+  /**
+   * Defines where this task gets its input properties at runtime.
+   * Key: The internal argument path (e.g., "query.value")
+   * Value: The provider token (e.g., "$stage.outputs.rfc_blocks")
+   */
+  inputMappings?: Record<string, string>;
+
+  /**
+   * Defines under what alias this task exposes its execution results to the stage context.
+   * Key: The path in the raw returned object (e.g., "blocks")
+   * Value: The context alias (e.g., "rfc_blocks")
+   */
+  outputMappings?: Record<string, string>;
+}
+
+/**
+ * Used by a given task to exapose parameter/s that will be required during pipeline processing for a remote task.
+ * Can also be view as a handle to external tasks/methods
+ */
+export interface DataLink {
+  originAddress?: ExposureAddress; // { m: "cd-ai"; c: "CdAi"; a: "GetApiKeyFromProfile" };
+  targetAddress?: ExposureAddress; // { m: "cd-cli"; c: "ProfileStore"; a: "FilterProfileByName" };
+  params: Record<string, string>; // eg { profileName: "open-ai", cacheKey: "runtime:profile" }; 
+}
+```
+
+
+```ts
+AssetRegistry.register({
+      name: "FilterProfileByName",
+      dependencies: ["GetDataByCacheKey"],
+      taskTemplate: {
+        status: "pending",
+        name: "FilterProfileByName",
+        type: "method",
+        executor: "cd-cli",
+        outputMappings: { user: "user_profile" }, // <── Exports here
+        cdRequest: {
+          ctx: "app",
+          m: "cd-cli",
+          c: "ProfileStore",
+          a: "FilterProfileByName",
+          dat: { f_vals: [{ data: null }], token: "" },
+          args: {
+            req: null,
+            res: null,
+            profileName: "open-ai", // <── Consumes dynamically
+            cacheData: "$outputs.profile_cache", // <── Consumes dynamically
+          },
+        },
+      },
+    });
+```
+
+The entry method that processes the second task
+```ts
+export class ProfileStoreController{
+   async FilterProfileByName(req: Request | null, res: Response | null, profileName: string, allProfiles?: ProfileModel[]){
+        try {
+            return await this.service.filterProfileByCacheKey(req, res, profileName, allProfiles);
+        } catch (e: any) {
+            if(req && res) {
+                await this.b.serviceErr(req, res, e, 'ProfileStoreController:FilterProfileByCacheKey');
+            } else {
+                console.error(`[ProfileStoreController][FilterProfileByCacheKey] Error: ${e.message}`);
+            }
+        }
+    }
+}
+```
+The actual service for the 2nd task.
+```ts
+export class ProfileStoreService{
+  async filterProfileByCacheKey(req: Request | null, res: Response | null, profileName?: string, profileData?: ProfileModel[]): Promise<ProfileModel[]> {
+    if (!profileData || !Array.isArray(profileData)) return [];
+    if (!profileName) return [];
+    return profileData.filter((profile) => profile.cdCliProfileName === profileName);
+  }
+}
+```
+
+/////////////////////////////////////////////
+
+Take a look at this log and advise fixes for the anomalies displayed.
+```log
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] start... [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] task: {
+  status: 'completed',
+  name: 'SysCache_GetDataByCacheKey',
+  type: 'method',
+  executor: 'cd-cli',
+  outputMappings: { 'f_vals[0].data': 'profile_cache' },
+  cdRequest: {
+    ctx: 'sys',
+    m: 'moduleman',
+    c: 'SysCache',
+    a: 'GetDataByCacheKey',
+    dat: { f_vals: [Array], token: '' },
+    args: { req: null, res: null, cacheKey: 'runtime:profiles' }
+  }
+} [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] state: 1 [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] currentStage: {
+  name: 'Dynamic Capability Resolution',
+  description: 'Stage built organically from dynamic dependency requirements.',
+  tasks: [
+    {
+      status: 'completed',
+      name: 'SysCache_GetDataByCacheKey',
+      type: 'method',
+      executor: 'cd-cli',
+      outputMappings: { 'f_vals[0].data': 'profile_cache' },
+      cdRequest: {
+        ctx: 'sys',
+        m: 'moduleman',
+        c: 'SysCache',
+        a: 'GetDataByCacheKey',
+        dat: { f_vals: [Array], token: '' },
+        args: { req: null, res: null, cacheKey: 'runtime:profiles' }
+      }
+    },
+    {
+      status: 'pending',
+      name: 'FilterProfileByName',
+      type: 'method',
+      executor: 'cd-cli',
+      outputMappings: { items: 'profile_cache' },
+      desparateParams: { profileName: 'ACTIVE_PROFILE_NAME' },
+      cdRequest: {
+        ctx: 'sys',
+        m: 'cd-cli',
+        c: 'ProfileStore',
+        a: 'FilterProfileByName',
+        dat: { f_vals: [Array], token: '' },
+        args: {
+          req: null,
+          res: null,
+          profileName: '',
+          allProfiles: '$outputs.items'
+        }
+      }
+    },
+    {
+      status: 'pending',
+      name: 'GetApiKeyFromProfile',
+      type: 'method',
+      executor: 'cd-cli',
+      exposedParams: [
+        {
+          originAddress: [Object],
+          targetAddress: [Object],
+          params: [Object]
+        }
+      ],
+      cdRequest: {
+        ctx: 'app',
+        m: 'cd-ai',
+        c: 'CdAi',
+        a: 'GetApiKeyFromProfile',
+        dat: { f_vals: [Array], token: '' },
+        args: { profileName: '$outputs.user_profile.id' }
+      }
+    }
+  ]
+} [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] Applying implicit sequential fallbacks for 'SysCache_GetDataByCacheKey' [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [INFO]: [CiCdRunnerService][resolveNextTask()] Auto-advancing implicitly to next sequential task: FilterProfileByName [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [INFO]: [CiCdRunnerService] Successfully resolved desperate param token 'ACTIVE_PROFILE_NAME' from provider task: GetApiKeyFromProfile [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [ERROR]: resolveValue(): output task target or alias 'items' not found [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: CiCdRunnerService::executeTaskWithPolicies()/ora unavailable:Cannot find package 'ora' imported from /home/emp-12/cd-node/dist/CdNode/sys/dev-descriptor/services/cd-ci-runner.service.js [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: CdCiRunnerService::callMethodFromCdRequest() → cdRequest received: {
+  ctx: 'sys',
+  m: 'cd-cli',
+  c: 'ProfileStore',
+  a: 'FilterProfileByName',
+  dat: { f_vals: [ { data: null } ], token: '' },
+  args: {
+    req: null,
+    res: null,
+    profileName: 'open-ai',
+    allProfiles: undefined
+  }
+} [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][callMethodFromCdRequest()] absoluteControllerURL: file:///home/emp-12/cd-node/dist/CdNode/sys/cd-cli/controllers/profile-store.controller.js [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [ERROR]: ❌ FilterProfileByName: Task 'FilterProfileByName' missing 'state' [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] start... [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] task: {
+  status: 'failed',
+  name: 'FilterProfileByName',
+  type: 'method',
+  executor: 'cd-cli',
+  outputMappings: { items: 'profile_cache' },
+  desparateParams: { profileName: 'ACTIVE_PROFILE_NAME' },
+  cdRequest: {
+    ctx: 'sys',
+    m: 'cd-cli',
+    c: 'ProfileStore',
+    a: 'FilterProfileByName',
+    dat: { f_vals: [Array], token: '' },
+    args: {
+      req: null,
+      res: null,
+      profileName: 'open-ai',
+      allProfiles: undefined
+    }
+  }
+} [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] state: 11 [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] currentStage: {
+  name: 'Dynamic Capability Resolution',
+  description: 'Stage built organically from dynamic dependency requirements.',
+  tasks: [
+    {
+      status: 'completed',
+      name: 'SysCache_GetDataByCacheKey',
+      type: 'method',
+      executor: 'cd-cli',
+      outputMappings: { 'f_vals[0].data': 'profile_cache' },
+      cdRequest: {
+        ctx: 'sys',
+        m: 'moduleman',
+        c: 'SysCache',
+        a: 'GetDataByCacheKey',
+        dat: { f_vals: [Array], token: '' },
+        args: { req: null, res: null, cacheKey: 'runtime:profiles' }
+      }
+    },
+    {
+      status: 'failed',
+      name: 'FilterProfileByName',
+      type: 'method',
+      executor: 'cd-cli',
+      outputMappings: { items: 'profile_cache' },
+      desparateParams: { profileName: 'ACTIVE_PROFILE_NAME' },
+      cdRequest: {
+        ctx: 'sys',
+        m: 'cd-cli',
+        c: 'ProfileStore',
+        a: 'FilterProfileByName',
+        dat: { f_vals: [Array], token: '' },
+        args: {
+          req: null,
+          res: null,
+          profileName: 'open-ai',
+          allProfiles: undefined
+        }
+      }
+    },
+    {
+      status: 'pending',
+      name: 'GetApiKeyFromProfile',
+      type: 'method',
+      executor: 'cd-cli',
+      exposedParams: [
+        {
+          originAddress: [Object],
+          targetAddress: [Object],
+          params: [Object]
+        }
+      ],
+      cdRequest: {
+        ctx: 'app',
+        m: 'cd-ai',
+        c: 'CdAi',
+        a: 'GetApiKeyFromProfile',
+        dat: { f_vals: [Array], token: '' },
+        args: { profileName: '$outputs.user_profile.id' }
+      }
+    }
+  ]
+} [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [DEBUG]: [CiCdRunnerService][resolveNextTask()] Applying implicit sequential fallbacks for 'FilterProfileByName' [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [WARN]: [CiCdRunnerService][resolveNextTask()] Task 'FilterProfileByName' failed with state 11. Auto-routing to NotifyFailure. [CONTEXT] -> {}
+[7/4/2026, 3:40:04 PM] [WARN]: [CdAiController][initAiRuntime()] Dynamic pipeline execution failed with state: 11, message: Next task not found: Dynamic Capability Resolution/NotifyFailure [CONTEXT] -> {}
 ```
