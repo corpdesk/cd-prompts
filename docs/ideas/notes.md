@@ -354,7 +354,8 @@ The system has literally expanded its own knowledge.
 Accomplished:
 - successful POC of Dynamic Asset-Pipeline Engine (DAPE)
   - POC was set for cd-open-ai to get its key from cach via profile controller.
-- 
+- first documentation for DAPE: 
+https://github.com/corpdesk/cd-prompts/blob/main/docs/reference/15.%20dape-documentation.md
 
 To do:
 - check status of all LLM init() implementation
@@ -365,3 +366,87 @@ To do:
   - has been tested for prompt
   - has set corpdesk context and ready to do usefull corpdesk work
 
+
+////////////////////////////
+
+15th July 2026:
+
+Following issue related to merging cd-shell with cd-node, the booting processs for cd-node is going through facelift.
+The main probleme is cd-shell is a PWA application targeting browser and is encountering imports that target node server applications. eg node-ssh.
+The current strategy is to have them resolved during runtime and not to get on the way of build time.
+To test new design:
+1. Invoke CdScannerService. to run under rpc and invoke
+
+2. Seve and retrieve descriptor data in various forms (arange the order in booting availability sequence)
+
+Browser based
+- save descriptor file in various locations (assets)
+- SysCache
+- IndexDB
+- file via capacitor plugin
+- sqlite via capacitor plugin
+
+Node server:
+- SysCache
+- Redis
+- MySql
+- Sqlite
+- via capacity plugin
+
+Test:
+- run scanner via CdScannerService.run()
+- make execCtx part of publishing input.
+- publish descriptor to available resources
+
+- invoke getDescriptor() at the begining of Main.
+- make make execCtx part of getDescriptor() input
+
+25th July 2026
+Road Map:
+```txt
+✓ ExecutionIterator
+
+↓
+
+✓ IteratorState
+
+↓
+
+✓ IIteration
+
+↓
+
+✓ Execution Pipeline
+
+↓
+
+BuildObservation
+
+↓
+
+BuildAnalyzer
+
+↓
+
+ShellBuildIterator
+
+↓
+
+KnowledgeProvider
+
+↓
+
+KnowledgeLookup
+
+↓
+
+Strategy Engine
+
+↓
+
+Automatic Build Repair
+
+↓
+
+AI Assistance (only if needed)
+```
